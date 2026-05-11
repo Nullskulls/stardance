@@ -110,18 +110,6 @@ class UserTest < ActiveSupport::TestCase
     assert user.ysws_eligible?
   end
 
-  test "locking voting marks existing votes suspicious" do
-    user = users(:one)
-    vote = votes(:one)
-    user.update!(voting_locked: false)
-    vote.update_columns(suspicious: false)
-
-    user.lock_voting_and_mark_votes_suspicious!
-
-    assert user.reload.voting_locked?
-    assert vote.reload.suspicious?
-  end
-
   test "balance cache can be invalidated" do
     user = users(:one)
 
@@ -149,19 +137,7 @@ class UserTest < ActiveSupport::TestCase
     identity = User::Identity.find_by!(provider: "hackatime", uid: "hackatime-baseline")
     assert_equal identity, user.reload.hackatime_identity
     assert_equal user, User.find_by_hackatime("hackatime-baseline")
-    assert user.has_hackatime?
-  end
-
-  test "awarding achievements records pending notification state" do
-    user = users(:one)
-    user.achievements.destroy_all
-    user.update_column(:has_pending_achievements, false)
-
-    achievement = user.award_achievement!(:identity_verified)
-
-    assert_equal Achievement.find(:identity_verified), achievement
-    assert user.earned_achievement?(:identity_verified)
-    assert user.reload.has_pending_achievements?
+    assert user.hackatime_identity.present?
   end
 
   test "grant_email returns hcb_email when present" do

@@ -19,7 +19,6 @@ module User::HackatimeSync
     if result[:banned] && !banned?
       Rails.logger.warn "User #{id} (#{slack_id}) is banned on Hackatime, auto-banning"
       ban!(reason: "Automatically banned: User is banned on Hackatime")
-      lock_voting_and_mark_votes_suspicious!
     end
 
     if result[:projects].any?
