@@ -9,24 +9,11 @@ module User::StateFlags
   def tutorial_step_completed?(slug) = tutorial_steps.include?(slug)
 
   def complete_tutorial_step!(slug)
-    return if tutorial_step_completed?(slug)
-
-    updated = self.class.where(id: id)
-      .where.not("tutorial_steps_completed @> ARRAY[?]::varchar[]", slug.to_s)
-      .update_all([ "tutorial_steps_completed = array_append(tutorial_steps_completed, ?), updated_at = NOW()", slug.to_s ])
-    return false if updated.zero?
-
-    self.tutorial_steps_completed = (tutorial_steps_completed || []) + [ slug.to_s ]
-    true
+    append_array_value_once(:tutorial_steps_completed, slug.to_s)
   end
 
   def revoke_tutorial_step!(slug)
-    return unless tutorial_step_completed?(slug)
-
-    self.class.where(id: id)
-      .update_all([ "tutorial_steps_completed = array_remove(tutorial_steps_completed, ?), updated_at = NOW()", slug.to_s ])
-    self.tutorial_steps_completed = (tutorial_steps_completed || []) - [ slug.to_s ]
-    true
+    remove_array_value(:tutorial_steps_completed, slug.to_s)
   end
 
   def has_dismissed?(thing_name) = things_dismissed.include?(thing_name.to_s)
@@ -34,26 +21,42 @@ module User::StateFlags
   def dismiss_thing!(thing_name)
     thing_name_str = thing_name.to_s
     raise ArgumentError, "Invalid thing to dismiss: #{thing_name_str}" unless DISMISSIBLE_THINGS.include?(thing_name_str)
-    return if has_dismissed?(thing_name_str)
 
-    updated = self.class.where(id: id)
-      .where.not("things_dismissed @> ARRAY[?]::varchar[]", thing_name_str)
-      .update_all([ "things_dismissed = array_append(things_dismissed, ?), updated_at = NOW()", thing_name_str ])
-    return false if updated.zero?
-
-    self.things_dismissed = (things_dismissed || []) + [ thing_name_str ]
-    true
+    append_array_value_once(:things_dismissed, thing_name_str)
   end
 
   def undismiss_thing!(thing_name)
     thing_name_str = thing_name.to_s
     raise ArgumentError, "Invalid thing to dismiss: #{thing_name_str}" unless DISMISSIBLE_THINGS.include?(thing_name_str)
-    return unless has_dismissed?(thing_name_str)
 
-    update_columns(things_dismissed: things_dismissed - [ thing_name_str ], updated_at: Time.current)
+    remove_array_value(:things_dismissed, thing_name_str)
   end
 
   def should_show_shop_tutorial?
     tutorial_step_completed?(:first_login) && !tutorial_step_completed?(:free_stickers)
   end
+
+  private
+    def append_array_value_once(column, value)
+      values = public_send(column) || []
+      return if values.include?(value)
+
+      updated = self.class.where(id: id)
+        .where.not("#{column} @> ARRAY[?]::varchar[]", value)
+        .update_all([ "#{column} = array_append(#{column}, ?), updated_at = NOW()", value ])
+      return false if updated.zero?
+
+      public_send("#{column}=", values + [ value ])
+      true
+    end
+
+    def remove_array_value(column, value)
+      values = public_send(column) || []
+      return unless values.include?(value)
+
+      self.class.where(id: id)
+        .update_all([ "#{column} = array_remove(#{column}, ?), updated_at = NOW()", value ])
+      public_send("#{column}=", values - [ value ])
+      true
+    end
 end
