@@ -64,25 +64,46 @@
           <div class="stat-box">
             <div class="stat-label">Total Time</div>
             <div class="stat-value">
-              <% total_hours = (@review.original_minutes || 0) / 60.0 %>
-              <%= total_hours.round(1) %>h
+              <%= (@stats[:total_minutes] / 60.0).round(1) %>h
             </div>
           </div>
           <div class="stat-box">
             <div class="stat-label">Avg per Devlog</div>
-            <div class="stat-value">Placeholder</div>
+            <div class="stat-value">
+              <%= (@stats[:avg_minutes] / 60.0).round(1) %>h
+            </div>
           </div>
           <div class="stat-box">
             <div class="stat-label">Longest</div>
-            <div class="stat-value">Placeholder</div>
+            <div class="stat-value">
+              <%= (@stats[:max_minutes] / 60.0).round(1) %>h
+            </div>
           </div>
           <div class="stat-box">
             <div class="stat-label">Devlogs ≥1hr</div>
-            <div class="stat-value">Placeholder</div>
+            <div class="stat-value">
+              <%= @stats[:one_hour_plus_count] %>
+            </div>
           </div>
         </div>
-        <div class="chart-placeholder">
-          <div class="placeholder-text">Placeholder for Time Chart</div>
+        <div class="time-chart">
+          <div class="chart-title">Time Distribution Across Devlogs</div>
+          <% if @review.devlog_reviews.any? %>
+            <%
+              chart_data = @review.devlog_reviews.each_with_index.map do |devlog_review, index|
+                {
+                  label: "Devlog #{index + 1}",
+                  minutes: devlog_review.original_minutes || 0
+                }
+              end
+            %>
+            <div data-controller="devlog-time-chart"
+                 data-devlog-time-chart-data-value="<%= chart_data.to_json %>"
+                 class="d3-chart-container">
+            </div>
+          <% else %>
+            <div class="placeholder-text">No devlogs to chart</div>
+          <% end %>
         </div>
       </section>
 
@@ -129,7 +150,7 @@
                   <% end %>
 
                   <div class="devlog-media-section">
-                    <div class="media-label">Devlog Media (<%= devlog_review.post_devlog.attachments.count %>)</div>
+                    <div class="media-label">Devlog Media (<%= devlog_review.post_devlog.attachments.size %>)</div>
                     <% if devlog_review.post_devlog.attachments.any? %>
                       <div class="media-grid">
                         <% devlog_review.post_devlog.attachments.each do |attachment| %>

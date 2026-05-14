@@ -1093,6 +1093,32 @@
       font-weight: 700;
       font-family: var(--font-family-sans);
     }
+
+    .time-chart {
+      margin-top: var(--space-l);
+
+      .chart-title {
+        color: var(--color-space-text-muted);
+        font-size: var(--font-size-s);
+        font-family: var(--font-family-sans);
+        margin-bottom: var(--space-m);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .d3-chart-container {
+        background: var(--color-space-surface-faint);
+        border-radius: var(--profile-radius);
+        padding: var(--space-m);
+        border: 1px solid var(--color-space-border);
+
+        svg {
+          display: block;
+          width: 100%;
+          height: auto;
+        }
+      }
+    }
   }
 
   // Boss Note Card
