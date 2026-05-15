@@ -10,9 +10,6 @@ application.register("achievement-highlight", AchievementHighlightController);
 import AddressSelectController from "./address_select_controller";
 application.register("address-select", AddressSelectController);
 
-import BackButtonController from "./back_button_controller";
-application.register("back-button", BackButtonController);
-
 import BioEditorController from "./bio_editor_controller";
 application.register("bio-editor", BioEditorController);
 
@@ -81,9 +78,6 @@ application.register("markdown-preview", MarkdownPreviewController);
 
 import ModalController from "./modal_controller";
 application.register("modal", ModalController);
-
-import NavHistoryController from "./nav_history_controller";
-application.register("nav-history", NavHistoryController);
 
 import OrderFormController from "./order_form_controller";
 application.register("order-form", OrderFormController);
