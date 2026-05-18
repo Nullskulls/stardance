@@ -1253,6 +1253,14 @@
   display: contents;
 }
 
+.project-show__hackatime-placeholder {
+  font-size: 13px;
+  color: var(--color-space-text);
+  opacity: 0.45;
+  pointer-events: none;
+  user-select: none;
+}
+
 .project-show__hackatime-tag {
   display: inline-flex;
   align-items: center;
