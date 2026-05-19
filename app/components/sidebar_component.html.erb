@@ -73,11 +73,12 @@
           <%= inline_svg_tag "icons/gear.svg", class: "sidebar__user-settings-icon" %>
         </button>
 
-        <button type="button" class="sidebar__user-logout" onclick="document.getElementById('logout-form').submit()" aria-label="Logout">
+        <%= button_to logout_path,
+                      method: :delete,
+                      class: "sidebar__user-logout",
+                      aria: { label: "Logout" },
+                      form: { class: "sidebar__user-logout-form", data: { turbo: false } } do %>
           <%= inline_svg_tag "icons/logout.svg", class: "sidebar__user-logout-icon" %>
-        </button>
-
-        <%= form_with url: logout_path, method: :delete, id: "logout-form", style: "display: none;" do %>
         <% end %>
       </div>
     </div>
