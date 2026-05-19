@@ -59,9 +59,6 @@
 
 @use "components/streamer_mode";
 
-// Themes
-@use "themes/christmas";
-
 // Pages
 @use "pages/onboarding" as onboarding_pages;
 @use "pages/projects/new";
