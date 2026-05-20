@@ -899,11 +899,11 @@
     }
   }
 
-  // Repo Platform Card
+  // Repo Platform Card - Compact Vertical Layout
   .repo-platform-card {
     display: flex;
-    align-items: center;
-    gap: var(--space-s);
+    flex-direction: column;
+    gap: var(--space-xxs);
     background: linear-gradient(
       135deg,
       var(--color-set-2-bg) 0%,
@@ -911,55 +911,28 @@
     );
     border: 2px solid var(--color-brand-mint);
     border-radius: var(--profile-radius);
-    padding: var(--space-s) var(--space-m);
+    padding: var(--space-xs);
     box-shadow: 0 4px 12px rgba(129, 255, 255, 0.2);
 
-    .platform-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      background: linear-gradient(
-        135deg,
-        var(--color-brand-mint) 0%,
-        var(--color-brand-blue) 100%
-      );
+    .platform-header {
       display: flex;
       align-items: center;
-      justify-content: center;
-      font-size: var(--font-size-xl);
-      font-weight: 700;
-      color: var(--color-set-1-bg);
-      font-family: var(--font-family-sans);
-    }
-
-    .platform-info {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-xxxs);
-    }
-
-    .platform-name {
-      color: var(--color-space-text);
-      font-size: var(--font-size-m);
-      font-weight: 700;
+      gap: var(--space-xxs);
       font-family: var(--font-family-sans);
     }
 
     .platform-username {
       color: var(--color-brand-mint);
-      font-size: var(--font-size-xs);
+      font-size: var(--font-size-xxs);
       font-weight: 600;
-      font-family: var(--font-family-sans);
-      display: flex;
-      align-items: center;
-      gap: var(--space-xxs);
-      flex-wrap: wrap;
+      white-space: nowrap;
+    }
 
-      .contribution-count {
-        color: var(--color-space-text-muted);
-        font-weight: 400;
-        font-size: var(--font-size-xxs);
-      }
+    .contribution-count {
+      color: var(--color-space-text-muted);
+      font-size: var(--font-size-xxs);
+      font-weight: 400;
+      white-space: nowrap;
     }
   }
 
@@ -2042,6 +2015,31 @@
     &.small {
       min-height: 120px;
       padding: var(--space-m);
+    }
+  }
+
+  // GitHub Contribution Calendar Styles - Compact
+  .contribution-calendar {
+    padding: var(--space-xxs);
+    background: var(--color-space-surface-faint);
+    border: 1px solid var(--color-space-border);
+    border-radius: calc(var(--profile-radius) / 2);
+    display: inline-block;
+    line-height: 0; // Remove extra spacing around SVG
+
+    svg {
+      display: block;
+    }
+  }
+
+  // Tooltip for calendar (rendered in body)
+  .github-calendar-tooltip {
+    font-family: var(--font-family-sans);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+
+    strong {
+      color: var(--color-brand-mint);
     }
   }
 }

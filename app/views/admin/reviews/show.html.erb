@@ -25,15 +25,20 @@
         <% repo_info = parse_repo_info(@review.project.repo_url) %>
         <% if repo_info %>
           <div class="repo-platform-card">
-            <div class="platform-info">
-              <div class="platform-username">
-                @<%= repo_info[:username] %>
-                <% contributions = fetch_platform_contributions(repo_info[:platform], repo_info[:username]) %>
-                <% if contributions %>
-                  <span class="contribution-count">• <%= contributions %></span>
-                <% end %>
-              </div>
+            <% contributions = fetch_platform_contributions(repo_info[:platform], repo_info[:username]) %>
+            <div class="platform-header">
+              <span class="platform-username">@<%= repo_info[:username] %></span>
+              <% if contributions %>
+                <span class="contribution-count">• <%= contributions %></span>
+              <% end %>
             </div>
+            <% calendar_data = prepare_contribution_calendar_data(repo_info[:platform], repo_info[:username]) %>
+            <% if calendar_data %>
+              <div class="contribution-calendar"
+                   data-controller="github-calendar"
+                   data-github-calendar-days-value="<%= calendar_data.to_json %>">
+              </div>
+            <% end %>
           </div>
         <% end %>
 
@@ -42,10 +47,6 @@
             undo review
           </button>
         <% end %>
-
-        <button class="btn-action btn-refresh" disabled>
-          FORCE reload Data
-        </button>
 
         <button class="btn-action btn-report" disabled>
           🚩 Report to Fraud Squad!

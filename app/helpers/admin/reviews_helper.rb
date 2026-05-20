@@ -83,4 +83,82 @@ module Admin::ReviewsHelper
       nil
     end
   end
+
+  # Prepare calendar data for GitHub-style contribution visualization
+  # Returns array of day objects with date, count, and level for the last 365 days
+  # Example: [{ date: "2024-01-01", count: 5, level: 1, day_of_week: 1, week_index: 0 }, ...]
+  def prepare_contribution_calendar_data(platform, username)
+    return nil if platform.blank? || username.blank?
+
+    result = Admin::ReviewPlatformService.fetch_contributions(platform, username)
+    return nil if result[:error] || result[:contributions].blank?
+
+    # Create a hash map of contributions by date for quick lookup
+    contribution_map = result[:contributions].each_with_object({}) do |day, hash|
+      hash[day["date"]] = day["count"]
+    end
+
+    # Calculate date range (last 365 days)
+    today = Date.today
+    one_year_ago = today - 364 # 365 days including today
+
+    # Normalize to start on Sunday for first week
+    start_date = one_year_ago - one_year_ago.wday
+
+    # Generate all days for the calendar grid
+    days = []
+    current_date = start_date
+    week_index = 0
+    day_index = 0
+
+    # Continue until we've covered all days through today
+    while current_date <= today || day_index % 7 != 0
+      date_str = current_date.to_s
+      count = contribution_map[date_str] || 0
+      day_of_week = current_date.wday # 0 = Sunday, 6 = Saturday
+
+      # Only include days within our actual range (one_year_ago to today)
+      if current_date >= one_year_ago && current_date <= today
+        days << {
+          date: date_str,
+          count: count,
+          level: calculate_contribution_level(count),
+          day_of_week: day_of_week,
+          week_index: week_index
+        }
+      elsif current_date > today
+        # Add empty cells to complete the final week
+        days << {
+          date: date_str,
+          count: 0,
+          level: 0,
+          day_of_week: day_of_week,
+          week_index: week_index,
+          future: true # Mark as future date (outside range)
+        }
+      end
+
+      # Move to next day
+      current_date += 1
+      day_index += 1
+
+      # Increment week index every 7 days
+      week_index = day_index / 7
+    end
+
+    days
+  end
+
+  private
+
+  # Calculate contribution level based on count
+  # 0 contributions = 0, <10 = 1, <20 = 2, <25 = 3, <30 = 4, >=30 = 5
+  def calculate_contribution_level(count)
+    return 0 if count == 0
+    return 1 if count < 10
+    return 2 if count < 20
+    return 3 if count < 25
+    return 4 if count < 30
+    5 # 30 or more
+  end
 end

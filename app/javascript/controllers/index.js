@@ -55,6 +55,9 @@ application.register("faq-accordion", FaqAccordionController);
 import FileUploadController from "./file_upload_controller";
 application.register("file-upload", FileUploadController);
 
+import GithubCalendarController from "./github_calendar_controller";
+application.register("github-calendar", GithubCalendarController);
+
 import FlashController from "./flash_controller";
 application.register("flash", FlashController);
 
