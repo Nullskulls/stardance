@@ -1,5 +1,5 @@
 class HomePolicy < ApplicationPolicy
   def index?
-    logged_in?
+    signed_in_any?
   end
 end

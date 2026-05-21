@@ -54,6 +54,10 @@ class ApplicationPolicy
   private
 
   def logged_in?
+    user.present? && user.hca_linked?
+  end
+
+  def signed_in_any?
     user.present?
   end
 end

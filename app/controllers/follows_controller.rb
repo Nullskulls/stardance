@@ -1,5 +1,4 @@
 class FollowsController < ApplicationController
-  before_action :require_logged_in
   before_action :load_target
 
   def create
@@ -29,11 +28,5 @@ class FollowsController < ApplicationController
 
   def load_target
     @target = User.find(params[:user_id])
-  end
-
-  def require_logged_in
-    return if current_user
-
-    redirect_to root_path, alert: "Please sign in first."
   end
 end

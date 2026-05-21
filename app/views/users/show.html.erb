@@ -27,15 +27,10 @@
     <div class="profile__banner">
       <%= image_tag banner_url, alt: "", class: "profile__banner-image",
                     data: { "profile-edit-target": "banner" } %>
-      <%= link_to home_path,
+      <%= link_to back_path,
                   class: "profile__back",
                   "aria-label": "Back",
-                  data: {
-                    controller: "back-button",
-                    "back-button-fallback-value": home_path,
-                    action: "click->back-button#go",
-                    turbo_frame: "_top"
-                  } do %>
+                  data: { turbo_frame: "_top" } do %>
         <svg class="profile__back-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M14 6l-6 6 6 6" />
         </svg>
@@ -67,7 +62,6 @@
 
         <ul class="profile__stats" aria-label="User stats">
           <li class="profile__stat"><span class="profile__stat-num"><%= @stats[:devlogs_count] %></span><span class="profile__stat-label">Devlogs</span></li>
-          <li class="profile__stat"><span class="profile__stat-num"><%= @stats[:hours_all_time] %></span><span class="profile__stat-label">Total hours</span></li>
           <li class="profile__stat"><span class="profile__stat-num"><%= @stats[:projects_count] %></span><span class="profile__stat-label">Projects</span></li>
           <li class="profile__stat"><span class="profile__stat-num"><%= @stats[:ships_count] %></span><span class="profile__stat-label">Ships</span></li>
           <li class="profile__stat"><span class="profile__stat-num"><%= @stats[:votes_count] %></span><span class="profile__stat-label">Votes</span></li>
@@ -186,9 +180,9 @@
       <p class="profile-tab-content__empty">No activity yet.</p>
     <% end %>
   <% when "devlogs" %>
-    <p class="profile-tab-content__empty">Devlogs</p>
+    <p class="profile-tab-content__empty">No devlogs yet.</p>
   <% when "replies" %>
-    <p class="profile-tab-content__empty">Replies</p>
+    <p class="profile-tab-content__empty">No replies yet.</p>
   <% when "projects" %>
     <% if @projects.any? %>
       <ul class="project-list">
@@ -250,13 +244,26 @@
         <% if own_profile %>
           <li class="project-list__item">
             <%= link_to new_project_path, class: "profile-project-card profile-project-card--new" do %>
-              <span>Create new +</span>
+              <span>Create a new Project</span>
             <% end %>
           </li>
         <% end %>
       </ul>
     <% else %>
-      <p class="profile-tab-content__empty">No projects yet.</p>
+      <% if own_profile %>
+        <%= link_to new_project_path, class: "empty-project-banner", aria: { label: "Create your first project" } do %>
+          <p class="empty-project-banner__headline">
+            <span class="empty-project-banner__word">Create your </span><span class="empty-project-banner__word empty-project-banner__word--emph">first project</span><span class="empty-project-banner__word"> +</span>
+          </p>
+          <p class="empty-project-banner__subhead">to begin posting</p>
+          <span class="empty-project-banner__reward">
+            <span class="empty-project-banner__reward-label">EARNS 10 STARDUST</span>
+            <%= image_tag "icons/stardust.png", alt: "", class: "empty-project-banner__reward-icon" %>
+          </span>
+        <% end %>
+      <% else %>
+        <p class="profile-tab-content__empty">No projects yet.</p>
+      <% end %>
     <% end %>
   <% end %>
 </section>

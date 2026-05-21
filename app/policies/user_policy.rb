@@ -8,7 +8,7 @@ class UserPolicy < ApplicationPolicy
   end
 
   def follow?
-    user.present? && user.id != record.id
+    user.present? && user.hca_linked? && user.id != record.id
   end
 
   def followers?
@@ -17,6 +17,10 @@ class UserPolicy < ApplicationPolicy
 
   def following?
     true
+  end
+
+  def view_deleted_devlogs?
+    user&.can_see_deleted_devlogs?
   end
 
   def impersonate?

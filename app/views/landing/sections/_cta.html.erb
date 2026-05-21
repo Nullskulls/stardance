@@ -1,7 +1,7 @@
 <section class="cta-section">
   <h2 class="cta-section__title">Make this summer <span class="cta-section__title--italic">count.</span></h2>
 
-  <p class="cta-section__subtitle">What else are you gonna do?<br>Sign up and build something you&rsquo;re actually proud of.<br><br>Stardance Challenge launches on <strong>June 1</strong>.</p>
+  <p class="cta-section__subtitle">What else are you gonna do?<br>Sign up and build something you&rsquo;re actually proud of.<% unless Flipper.enabled?(:new_onboarding) %><br><br>Stardance Challenge launches on <strong>June 1</strong>.<% end %></p>
 
   <div class="cta-section__form">
     <%= render "landing/sections/rsvp_form",

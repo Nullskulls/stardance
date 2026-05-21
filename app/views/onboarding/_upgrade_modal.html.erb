@@ -1,0 +1,13 @@
+<div class="upgrade-modal" data-controller="upgrade-modal" data-action="click->upgrade-modal#backdropClose">
+  <div class="upgrade-card" data-upgrade-modal-target="card">
+    <button type="button"
+            class="upgrade-card__close"
+            aria-label="Close"
+            data-action="click->upgrade-modal#close">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M6 6L18 18M6 18L18 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      </svg>
+    </button>
+    <%= render "onboarding/upgrade_content" %>
+  </div>
+</div>

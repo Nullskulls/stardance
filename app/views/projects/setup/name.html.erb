@@ -1,0 +1,38 @@
+<% content_for :title, "Name your project" %>
+<main class="onboarding-screen onboarding-screen--project-name project-setup-screen"
+      data-controller="onboarding-transition">
+  <%= render Projects::Setup::ProgressBarComponent.new(action: :name) %>
+
+  <div class="onboarding-screen__content">
+    <p class="onboarding-screen__eyebrow">tell us about it ✦</p>
+    <h1 class="onboarding-screen__title">What are you going to make?</h1>
+    <p class="onboarding-screen__subhead">Give it a snazzy name — you can change it later.</p>
+
+    <%= form_with url: projects_setup_submit_name_path, method: :post, local: true,
+                   class: "project-setup-name__form" do %>
+      <% prefill_title = @setup_project&.title.presence
+         prefill_title = nil if prefill_title == Projects::SetupController::DEFAULT_PROJECT_TITLE %>
+      <%= text_field_tag :title,
+                         prefill_title,
+                         placeholder: "Cosmic Sticky Notes",
+                         autocomplete: "off",
+                         required: true,
+                         maxlength: Projects::SetupController::MAX_TITLE_LENGTH,
+                         class: "project-setup-name__input" %>
+
+      <%= text_area_tag :description,
+                        @setup_project&.description,
+                        placeholder: "One-liner about what it does (optional)",
+                        rows: 3,
+                        maxlength: Projects::SetupController::MAX_DESCRIPTION_LENGTH,
+                        class: "project-setup-name__textarea" %>
+
+      <%= render SpecialActionButtonComponent.new(
+            text: "Continue",
+            type: :submit,
+            class: "project-setup-name__submit",
+            data: { action: "click->onboarding-transition#press" }
+          ) %>
+    <% end %>
+  </div>
+</main>

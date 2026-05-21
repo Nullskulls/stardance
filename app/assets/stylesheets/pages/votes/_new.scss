@@ -198,19 +198,9 @@
     gap: 0.5em;
     width: 100%;
 
-    .btn {
-      font-family: var(--font-family-text);
-      font-size: 1rem;
+    .action-btn {
       flex: 1;
-      justify-content: center;
-      align-items: center;
-      display: flex;
       min-width: 0;
-
-      svg {
-        width: 18px;
-        height: 18px;
-      }
     }
 
     @media (max-width: 700px) {
@@ -464,13 +454,11 @@
       }
     }
 
-    > .btn[form="vote-score-form"] {
+    > .action-btn[form="vote-score-form"] {
       flex-shrink: 0;
       margin: var(--space-s) 0 0;
-      justify-content: center;
 
       @media (max-width: 550px) {
-        font-size: 1rem;
         margin: var(--space-xs) 0 0;
       }
     }

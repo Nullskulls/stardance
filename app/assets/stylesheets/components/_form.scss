@@ -180,7 +180,7 @@
   @media (max-width: 768px) {
     flex-direction: column-reverse;
 
-    .btn {
+    .action-btn {
       width: 100%;
       justify-content: center;
     }
@@ -211,15 +211,17 @@
   }
 }
 
-// Settings form (modal)
+// Settings form (modal) — Stardance dark surface palette per docs/branding.md
 .settings-form {
-  &__title {
-    margin-bottom: var(--space-l);
-    border-radius: var(--border-radius);
-  }
+  color: var(--color-space-text);
 
   &__field {
     margin-bottom: var(--space-l);
+
+    & + & {
+      padding-top: var(--space-m);
+      border-top: 1px solid var(--color-overlay-light);
+    }
   }
 
   &__checkbox {
@@ -229,72 +231,76 @@
     cursor: pointer;
 
     input[type="checkbox"] {
-      width: 1.5rem;
-      height: 1.5rem;
+      width: 1.25rem;
+      height: 1.25rem;
       cursor: pointer;
-      accent-color: var(--color-brown-500);
+      accent-color: var(--color-brand-lilac);
       flex-shrink: 0;
     }
 
     span {
-      font-family: var(--font-family-subtitle);
-      font-size: var(--font-size-l);
-      color: var(--color-text-body);
+      font-family: var(--font-family-text);
+      font-size: var(--font-size-m);
+      font-weight: 600;
+      color: var(--color-space-text);
     }
   }
 
   &__hint {
     display: block;
-    margin-top: var(--space-xs);
-    margin-left: calc(1.5rem + var(--space-s));
+    margin-top: var(--space-xxs);
+    margin-left: calc(1.25rem + var(--space-s));
     font-family: var(--font-family-text);
     font-size: var(--font-size-s);
-    color: var(--color-text-muted);
-    line-height: var(--line-height-body);
+    color: var(--color-space-text-muted);
+    line-height: 1.45;
+
+    a {
+      color: var(--color-brand-lilac);
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
   }
 
   &__label {
     display: block;
     margin-bottom: var(--space-xs);
-    font-family: var(--font-family-subtitle);
-    font-size: var(--font-size-l);
-    color: var(--color-text-header);
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-m);
+    font-weight: 600;
+    color: var(--color-space-text);
   }
 
   &__input {
     display: block;
     width: 100%;
     padding: var(--space-s) var(--space-m);
-    border-radius: calc(var(--border-radius) * 0.6);
-    border: solid 2px var(--color-brown-500);
+    border-radius: var(--profile-radius);
+    border: 1.5px solid var(--color-border-input);
     font-family: var(--font-family-text);
     font-size: var(--font-size-m);
-    color: var(--color-text-body);
-    background-color: var(--color-bg);
+    color: var(--color-space-text);
+    background-color: var(--color-set-1-bg);
     outline: none;
     transition:
-      border-color 200ms,
-      box-shadow 200ms;
+      border-color 160ms ease,
+      box-shadow 160ms ease;
 
     &::placeholder {
-      color: var(--color-text-muted);
-      opacity: 0.7;
+      color: var(--color-space-text-muted);
     }
 
     &:focus {
-      border-color: var(--color-brown-400);
-      box-shadow: 0 0 0 3px rgba(127, 77, 60, 0.15);
+      border-color: var(--color-border-input-focus);
+      box-shadow: 0 0 0 3px var(--color-brand-highlight-faint);
     }
   }
 
   &__field:has(&__input) &__hint {
     margin-left: 0;
-  }
-
-  &__section {
-    margin-top: var(--space-l);
-    padding-top: var(--space-l);
-    border-top: 2px solid var(--color-tan-300);
   }
 }
 

@@ -1,7 +1,7 @@
 class ShopSuggestionsController < ApplicationController
-  before_action :require_login
-
   def create
+    authorize :shop_suggestion
+
     if current_user.has_dismissed?("shop_suggestion_box") || !Flipper.enabled?(:shop_suggestion_box, current_user)
       redirect_to shop_path, alert: "Suggestion box is not available."
       return
@@ -21,9 +21,5 @@ class ShopSuggestionsController < ApplicationController
 
   def suggestion_params
     params.require(:shop_suggestion).permit(:item, :explanation, :link)
-  end
-
-  def require_login
-    redirect_to root_path, alert: "Please log in first" and return unless current_user
   end
 end

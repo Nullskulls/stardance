@@ -7,10 +7,6 @@ class Airtable::UserSyncJob < Airtable::BaseSyncJob
   def primary_key_field = "email"
 
   def field_mapping(user)
-    funnel_events = FunnelEvent.where(user_id: user.id)
-                               .or(FunnelEvent.where(email: user.email&.downcase))
-                               .order(:created_at)
-    last_event = funnel_events.last
     address = user.addresses.first
 
     fields = {
@@ -27,10 +23,7 @@ class Airtable::UserSyncJob < Airtable::BaseSyncJob
       "synced_at" => Time.now,
       "is_banned" => user.banned,
       "star_id" => user.id.to_s,
-      "ref" => user.ref,
-      "last_funnel_event" => last_event&.event_name,
-      "last_funnel_event_at" => last_event&.created_at,
-      "funnel_events" => funnel_events.pluck(:event_name).uniq.join(",")
+      "ref" => user.ref
     }
 
     if address.present?

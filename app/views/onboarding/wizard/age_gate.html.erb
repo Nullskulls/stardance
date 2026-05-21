@@ -1,0 +1,26 @@
+<% content_for :title, "Too old" %>
+<main class="onboarding-screen onboarding-screen--age-gate">
+  <div class="onboarding-age-gate__illustration" aria-hidden="true">
+    <%= image_tag "onboarding/uh-oh-dino.svg", class: "onboarding-age-gate__dino", alt: "" %>
+  </div>
+
+  <h1 class="onboarding-screen__title">Uh oh! You're too old :(</h1>
+
+  <div class="onboarding-age-gate__body">
+    <p>But if you know a teen who'd love this, send them our way :)</p>
+    <p>You're still welcome to look around the platform! Just no account or follows, since the Stardance Challenge platform is teens-only.</p>
+    <p>
+      Curious about why? Read about
+      <%= link_to "our philosophy", "https://hackclub.com/philosophy", target: "_blank", rel: "noopener" %>.
+    </p>
+    <p>Thanks for stopping by!</p>
+  </div>
+
+  <footer class="onboarding-age-gate__links">
+    <span class="onboarding-age-gate__links-label">SEE OTHER PAGES</span>
+    <%= link_to "Landing page", root_path, class: "onboarding-age-gate__link" %>
+    <%= link_to "Teacher? see edu page", "/edu", class: "onboarding-age-gate__link" %>
+    <%= link_to "Learn about hack club", "https://hackclub.com", target: "_blank", rel: "noopener", class: "onboarding-age-gate__link" %>
+    <%= link_to "look at the platform anyway", root_path, class: "onboarding-age-gate__link onboarding-age-gate__link--centered" %>
+  </footer>
+</main>

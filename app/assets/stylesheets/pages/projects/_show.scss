@@ -7,9 +7,14 @@
 .project-show__feed,
 .project-show__notice,
 .project-show__onboarding,
-.project-show__payout-votes {
+.project-show__payout-votes,
+turbo-frame#project_hero {
   width: min(100%, 922px);
   align-self: center;
+}
+
+turbo-frame#project_hero {
+  display: block;
 }
 
 // Local CSS vars previously lived here (--project-show-surface, -border,
@@ -149,11 +154,13 @@
   border: 0;
   background: transparent;
   outline: none;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--color-space-text-muted);
+  text-underline-offset: 6px;
 
   &:focus {
-    text-decoration: underline;
-    text-decoration-thickness: 2px;
-    text-underline-offset: 6px;
+    text-decoration-color: var(--color-brand-highlight);
   }
 }
 
@@ -174,7 +181,7 @@
 }
 
 .project-show__stats-num {
-  font-size: 1.375rem;
+  font-size: 1.1875rem;
   line-height: 1;
 }
 
@@ -194,7 +201,7 @@
   background: transparent;
   color: var(--color-space-text);
   font: inherit;
-  font-size: 1.375rem;
+  font-size: 1.1875rem;
   line-height: 1.28;
 }
 
@@ -226,7 +233,11 @@
   flex-direction: column;
   gap: 6px;
   color: var(--color-space-text);
-  font-size: 1.375rem;
+  font-size: 1.1875rem;
+
+  &[hidden] {
+    display: none;
+  }
 }
 
 .project-show__field--inline {
@@ -234,6 +245,17 @@
   grid-template-columns: minmax(120px, 1fr) minmax(0, 700px);
   align-items: center;
   gap: 20px;
+}
+
+.project-form--shake {
+  animation: input-shake 0.32s ease both;
+}
+
+.project-form--readme-locked input,
+.project-show__field--locked .project-show__control {
+  opacity: 0.65;
+  cursor: not-allowed;
+  filter: saturate(0.7);
 }
 
 .project-show__control {
@@ -383,7 +405,7 @@
   min-height: 50px;
   padding: 0 0 0 4px;
   color: var(--color-space-text);
-  font-size: 1.375rem;
+  font-size: 1.1875rem;
   line-height: 1.18;
 }
 
@@ -593,7 +615,7 @@
 
 .project-show__authors {
   margin: 0;
-  font-size: 1.375rem; // 22px
+  font-size: 1.1875rem; // 19px
   color: var(--color-space-text);
   line-height: 1;
 }
@@ -642,6 +664,12 @@
 // so this uses the dark-bg variant. Secondary base = set-2 fill with a
 // muted set-3-coloured border + white text; primary fills with the cream
 // highlight.
+// `button_to` wraps the button in a form. Make that form invisible to the
+// flex parent so the button itself remains the flex item (gets flex: 1 below).
+.project-show__action-form {
+  display: contents;
+}
+
 .project-show__action {
   flex: 1;
   display: inline-flex;
@@ -654,7 +682,7 @@
   color: var(--color-space-text);
   text-decoration: none;
   font-family: inherit;
-  font-size: 1.375rem; // 22px
+  font-size: 1.1875rem; // 19px
   font-weight: 700;
   cursor: pointer;
   transition:
@@ -720,7 +748,7 @@
   }
 }
 
-// Image-icon variant — sized to sit alongside the 22px button text. The
+// Image-icon variant — sized to sit alongside the 19px button text. The
 // asset is the same illustrative PNG used in the sidebar for the "home"
 // nav item, so the rocket on "Create new ship" matches the home icon
 // visually.
@@ -830,13 +858,13 @@
 }
 
 .project-show__onboarding-card-body-title {
-  font-size: 1.375rem;
+  font-size: 1.1875rem;
   line-height: 1;
 }
 
 .project-show__onboarding-card-body-text {
   max-width: 580px;
-  font-size: 1.375rem;
+  font-size: 1.1875rem;
   line-height: 1;
 }
 
@@ -907,7 +935,7 @@
   flex-wrap: wrap;
   align-items: baseline;
   gap: 4px;
-  font-size: 1.375rem; // 22px
+  font-size: 1.1875rem; // 19px
   color: var(--color-space-text);
   line-height: 1;
 }
@@ -942,7 +970,7 @@
 
 .project-show__latest-ship-text {
   margin: 0;
-  font-size: 1.375rem; // 22px
+  font-size: 1.1875rem; // 19px
   line-height: 1.3;
   color: var(--color-space-text);
   white-space: pre-wrap;
@@ -1055,7 +1083,7 @@
 .project-show__notice-title {
   margin: 0 0 var(--space-xs);
   // Branding §2.1 Body size, bold — used as a "small section title".
-  font-size: 1.375rem;
+  font-size: 1.1875rem;
   font-weight: 700;
 }
 
@@ -1099,7 +1127,7 @@
 .project-show__payout-votes-title {
   margin: 0 0 var(--space-xs);
   // Branding §2.1 Body size, bold.
-  font-size: 1.375rem;
+  font-size: 1.1875rem;
   font-weight: 700;
 }
 
@@ -1198,4 +1226,223 @@
     justify-content: flex-start;
     flex-wrap: wrap;
   }
+}
+
+.composer-modal {
+  border: none;
+  padding: 0;
+  background: transparent;
+  max-width: min(680px, 92vw);
+  width: 100%;
+  position: fixed;
+  top: 12vh;
+  left: 50%;
+  translate: -50% 0;
+  margin: 0;
+  overflow: visible;
+
+  &::backdrop {
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(2px);
+  }
+
+  .feed-composer {
+    background: var(--color-space-bg-2, #0d0b2e);
+  }
+}
+
+.project-show__hackatime-picker {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.project-show__hackatime-box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 45px;
+  padding: 6px 12px;
+  border: 2px solid var(--color-border-input);
+  border-radius: var(--profile-radius);
+  background: transparent;
+  color: var(--color-space-text);
+  cursor: text;
+
+  &:focus-within {
+    border-color: var(--color-border-input-focus);
+  }
+}
+
+.project-show__hackatime-tags {
+  display: contents;
+}
+
+.project-show__hackatime-placeholder {
+  font-size: 13px;
+  color: var(--color-space-text);
+  opacity: 0.45;
+  pointer-events: none;
+  user-select: none;
+}
+
+.project-show__hackatime-connect {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-yellow-200);
+  background: none;
+  border: 1px dashed var(--color-yellow-200);
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    opacity 0.15s;
+
+  &:hover {
+    opacity: 0.85;
+  }
+}
+
+.project-show__hackatime-empty {
+  font-size: 13px;
+  color: var(--color-space-text);
+  opacity: 0.5;
+}
+
+.project-show__hackatime-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--color-set-2-bg);
+  border: 1px solid var(--color-space-border);
+  font-size: 14px;
+  color: var(--color-space-text);
+  white-space: nowrap;
+}
+
+.project-show__hackatime-tag-name {
+  font-weight: 700;
+}
+
+.project-show__hackatime-tag-time {
+  opacity: 0.6;
+  font-size: 13px;
+}
+
+.project-show__hackatime-tag-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-space-text);
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.15s;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+.project-show__hackatime-tag-remove-icon {
+  width: 0.5rem;
+  height: 0.5rem;
+}
+
+.project-show__hackatime-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
+  border: 1px solid hsla(0, 0%, 100%, 0.3);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-space-text);
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+.project-show__hackatime-add-icon {
+  width: 0.6rem;
+  height: 0.6rem;
+}
+
+.project-show__hackatime-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  margin-top: 4px;
+  padding: 4px;
+  border-radius: var(--profile-radius);
+  border: 2px solid var(--color-border-input);
+  background: var(--color-set-2-bg);
+  display: flex;
+  flex-direction: column;
+  max-height: 220px;
+  overflow-y: auto;
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+.project-show__hackatime-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-space-text);
+  font-family: inherit;
+  font-size: 1rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s;
+
+  &:hover:not(:disabled) {
+    background: var(--color-set-3-bg);
+  }
+
+  &--taken {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+}
+
+.project-show__hackatime-dropdown-name {
+  font-weight: 700;
+}
+
+.project-show__hackatime-dropdown-time {
+  opacity: 0.5;
+}
+
+.project-show__hackatime-dropdown-taken {
+  margin-left: auto;
+  font-size: 13px;
+  font-style: italic;
+  opacity: 0.7;
 }

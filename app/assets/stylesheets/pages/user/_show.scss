@@ -216,9 +216,9 @@ turbo-frame#profile_tabs {
 }
 
 .profile__stat-num {
-  // Branding §2.1 Body scale: 22px. Matches the project page's
+  // Branding §2.1 Body scale: 19px. Matches the project page's
   // .project-show__stats strong rule for cross-page parity.
-  font-size: 1.375rem;
+  font-size: 1.1875rem;
   font-weight: 700;
 }
 
@@ -227,10 +227,10 @@ turbo-frame#profile_tabs {
   opacity: 0.6;
 }
 
-// Bio. Branding §2.1 Body scale: 22px (matches the project page's
+// Bio. Branding §2.1 Body scale: 19px (matches the project page's
 // .project-show__description and stat numbers).
 .profile__bio {
-  font-size: 1.375rem;
+  font-size: 1.1875rem;
   line-height: 1.3;
   // No `white-space: pre-wrap` here: render_bio already converts \n to <br>
   // and pre-wrap would render the ERB-template indentation around the
@@ -286,7 +286,7 @@ turbo-frame#profile_tabs {
   color: var(--color-space-text);
   // Match read-mode bio typography exactly so text doesn't shift on edit.
   font-family: inherit;
-  font-size: 1.375rem;
+  font-size: 1.1875rem;
   line-height: 1.3;
   white-space: pre-wrap;
   word-wrap: break-word;
@@ -502,7 +502,7 @@ turbo-frame#profile_tabs {
 }
 
 // Tab pills borrow the branding §4.2 "large action button" typography —
-// 22px bold — since each tab spans a section of the profile and needs the
+// 19px bold — since each tab spans a section of the profile and needs the
 // same visual weight as a primary action.
 .profile-tabs__tab {
   flex: 1;
@@ -535,6 +535,7 @@ turbo-frame#profile_tabs {
 }
 
 .profile-tab-content__empty {
+  display: block;
   padding: var(--space-l);
   text-align: center;
   color: var(--color-space-text);
@@ -543,6 +544,15 @@ turbo-frame#profile_tabs {
   opacity: 0.7;
   font-size: var(--font-size-l);
   margin: 0;
+
+  &--link {
+    text-decoration: none;
+    transition: opacity 150ms ease;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
 }
 
 // Projects tab — rich cards with banner + meta + description.
@@ -723,11 +733,12 @@ turbo-frame#profile_tabs {
 
 .profile-project-card--new {
   background: transparent;
-  border-style: dashed;
+  box-shadow: none;
+  border: 2px dashed var(--color-space-border);
   justify-content: center;
   padding: var(--space-m);
-  font-size: var(--font-size-l);
-  opacity: 0.75;
+  font-size: var(--font-size-m);
+  opacity: 0.7;
 
   &:hover {
     opacity: 1;

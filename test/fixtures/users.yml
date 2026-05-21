@@ -5,6 +5,7 @@
 # Table name: users
 #
 #  id                           :bigint           not null, primary key
+#  age_attestation              :string
 #  banned                       :boolean          default(FALSE), not null
 #  banned_at                    :datetime
 #  banned_reason                :text
@@ -12,15 +13,18 @@
 #  display_name                 :string
 #  email                        :string
 #  enriched_ref                 :string
+#  experience_level             :string
 #  first_name                   :string
 #  granted_roles                :string           default([]), not null, is an Array
 #  has_gotten_free_stickers     :boolean          default(FALSE)
 #  has_pending_achievements     :boolean          default(FALSE), not null
 #  hcb_email                    :string
+#  interests                    :string           default([]), is an Array
 #  internal_notes               :text
 #  last_name                    :string
 #  manual_ysws_override         :boolean
 #  mission_review_notifications :boolean          default(TRUE), not null
+#  onboarded_at                 :datetime
 #  ref                          :string
 #  regions                      :string           default([]), is an Array
 #  session_token                :string
@@ -39,9 +43,11 @@
 #
 # Indexes
 #
-#  index_users_on_email          (email)
-#  index_users_on_session_token  (session_token) UNIQUE
-#  index_users_on_slack_id       (slack_id) UNIQUE
+#  index_users_on_email               (email)
+#  index_users_on_lower_email_unique  (lower((email)::text)) UNIQUE WHERE ((email IS NOT NULL) AND ((email)::text <> ''::text))
+#  index_users_on_onboarded_at        (onboarded_at)
+#  index_users_on_session_token       (session_token) UNIQUE
+#  index_users_on_slack_id            (slack_id) UNIQUE
 #
 one:
   email: one@example.test

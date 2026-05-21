@@ -15,7 +15,7 @@
 <div class="my-orders">
   <div class="my-orders__header">
     <h1 class="my-orders__title">My Orders</h1>
-    <%= render ButtonComponent.new(text: "Back to the Shop", href: "/shop/", color: :brown, variant: :borderless) %>
+    <%= render ActionButtonComponent.new(text: "Back to the Shop", href: "/shop/", size: :small, variant: :secondary) %>
   </div>
 
   <% if @orders.empty? %>
@@ -81,7 +81,7 @@
                       <span class="my-orders__status-hint">We have ordered/shipped the item to you! This does not mean it has already reached you.<% if order.external_ref.present? %> You can track the package here: <% if order.external_ref.start_with?("pkg!", "ltr!") %><a href="https://mail.hackclub.com/<%= order.external_ref %>" target="_blank" rel="noopener"><%= order.external_ref %></a><% else %><%= order.external_ref %><% end %><% end %></span>
                     <% elsif order.grant? && order.shop_card_grant.present? %>
                       <div class="my-orders__grant-actions">
-                        <%= render ButtonComponent.new(text: "Open Grant", href: order.shop_card_grant.hcb_url, color: :brown, target: "_blank") %>
+                        <%= render ActionButtonComponent.new(text: "Open Grant", href: order.shop_card_grant.hcb_url, size: :large, variant: :primary, target: "_blank") %>
                       </div>
                     <% else %>
                       <span class="my-orders__status-hint">We have ordered the item for you! <% if order.external_ref.present? %><%= order.external_ref %><% else %>You should check your emails :)<% end %></span>

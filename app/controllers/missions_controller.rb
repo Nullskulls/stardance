@@ -6,11 +6,8 @@ class MissionsController < ApplicationController
     authorize Mission
 
     @available_missions = Mission.available
-                                 .includes(:steps, :prizes, icon_attachment: :blob)
+                                 .includes(icon_attachment: :blob)
                                  .order(featured_at: :desc, name: :asc)
-    # Upcoming/ended are size-capped at 8 and typically empty; skip eager
-    # loading steps/prizes here to avoid Bullet's "AVOID eager loading"
-    # warning when the section has no rows to iterate.
     @upcoming_missions = Mission.enabled
                                 .where("start_at IS NOT NULL AND start_at > ?", Time.current)
                                 .includes(icon_attachment: :blob)

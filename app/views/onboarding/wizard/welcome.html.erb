@@ -1,0 +1,36 @@
+<% content_for :title, "Welcome" %>
+<main class="onboarding-screen onboarding-screen--welcome"
+      data-controller="onboarding-transition"
+      data-onboarding-transition-duration-value="700">
+  <div class="onboarding-welcome__background" aria-hidden="true">
+    <video class="onboarding-welcome__video" autoplay muted loop playsinline preload="auto">
+      <source src="<%= asset_path("stardance-bg.webm") %>" type="video/webm">
+    </video>
+    <%= image_tag image_path("landing/space/moon.png"), class: "onboarding-welcome__planet", alt: "" %>
+  </div>
+
+  <header class="onboarding-welcome__partnership" aria-label="Partnerships">
+    <span class="onboarding-welcome__partnership-label">in partnership with</span>
+    <span class="onboarding-welcome__partnership-logos">
+      <%# Logo assets are reused from the landing page; verify filenames at execution time %>
+      <span class="onboarding-welcome__partnership-logo">NASA</span>
+      <span class="onboarding-welcome__partnership-logo">AMD</span>
+      <span class="onboarding-welcome__partnership-logo">GitHub</span>
+    </span>
+  </header>
+
+  <div class="onboarding-welcome__content">
+    <h1 class="onboarding-welcome__title">
+      <span class="onboarding-welcome__title-line">Welcome to the</span>
+      <em class="onboarding-welcome__title-em">Stardance Challenge</em>
+    </h1>
+    <p class="onboarding-welcome__subhead">
+      Make projects → Ship to earn stardust → Spend on prizes
+    </p>
+    <%= link_to onboarding_birthday_path,
+                class: "onboarding-welcome__cta",
+                data: { action: "click->onboarding-transition#leave" } do %>
+      <span class="onboarding-welcome__cta-label">GET STARTED</span>
+    <% end %>
+  </div>
+</main>

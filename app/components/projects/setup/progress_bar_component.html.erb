@@ -1,0 +1,20 @@
+<div class="onboarding-top-bar">
+  <% if back_path %>
+    <%= link_to back_path,
+                class: "onboarding-back-button",
+                "aria-label": "Go back",
+                data: { action: "click->onboarding-transition#leave" } do %>
+      <svg class="onboarding-back-button__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M14 6L8 12L14 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    <% end %>
+  <% end %>
+
+  <div class="onboarding-progress-bar <%= "onboarding-progress-bar--animated" if first_appearance? %>"
+       style="--progress-width: <%= fill_percentage %>%; --progress-prev: <%= previous_fill_percentage %>%;">
+    <p class="onboarding-progress-bar__label">setting up your first project ✦</p>
+    <div class="onboarding-progress-bar__track">
+      <div class="onboarding-progress-bar__fill"></div>
+    </div>
+  </div>
+</div>

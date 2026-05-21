@@ -138,47 +138,6 @@ module Admin
         }
       end
 
-      def load_funnel_stats
-        cached_data = Rails.cache.fetch("super_mega_funnel_stats", expires_in: 5.minutes) do
-          begin
-            funnel_steps = [
-              "start_flow_started",
-              "start_flow_name",
-              "start_flow_project",
-              "start_flow_devlog",
-              "start_flow_signin",
-              "identity_verified",
-              "hackatime_linked",
-              "project_created",
-              "devlog_created"
-            ]
-
-            grouped_counts = FunnelEvent.where(event_name: funnel_steps)
-                                         .group(:event_name)
-                                         .distinct
-                                         .count(:email)
-
-            funnel_data = funnel_steps.index_with { |step| grouped_counts[step] || 0 }
-
-            funnel_with_counts = funnel_steps.map do |step|
-              count = funnel_data[step]
-
-              {
-                name: step,
-                count: count
-              }
-            end
-
-            { funnel_steps: funnel_with_counts }
-          rescue StandardError => e
-            Rails.logger.error("[SuperMegaDashboard] Error in load_funnel_stats: #{e.message}")
-            { funnel_steps: [] }
-          end
-        end
-
-        @funnel_steps = cached_data&.dig(:funnel_steps) || []
-      end
-
       def load_hcb_expenses
         data = Rails.cache.fetch("super_mega_hcb_stats", expires_in: 1.hour) do
           response = Faraday.get("https://hcb.hackclub.com/api/v3/organizations/flavortown")

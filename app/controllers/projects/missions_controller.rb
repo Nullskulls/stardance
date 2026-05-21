@@ -7,7 +7,6 @@ class Projects::MissionsController < ApplicationController
     mission = Mission.available.find_by!(slug: params[:mission_slug])
 
     @project.mission_attachments.create!(mission: mission, attached_at: Time.current)
-    track_funnel("mission_attached_post_creation", mission: mission)
 
     redirect_to project_path(@project), notice: "Attached to the #{mission.name} mission."
   rescue ActiveRecord::RecordInvalid => e
@@ -23,7 +22,6 @@ class Projects::MissionsController < ApplicationController
 
     mission = attachment.mission
     attachment.detach!
-    track_funnel("mission_detached", mission: mission)
 
     redirect_to project_path(@project), notice: "Detached from the #{mission.name} mission."
   end
@@ -37,14 +35,5 @@ class Projects::MissionsController < ApplicationController
   def require_missions_enabled
     return if Flipper.enabled?(:missions, current_user)
     raise ActionController::RoutingError, "Not Found"
-  end
-
-  def track_funnel(event, mission:)
-    return unless defined?(FunnelTrackerService)
-    FunnelTrackerService.track(
-      event_name: event,
-      user: current_user,
-      properties: { project_id: @project.id, mission_id: mission.id, mission_slug: mission.slug }
-    )
   end
 end

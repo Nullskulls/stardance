@@ -594,7 +594,7 @@ All side effects are **generic** — no per-mission callback classes. Behavior i
 | Submission soft-deleted (bypass) | PaperTrail entry. No notifications (user-initiated). Ship's `mission_submission` becomes nil under the default scope, so voting eligibility falls through to the regular non-mission path. |
 | Submission `undo` event | PaperTrail entry only. No notifications. |
 | Mission softly deleted | No cascade. Submissions and step completions remain, queryable via `with_deleted`. Project attachments are auto-detached so the panel UI clears. |
-| Prize redeemed | `mission_prize_redeemed` funnel event. PaperTrail entry on submission. |
+| Prize redeemed | PaperTrail entry on submission. |
 
 ---
 

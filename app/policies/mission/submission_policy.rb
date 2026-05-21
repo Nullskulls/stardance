@@ -1,4 +1,13 @@
 class Mission::SubmissionPolicy < ApplicationPolicy
+  class Scope < ApplicationPolicy::Scope
+    def resolve
+      return scope.none if user.blank?
+      return scope.all if user.admin? || user.has_role?(:helper) || user.has_role?(:mission_reviewer)
+
+      scope.where(mission_id: user.mission_memberships.select(:mission_id))
+    end
+  end
+
   def index?
     return true if user.blank? # show empty list / login prompt
     user.admin? || user.has_role?(:helper) ||

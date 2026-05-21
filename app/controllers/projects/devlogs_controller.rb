@@ -1,15 +1,8 @@
 class Projects::DevlogsController < ApplicationController
   before_action :set_project
   before_action :set_devlog, only: %i[edit update destroy versions]
-  before_action :require_hackatime_project, only: %i[new create]
-  before_action :sync_hackatime_projects, only: %i[new create]
-  before_action :load_preview_time, only: %i[new]
-  before_action :require_preview_time, only: %i[new]
-
-  def new
-    authorize @project, :create_devlog?
-    @devlog = Post::Devlog.new
-  end
+  before_action :require_hackatime_project, only: %i[create]
+  before_action :sync_hackatime_projects, only: %i[create]
 
   def create
     authorize @project, :create_devlog?
@@ -26,29 +19,20 @@ class Projects::DevlogsController < ApplicationController
         Post.create!(project: @project, user: current_user, postable: @devlog)
         flash[:notice] = "Devlog created successfully"
 
-        unless @devlog.tutorial?
-          existing_non_tutorial_devlogs = Post::Devlog.joins(:post)
-                                                      .where(posts: { user_id: current_user.id })
-                                                      .where(tutorial: false)
-                                                      .where.not(id: @devlog.id)
-          if existing_non_tutorial_devlogs.empty?
-            FunnelTrackerService.track(
-              event_name: "devlog_created",
-              user: current_user,
-              properties: { devlog_id: @devlog.id, project_id: @project.id }
-            )
-          end
-        end
-
-        if current_user.complete_tutorial_step! :post_devlog
-          tutorial_message OnboardingCopy::FIRST_DEVLOG_POSTED
-        end
-
         return redirect_to project_path(@project)
       else
-        flash.now[:alert] = @devlog.errors.full_messages.to_sentence
-        render :new, status: :unprocessable_entity
+        redirect_back fallback_location: home_path(project_id: @project.id),
+                      alert: @devlog.errors.full_messages.to_sentence
       end
+    end
+  end
+
+  def preview_time
+    authorize @project, :create_devlog?
+    load_preview_time
+    respond_to do |format|
+      format.html { render partial: "projects/devlogs/preview_time", locals: { preview_time: @preview_time, preview_seconds: @preview_seconds } }
+      format.json { render json: { preview_time: @preview_time } }
     end
   end
 
@@ -146,7 +130,6 @@ class Projects::DevlogsController < ApplicationController
                       .postable
   end
 
-
   def require_hackatime_project
     unless @project.hackatime_keys.present?
       redirect_to project_path(@project), alert: "You must link at least one Hackatime project before posting a devlog" and return
@@ -159,18 +142,6 @@ class Projects::DevlogsController < ApplicationController
 
     owner.try_sync_hackatime_data!
     @project.reload
-  end
-
-  def require_preview_time
-    unless @preview_time.present?
-      @retry_count = (params[:retry] || 0).to_i
-      if @retry_count < 3
-        @show_loading = true
-        render :loading and return
-      else
-        redirect_to project_path(@project), alert: "Could not fetch your coding time from Hackatime after multiple attempts. Please ensure Hackatime is tracking your project." and return
-      end
-    end
   end
 
   def devlog_params

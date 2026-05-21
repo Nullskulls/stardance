@@ -1,0 +1,73 @@
+<%
+  steps = []
+  steps << { intro: true, text: "Welcome to your first project!" }
+  steps << {
+    selector: ".project-show__hero",
+    text: "Here's your pre-filled project details.",
+    padding: 12,
+    radius: 12
+  }
+  steps << {
+    selector: ".project-show__pill--outline",
+    text: "Edit your project here.",
+    padding: 8,
+    radius: 999
+  }
+  if @project_onboarding_mission.present?
+    steps << {
+      selector: ".project-show__onboarding-card--mission",
+      text: "Because this project is part of a mission, you can view the mission's details here.",
+      arrowPosition: "bottom",
+      padding: 12,
+      radius: 12
+    }
+  end
+  unless @hackatime_linked
+    steps << {
+      selector: ".project-show__action--full",
+      text: "Click here to link Hackatime before you start working so we can track your time spent!",
+      padding: 8,
+      radius: 999
+    }
+  end
+%>
+
+<div class="welcome-tour"
+     data-controller="welcome-tour"
+     data-welcome-tour-steps-value="<%= steps.to_json %>"
+     role="dialog"
+     aria-modal="true"
+     aria-label="Project tour">
+  <div class="welcome-tour__overlay" aria-hidden="true"></div>
+  <div class="welcome-tour__spotlight"
+       data-welcome-tour-target="spotlight"
+       aria-hidden="true"></div>
+
+  <div class="welcome-tour__tooltip" data-welcome-tour-target="tooltip">
+    <%= inline_svg_tag "icons/tour-arrow.svg",
+                       class: "welcome-tour__arrow",
+                       aria: { hidden: true },
+                       focusable: false %>
+
+    <p class="welcome-tour__text" data-welcome-tour-target="text"></p>
+
+    <div class="welcome-tour__actions">
+      <button type="button"
+              class="welcome-tour__back"
+              data-welcome-tour-target="back"
+              data-action="click->welcome-tour#back"
+              hidden>
+        Back
+      </button>
+      <button type="button"
+              class="welcome-tour__next"
+              data-welcome-tour-target="next"
+              data-action="click->welcome-tour#next">
+      </button>
+    </div>
+
+    <span class="welcome-tour__counter"
+          data-welcome-tour-target="counter"
+          aria-hidden="true"></span>
+  </div>
+</div>

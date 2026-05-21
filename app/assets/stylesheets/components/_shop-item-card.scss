@@ -449,30 +449,9 @@
     width: 100%;
     margin-top: auto;
     position: relative;
+  }
 
-    .btn {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      font-family: var(--font-family-text);
-      cursor: pointer;
-      border-radius: 12px;
-      font-size: 1.5rem;
-      padding: 0.2rem;
-      color: var(--color-text-body);
-    }
-
-    .disabled,
-    .btn-disabled {
-      cursor: default;
-      opacity: 0.7;
-      pointer-events: none;
-    }
-
-    .btn:hover {
-      filter: brightness(1.1);
-    }
+  &__order-cta {
+    width: 100%;
   }
 }

@@ -11,12 +11,11 @@
 
 // Components
 @use "components/alerts";
-@use "components/btn";
+@use "components/action_button";
 @use "components/special_action_button";
 @use "components/form";
 @use "components/input";
 @use "components/input-group";
-@use "components/file-upload";
 @use "components/hackatime_project_selector";
 @use "components/project_card";
 @use "components/project_show_card";
@@ -41,6 +40,7 @@
 @use "components/comments";
 @use "components/dialogue_box";
 @use "components/welcome_overlay";
+@use "components/welcome_tour";
 @use "components/markdown_content";
 @use "components/announcement_component";
 @use "components/comic_card";
@@ -50,6 +50,7 @@
 @use "components/mission_panel";
 @use "components/status_pill";
 @use "components/feed";
+@use "components/onboarding";
 
 @use "components/vimeo_embed";
 @use "components/command_palette";
@@ -58,7 +59,9 @@
 @use "themes/christmas";
 
 // Pages
+@use "pages/onboarding" as onboarding_pages;
 @use "pages/projects/new";
+@use "pages/project_setup";
 @use "pages/projects/show";
 @use "pages/projects/ship";
 @use "pages/projects/readme";

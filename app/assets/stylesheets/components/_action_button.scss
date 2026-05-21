@@ -1,0 +1,140 @@
+// Small + large action buttons per docs/branding.md §4.1 / §4.2.
+// Pill-shaped, 2px border, three variants (primary / secondary / destructive),
+// background-aware via the --light-bg modifier per §4.0.
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  font-family: var(--font-family-text);
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease,
+    color 200ms ease;
+
+  &__label {
+    display: inline-block;
+  }
+
+  &__icon {
+    flex-shrink: 0;
+    width: 1.1em;
+    height: 1.1em;
+    fill: currentColor;
+    color: inherit;
+    transition: transform 200ms ease;
+
+    &--trailing {
+      margin-left: var(--space-xxxs);
+    }
+
+    &--leading {
+      margin-right: var(--space-xxxs);
+    }
+  }
+
+  &--small {
+    font-size: 16px;
+    padding: 3px 16px;
+  }
+
+  &--large {
+    font-size: 19px;
+    padding: 12px 32px;
+
+    &:hover .action-btn__icon--trailing,
+    &:focus-visible .action-btn__icon--trailing {
+      transform: translateX(6px);
+    }
+  }
+
+  // Dark-bg variants (default). Approved for set 1 / set 2 surfaces.
+  &--primary {
+    background-color: var(--color-brand-highlight);
+    border-color: var(--color-brand-highlight);
+    color: var(--color-set-1-bg);
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--color-brand-highlight-secondary);
+      border-color: var(--color-brand-highlight-secondary);
+    }
+
+    &:active {
+      background-color: #fff;
+      border-color: #fff;
+    }
+  }
+
+  &--secondary {
+    background-color: var(--color-set-2-bg);
+    border-color: #fff;
+    color: #fff;
+
+    &:active {
+      color: var(--color-brand-highlight);
+      border-color: var(--color-brand-highlight);
+    }
+  }
+
+  &--destructive {
+    background-color: transparent;
+    border-color: var(--color-brand-salmon);
+    color: var(--color-brand-salmon);
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--color-brand-salmon);
+      color: var(--color-set-1-bg);
+    }
+
+    &:active {
+      background-color: var(--color-brand-salmon);
+      color: var(--color-set-1-bg);
+      filter: brightness(0.92);
+    }
+  }
+
+  // Light-bg overrides. Approved for set 3 / set 4 surfaces.
+  &--light-bg.action-btn--primary {
+    background-color: #fff;
+    border-color: #fff;
+    color: var(--color-set-1-bg);
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--color-brand-highlight-secondary);
+      border-color: var(--color-brand-highlight-secondary);
+    }
+
+    &:active {
+      background-color: var(--color-brand-highlight);
+      border-color: var(--color-brand-highlight);
+    }
+  }
+
+  &--light-bg.action-btn--secondary {
+    background-color: transparent;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-brand-highlight);
+    outline-offset: 2px;
+  }
+
+  &:disabled,
+  &--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}

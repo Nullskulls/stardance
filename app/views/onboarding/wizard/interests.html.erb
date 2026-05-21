@@ -1,0 +1,42 @@
+<% content_for :title, "Interests" %>
+<main class="onboarding-screen onboarding-screen--interests" data-controller="onboarding-transition">
+  <%= render Onboarding::ProgressBarComponent.new(step: :interests) %>
+
+  <div class="onboarding-screen__content">
+    <p class="onboarding-screen__eyebrow">ok anywayssssss</p>
+    <h1 class="onboarding-screen__title onboarding-screen__title--lower">what kind of stuff do u like?</h1>
+    <p class="onboarding-screen__subhead">pick as many as you want !!!!!!!!!!!!!!!!!!!!!!!!!</p>
+
+    <%= form_with url: onboarding_interests_path, method: :post, local: true,
+                   data: { controller: "onboarding-interests", action: "change->onboarding-interests#toggle" },
+                   class: "onboarding-interests__form" do |f| %>
+      <div class="onboarding-interests__grid">
+        <% User::ALLOWED_INTERESTS.each do |slug| %>
+          <label class="onboarding-interests__tile">
+            <%= check_box_tag "interests[]", slug, @selected.include?(slug),
+                              class: "onboarding-interests__checkbox",
+                              data: { onboarding_interests_target: "interest" } %>
+            <span class="onboarding-interests__label"><%= slug.tr("_", " ") %></span>
+          </label>
+        <% end %>
+        <label class="onboarding-interests__tile onboarding-interests__tile--unknown">
+          <%= check_box_tag "interests[]", User::INTERESTS_UNKNOWN,
+                            @selected == [ User::INTERESTS_UNKNOWN ],
+                            class: "onboarding-interests__checkbox",
+                            data: { onboarding_interests_target: "unknown" } %>
+          <span class="onboarding-interests__label">i don't know</span>
+        </label>
+      </div>
+      <%= render SpecialActionButtonComponent.new(
+            text: "Next",
+            type: :submit,
+            disabled: @selected.empty?,
+            class: "onboarding-interests__submit",
+            data: {
+              onboarding_interests_target: "submit",
+              action: "click->onboarding-transition#press"
+            }
+          ) %>
+    <% end %>
+  </div>
+</main>

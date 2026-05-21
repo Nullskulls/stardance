@@ -20,12 +20,6 @@ production:
     concurrency: 1
     description: "Sync user data to Airtable every minute with single execution limit"
 
-  sync_pre_signup_leads_to_airtable:
-    class: Airtable::PreSignupLeadSyncJob
-    schedule: every hour
-    concurrency: 1
-    description: "Full sync of pre-signup leads to Airtable"
-
   sync_rsvp_to_airtable:
     class: Airtable::RsvpSyncJob
     schedule: every minute
@@ -153,3 +147,9 @@ production:
     schedule: every 12 hours
     concurrency: 1
     description: "Recompute vote quality scores and update blessed/cursed/neutral verdicts for all voters"
+
+  cleanup_guest_users:
+    class: CleanupGuestUsersJob
+    schedule: every day at 4am America/New_York
+    concurrency: 1
+    description: "Hard-delete guest users (no HCA identity) older than 30 days"

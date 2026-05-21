@@ -30,14 +30,8 @@ class FollowsControllerTest < ActionDispatch::IntegrationTest
     assert_response :forbidden
   end
 
-  test "redirects logged-out users" do
+  test "rejects logged-out users via policy" do
     post user_follow_path(@bob)
-    assert_redirected_to root_path
-  end
-
-  private
-
-  def create_user(slack_id:, display_name:)
-    User.create!(slack_id: slack_id, display_name: display_name, email: "#{display_name}@example.test")
+    assert_response :forbidden
   end
 end

@@ -34,6 +34,7 @@ Rails.application.config.after_initialize do
         shipping
         show_and_tell_live
         missions
+        new_onboarding
       ].each { |flag| Flipper.add(flag) }
     end
   rescue StandardError => e

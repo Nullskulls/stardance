@@ -17,13 +17,8 @@
             <span class="sidebar__nav-icon-wrapper" aria-hidden="true">
               <% case item[:icon] %>
               <% when :avatar %>
-                <% if user.slack_id.present? %>
-                  <%= image_tag user.avatar, alt: "", class: "sidebar__nav-avatar" %>
-                <% else %>
-                  <span class="sidebar__nav-avatar sidebar__nav-avatar--placeholder">
-                    <%= user.display_name.first.upcase %>
-                  </span>
-                <% end %>
+                <% avatar_classes = [ "sidebar__nav-avatar", ("sidebar__nav-avatar--guest" if user.slack_id.blank?) ].compact.join(" ") %>
+                <%= image_tag user.avatar, alt: "", class: avatar_classes %>
               <% when Hash %>
                 <%= image_tag "icons/#{item[:icon][:idle]}.png", alt: "", class: "sidebar__nav-icon sidebar__nav-icon--idle" %>
                 <%= image_tag "icons/#{item[:icon][:active]}.png", alt: "", class: "sidebar__nav-icon sidebar__nav-icon--active" %>
@@ -78,11 +73,12 @@
           <%= inline_svg_tag "icons/gear.svg", class: "sidebar__user-settings-icon" %>
         </button>
 
-        <button type="button" class="sidebar__user-logout" onclick="document.getElementById('logout-form').submit()" aria-label="Logout">
+        <%= button_to logout_path,
+                      method: :delete,
+                      class: "sidebar__user-logout",
+                      aria: { label: "Logout" },
+                      form: { class: "sidebar__user-logout-form", data: { turbo: false } } do %>
           <%= inline_svg_tag "icons/logout.svg", class: "sidebar__user-logout-icon" %>
-        </button>
-
-        <%= form_with url: logout_path, method: :delete, id: "logout-form", style: "display: none;" do %>
         <% end %>
       </div>
     </div>
@@ -155,8 +151,8 @@
       </div>
 
       <div class="modal__actions">
-        <%= f.submit "Save", class: "modal__actions-close" %>
         <button type="button" class="modal__actions-close" onclick="document.getElementById('settings-form').reset(); document.getElementById('settings-modal').close()">Cancel</button>
+        <%= f.submit "Save", class: "modal__actions-close modal__actions-close--primary" %>
       </div>
     <% end %>
 

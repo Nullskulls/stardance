@@ -23,31 +23,35 @@
   can_edit_project = @can_edit_project
 %>
 
+<% if @show_project_tour %>
+  <%= render "welcome_tour" %>
+<% end %>
+
 <div class="app-layout">
   <div class="app-layout__main">
 
+    <%= turbo_frame_tag "project_hero" do %>
     <% if can_edit_project && (params[:editing].present? || @project.errors.any?) %>
       <%= form_with(model: @project,
                     url: project_path(@project),
                     method: :patch,
                     multipart: true,
-                    local: true,
                     class: "project-show project-show--editing",
-                    data: { controller: "project-form", action: "submit->project-form#onSubmit" }) do |form| %>
+                    data: {
+                      turbo_frame: "_top",
+                      controller: "project-form",
+                      action: "submit->project-form#onSubmit",
+                      "project-form-readme-locked-class-value": "project-show__field--locked"
+                    }) do |form| %>
         <%= hidden_field_tag :inline_project_show, "1" %>
 
         <header class="project-show__hero">
-          <div class="project-show__banner">
-            <%= image_tag banner_url, alt: "", class: "project-show__banner-image" %>
-            <%= link_to home_path,
+          <div class="project-show__banner" data-controller="file-upload">
+            <%= image_tag banner_url, alt: "", class: "project-show__banner-image", data: { "file-upload-target": "preview" } %>
+            <%= link_to back_path,
                         class: "project-show__back",
                         "aria-label": "Back",
-                        data: {
-                          controller: "back-button",
-                          "back-button-fallback-value": home_path,
-                          action: "click->back-button#go",
-                          turbo_frame: "_top"
-                        } do %>
+                        data: { turbo_frame: "_top" } do %>
               <svg class="project-show__back-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M14 6l-6 6 6 6" />
               </svg>
@@ -55,7 +59,8 @@
 
             <label class="project-show__banner-upload">
               <span>Change banner</span>
-              <%= form.file_field :banner, accept: Project::ACCEPTED_CONTENT_TYPES.join(","), class: "project-show__banner-input" %>
+              <%= form.file_field :banner, accept: Project::ACCEPTED_CONTENT_TYPES.join(","), class: "project-show__banner-input",
+                    data: { "file-upload-target": "input", action: "change->file-upload#change" } %>
             </label>
           </div>
 
@@ -116,35 +121,69 @@
                                placeholder: "What are you building?",
                                aria: { label: "Project description" },
                                data: {
-                                 action: "input->project-form#onDescriptionInput input->project-form#syncUpdateCheckbox blur->project-form#validateDescription",
+                                 action: "input->project-form#validateDescription blur->project-form#validateDescription",
                                  "project-form-target": "description"
                                } %>
 
             <div class="project-show__edit-grid">
-              <label class="project-show__field project-show__field--inline">
+              <div class="project-show__field project-show__field--inline">
                 <span>Hackatime projects</span>
-                <span class="project-show__hackatime-picker"
-                      data-controller="hackatime-project-selector"
-                      data-hackatime-project-selector-initial-projects-value="<%= @project.hackatime_projects.where(user_id: current_user.id).select(:id, :name).map { |project| { id: project.id, name: project.name } }.to_json %>"
-                      data-hackatime-project-selector-project-times-value="<%= @project_times.to_json %>"
-                      data-project-icon-path="<%= asset_path("icons/rocket.svg") %>"
-                      data-close-icon-path="<%= asset_path("icons/close.svg") %>">
-                  <span class="project-show__control project-show__control--select">
-                    <select class="project-show__select"
-                            aria-label="Hackatime projects"
-                            data-hackatime-project-selector-target="select"
-                            data-action="change->hackatime-project-selector#addProject">
-                      <option value="">Select Hackatime project</option>
-                      <% @available_hackatime_projects.each do |hackatime_project| %>
-                        <option value="<%= hackatime_project.id %>" data-name="<%= hackatime_project.name %>"><%= hackatime_project.name %></option>
-                      <% end %>
-                    </select>
+                <% if !@hackatime_linked %>
+                  <a href="#" class="project-show__hackatime-connect"
+                     onclick="var f=document.createElement('form');f.method='post';f.action='/auth/hackatime';f.innerHTML='<input type=hidden name=authenticity_token value=&quot;'+document.querySelector('meta[name=csrf-token]').content+'&quot;>';document.body.append(f);f.submit();return false;">
+                    Connect Hackatime to link projects →
+                  </a>
+                <% elsif @hackatime_dropdown_items.blank? %>
+                  <span class="project-show__hackatime-empty">
+                    No Hackatime projects yet — start coding with Hackatime installed to see them here.
                   </span>
-                  <span class="project-show__hackatime-selected"
-                        data-hackatime-project-selector-target="selectedContainer"></span>
-                  <span data-hackatime-project-selector-target="hiddenInputs"></span>
-                </span>
-              </label>
+                <% else %>
+                  <div data-controller="hackatime-link">
+                    <div class="project-show__hackatime-picker">
+                      <div class="project-show__hackatime-box" data-hackatime-link-target="box">
+                        <button type="button" class="project-show__hackatime-add" data-action="hackatime-link#toggle" data-hackatime-link-target="addBtn" aria-label="Add Hackatime project">
+                          <%= inline_svg_tag "icons/plus.svg", class: "project-show__hackatime-add-icon" %>
+                        </button>
+                        <div class="project-show__hackatime-tags" data-hackatime-link-target="tags">
+                          <span class="project-show__hackatime-placeholder"
+                                data-hackatime-link-target="placeholder"
+                                <%= "hidden" if @linked_hackatime_projects.any? %>>
+                            Link a Project
+                          </span>
+                          <% @linked_hackatime_projects.each do |hp| %>
+                            <span class="project-show__hackatime-tag" data-hackatime-id="<%= hp.id %>">
+                              <span class="project-show__hackatime-tag-name"><%= hp.name %></span>
+                              <span class="project-show__hackatime-tag-time"><%= format_seconds(@hackatime_times[hp.name] || 0) %></span>
+                              <button type="button" class="project-show__hackatime-tag-remove" data-action="hackatime-link#remove" data-id="<%= hp.id %>" aria-label="Remove <%= hp.name %>">
+                                <%= inline_svg_tag "icons/close.svg", class: "project-show__hackatime-tag-remove-icon" %>
+                              </button>
+                              <input type="hidden" name="project[hackatime_project_ids][]" value="<%= hp.id %>">
+                            </span>
+                          <% end %>
+                        </div>
+                      </div>
+
+                      <div class="project-show__hackatime-dropdown" data-hackatime-link-target="dropdown" hidden>
+                        <% @hackatime_dropdown_items.reject { |i| i[:linked] }.each do |item| %>
+                          <button type="button"
+                                  class="project-show__hackatime-dropdown-item<%= " project-show__hackatime-dropdown-item--taken" if item[:taken] %>"
+                                  data-action="hackatime-link#select"
+                                  data-id="<%= item[:id] %>"
+                                  data-name="<%= item[:name] %>"
+                                  data-hours="<%= item[:hours] %>"
+                                  <%= "disabled" if item[:taken] %>>
+                            <span class="project-show__hackatime-dropdown-name"><%= item[:name] %></span>
+                            <span class="project-show__hackatime-dropdown-time"><%= format_seconds(item[:seconds]) %></span>
+                            <% if item[:taken] %>
+                              <span class="project-show__hackatime-dropdown-taken">linked to <%= item[:taken_by] %></span>
+                            <% end %>
+                          </button>
+                        <% end %>
+                      </div>
+                    </div>
+                  </div>
+                <% end %>
+              </div>
 
               <label class="project-show__field project-show__field--inline">
                 <span>AI usage declaration</span>
@@ -167,6 +206,7 @@
                 <%= form.url_field :demo_url,
                                    class: "project-show__control",
                                    placeholder: "https://example.com",
+                                   inputmode: "url",
                                    data: {
                                      action: "input->project-form#validateUrl blur->project-form#validateUrl",
                                      "project-form-target": "demoUrl"
@@ -178,17 +218,21 @@
                 <%= form.url_field :repo_url,
                                    class: "project-show__control",
                                    placeholder: "https://github.com/user/repo",
+                                   inputmode: "url",
                                    data: {
                                      action: "input->project-form#onRepoInput blur->project-form#onRepoBlur",
                                      "project-form-target": "repoUrl"
                                    } %>
               </label>
 
-              <label class="project-show__field project-show__field--inline" data-project-form-target="readmeContainer">
+              <label class="project-show__field project-show__field--inline"
+                     data-project-form-target="readmeContainer"
+                     <%= "hidden" if @project.readme_url.blank? %>>
                 <span>Readme URL <span class="project-show__help" title="A raw README URL for your project page.">?</span></span>
                 <%= form.url_field :readme_url,
                                    class: "project-show__control",
                                    placeholder: "https://raw.githubusercontent.com/user/repo/main/README.md",
+                                   inputmode: "url",
                                    data: {
                                      action: "input->project-form#onReadmeInput input->project-form#validateUrl blur->project-form#validateUrl",
                                      "project-form-target": "readmeUrl"
@@ -200,7 +244,7 @@
               <% if @project.fire? %>
                 <span class="project-show__badge project-show__badge--fire">⭐ Super Star Project</span>
               <% end %>
-              <%= link_to "Discard changes", project_path(@project), class: "project-show__pill project-show__pill--outline", data: { turbo_frame: "_top" } %>
+              <%= link_to "Discard changes", project_path(@project), class: "project-show__pill project-show__pill--outline", data: { turbo_frame: "project_hero" } %>
               <%= form.submit "Save", class: "project-show__pill project-show__pill--save", data: { "project-form-target": "submit" } %>
             </div>
           </div>
@@ -211,15 +255,10 @@
         <header class="project-show__hero">
           <div class="project-show__banner">
             <%= image_tag banner_url, alt: "", class: "project-show__banner-image" %>
-            <%= link_to home_path,
+            <%= link_to back_path,
                         class: "project-show__back",
                         "aria-label": "Back",
-                        data: {
-                          controller: "back-button",
-                          "back-button-fallback-value": home_path,
-                          action: "click->back-button#go",
-                          turbo_frame: "_top"
-                        } do %>
+                        data: { turbo_frame: "_top" } do %>
               <svg class="project-show__back-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M14 6l-6 6 6 6" />
               </svg>
@@ -281,10 +320,10 @@
                 <% if can_edit_project %>
                   <%= link_to "Edit project", project_path(@project, editing: true),
                               class: "project-show__pill project-show__pill--outline",
-                              data: { turbo_frame: "_top" } %>
+                              data: { turbo_frame: "project_hero" } %>
                 <% end %>
 
-                <% if current_user %>
+                <% if current_user && !is_member %>
                   <%= link_to (viewer_follow ? "Following" : "Follow"),
                               (viewer_follow ? unfollow_project_path(@project) : follow_project_path(@project)),
                               class: [ "project-show__pill", "project-show__pill--save", ("project-show__pill--following" if viewer_follow) ].compact.join(" "),
@@ -299,24 +338,36 @@
         </header>
       </article>
     <% end %>
+    <% end %>
 
     <% if is_member %>
-      <nav class="project-show__actions" aria-label="Project actions">
-        <%= link_to new_project_devlog_path(@project),
-                    class: "project-show__action project-show__action--secondary",
-                    data: { turbo_frame: "_top" } do %>
-          Post a devlog<span class="project-show__action-icon" aria-hidden="true">+</span>
-        <% end %>
-        <%= link_to new_project_ships_path(@project),
-                    class: "project-show__action project-show__action--primary",
-                    data: { turbo_frame: "_top" } do %>
-          Create new ship<%= image_tag "icons/rocket.png", alt: "", class: "project-show__action-icon project-show__action-icon--img" %>
-        <% end %>
-        <button type="button"
-                class="project-show__action project-show__action--secondary"
-                disabled
-                title="Manage teammates — coming soon">Manage teammates</button>
-      </nav>
+      <% if @hackatime_linked %>
+        <nav class="project-show__actions" aria-label="Project actions">
+          <button type="button"
+                  class="project-show__action project-show__action--secondary"
+                  onclick="document.getElementById('composer-modal-' + <%= @project.id.to_json %>).showModal()">
+            Post a devlog<span class="project-show__action-icon" aria-hidden="true">+</span>
+          </button>
+          <%= link_to new_project_ships_path(@project),
+                      class: "project-show__action project-show__action--primary",
+                      data: { turbo_frame: "_top" } do %>
+            Create new ship<%= image_tag "icons/rocket.png", alt: "", class: "project-show__action-icon project-show__action-icon--img" %>
+          <% end %>
+          <button type="button"
+                  class="project-show__action project-show__action--secondary"
+                  disabled
+                  title="Manage teammates — coming soon">Manage teammates</button>
+        </nav>
+      <% else %>
+        <nav class="project-show__actions project-show__actions--single" aria-label="Project actions">
+          <%= button_to "/auth/hackatime",
+                        method: :post,
+                        class: "project-show__action project-show__action--primary project-show__action--full",
+                        form: { class: "project-show__action-form" } do %>
+            Link Hackatime to track your project time<%= image_tag "icons/right-arrow.svg", alt: "", class: "project-show__action-icon project-show__action-icon--img" %>
+          <% end %>
+        </nav>
+      <% end %>
     <% end %>
 
     <% if @show_project_onboarding %>
@@ -325,7 +376,7 @@
           <h2 class="project-show__onboarding-header-title" id="project-show-onboarding-title">Welcome to your new project!</h2>
           <p class="project-show__onboarding-header-body">
             Not sure what to do? Follow a guide to set up your project, or jump straight into it by
-            <%= link_to "editing your project info", project_path(@project, editing: true), class: "project-show__onboarding-header-link", data: { turbo_frame: "_top" } %>.
+            <%= link_to "editing your project info", project_path(@project, editing: true), class: "project-show__onboarding-header-link", data: { turbo_frame: "project_hero" } %>.
           </p>
         </header>
 
@@ -338,19 +389,6 @@
               <span class="project-show__onboarding-card-body-text">Learn to use a GitHub repository to store your project's code, and link it to your Stardance project.</span>
             </span>
             <span class="project-show__onboarding-card-action">See tutorial →</span>
-          <% end %>
-
-          <% if @show_hackatime_onboarding %>
-            <%= button_to "/auth/hackatime",
-                          method: :post,
-                          class: "project-show__onboarding-card project-show__onboarding-card--button",
-                          form: { class: "project-show__onboarding-form" } do %>
-              <span class="project-show__onboarding-card-body">
-                <strong class="project-show__onboarding-card-body-title">Set up hour tracking with Hackatime</strong>
-                <span class="project-show__onboarding-card-body-text">Set up Hackatime in your editor to log hours for your project easily.</span>
-              </span>
-              <span class="project-show__onboarding-card-action">See tutorial →</span>
-            <% end %>
           <% end %>
 
           <% if @project_onboarding_mission.present? %>
@@ -370,17 +408,6 @@
 
     <% if Flipper.enabled?(:missions, current_user) %>
       <%= render "projects/mission_panel", project: @project %>
-    <% end %>
-
-    <% if @show_ai_coding_time_ignored_card %>
-      <aside id="ai-coding-time-ignored-card" class="project-show__notice">
-        <h2 class="project-show__notice-title">Note: AI coding time is being ignored</h2>
-        <p class="project-show__notice-body">Time spent coding entirely using AI agents like GitHub Copilot is being automatically filtered out of total project time. If you were using AI agents excessively and see discrepancies, this is likely why. Ask the support team in <a class="project-show__notice-link" href="https://hackclub.slack.com/app_redirect?channel=C09MATKQM8C" rel="noopener" target="_blank">#flavortown-help</a> if you have questions.</p>
-        <button class="project-show__notice-dismiss"
-                aria-label="Dismiss"
-                data-dismiss-url="<%= my_dismissals_path %>"
-                onclick="fetch(this.dataset.dismissUrl, {method: 'POST', headers: {'X-CSRF-Token': document.querySelector('meta[name=csrf-token]').content, 'Content-Type': 'application/x-www-form-urlencoded'}, body: 'thing_name=ai_coding_time_ignored_card'}); this.closest('#ai-coding-time-ignored-card').remove();">×</button>
-      </aside>
     <% end %>
 
     <% if @votes_for_payout.present? %>
@@ -460,6 +487,20 @@
     <% end %>
 
   </div>
+
+  <% if is_member && @composer_devlog && @composer_projects %>
+    <dialog id="composer-modal-<%= @project.id %>"
+            class="composer-modal"
+            data-controller="modal"
+            aria-label="Post a devlog">
+      <%= render Posts::ComposerComponent.new(
+            post: @composer_devlog,
+            current_user: current_user,
+            projects: @composer_projects,
+            selected_project: @project
+          ) %>
+    </dialog>
+  <% end %>
 
   <%= render DiscoverRailComponent.new %>
 </div>

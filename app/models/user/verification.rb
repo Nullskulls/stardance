@@ -3,7 +3,6 @@ module User::Verification
 
   included do
     after_commit :handle_verification_eligibility_change, if: :should_check_verification_eligibility?
-    after_commit :track_identity_verified, if: :should_track_identity_verified?
   end
 
   def identity_verified? = verification_verified?
@@ -69,17 +68,6 @@ module User::Verification
       elsif should_reject_orders?
         reject_awaiting_verification_orders!
       end
-    end
-
-    def should_track_identity_verified?
-      saved_change_to_verification_status? && verification_verified?
-    end
-
-    def track_identity_verified
-      FunnelTrackerService.track(
-        event_name: "identity_verified",
-        user: self
-      )
     end
 
     def enforce_fatal_rejection!

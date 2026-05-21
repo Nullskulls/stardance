@@ -85,7 +85,6 @@ module Admin
       "Vote" => "Vote",
       "Like" => "Like",
       "Rsvp" => "Rsvp",
-      "FunnelEvent" => "FunnelEvent",
       "FulfillmentPayoutRun" => "FulfillmentPayoutRun"
     }.freeze
 

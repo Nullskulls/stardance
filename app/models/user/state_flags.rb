@@ -1,7 +1,7 @@
 module User::StateFlags
   extend ActiveSupport::Concern
 
-  DISMISSIBLE_THINGS = %w[home_intro flagship_ad shop_suggestion_box willsbuilds_banner ai_coding_time_ignored_card].freeze
+  DISMISSIBLE_THINGS = %w[home_intro flagship_ad shop_suggestion_box willsbuilds_banner].freeze
 
   # Use symbols here; `tutorial_steps_completed` is the raw persisted array.
   def tutorial_steps = tutorial_steps_completed&.map(&:to_sym) || []
@@ -35,6 +35,16 @@ module User::StateFlags
   def should_show_shop_tutorial?
     tutorial_step_completed?(:first_login) && !tutorial_step_completed?(:free_stickers)
   end
+
+  def onboarded? = onboarded_at.present?
+  def hca_linked? = hack_club_identity.present?
+  def guest? = !hca_linked?
+
+  # True for guests who already started the first-project setup flow and own
+  # a project that is gated behind finishing HCA link. Used to swap the
+  # "Create your first project" banner copy and to redirect away from the
+  # project show page.
+  def has_pending_setup_project? = guest? && projects.exists?
 
   private
     def append_array_value_once(column, value)

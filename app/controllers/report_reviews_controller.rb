@@ -1,20 +1,19 @@
 class ReportReviewsController < ApplicationController
-  before_action :ensure_logged_in
   before_action :find_token, only: [ :review, :dismiss ]
 
   def review
+    authorize :report_review
+
     process_token(:reviewed)
   end
 
   def dismiss
+    authorize :report_review
+
     process_token(:dismissed)
   end
 
   private
-
-  def ensure_logged_in
-    redirect_to "/?login=1", alert: "You must be logged in to review reports" unless current_user
-  end
 
   def find_token
     @token = Report::ReviewToken.pending.find_by(token: params[:token])

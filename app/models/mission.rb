@@ -12,8 +12,10 @@
 #  end_at                  :datetime
 #  featured_at             :datetime
 #  name                    :string           not null
+#  prizes_count            :integer          default(0), not null
 #  slug                    :string           not null
 #  start_at                :datetime
+#  steps_count             :integer          default(0), not null
 #  created_at              :datetime         not null
 #  updated_at              :datetime         not null
 #

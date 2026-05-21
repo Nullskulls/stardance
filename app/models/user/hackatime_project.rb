@@ -32,6 +32,7 @@ class User::HackatimeProject < ApplicationRecord
   validates :name, uniqueness: { scope: :user_id }
   validates :name, exclusion: { in: EXCLUDED_NAMES, message: "is excluded" }
   validate :project_not_already_linked, if: :project_id_changed?
+  validate :not_used_in_devlog, if: :project_id_changed?
 
   private
 
@@ -43,5 +44,21 @@ class User::HackatimeProject < ApplicationRecord
     return if previous_project.nil? || previous_project.deleted?
 
     errors.add(:project, "is already linked to another project")
+  end
+
+  def not_used_in_devlog
+    return unless project_id_was.present? && project_id != project_id_was
+
+    previous_project = Project.unscoped.find_by(id: project_id_was)
+    return if previous_project.nil?
+
+    devlog_uses_key = previous_project.posts
+      .joins("INNER JOIN post_devlogs ON post_devlogs.id = posts.postable_id AND posts.postable_type = 'Post::Devlog'")
+      .where("post_devlogs.hackatime_projects_key_snapshot LIKE ?", "%#{name}%")
+      .exists?
+
+    if devlog_uses_key
+      errors.add(:base, "cannot be unlinked because it was used in a devlog")
+    end
   end
 end

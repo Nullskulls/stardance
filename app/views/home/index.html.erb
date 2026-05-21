@@ -1,5 +1,9 @@
 <% content_for :title, "Home" %>
 
+<% if @welcoming %>
+  <%= render "welcome_tour" %>
+<% end %>
+
 <div class="app-layout">
   <main class="app-layout__main feed-home" aria-label="Home feed">
     <%= render Posts::ComposerComponent.new(

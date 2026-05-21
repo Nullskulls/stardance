@@ -53,31 +53,26 @@
 
     <%= form_with url: skip_votes_path, method: :post, data: { turbo: false }, class: "votes-new__skip-form" do %>
       <%= hidden_field_tag :suggestion_token, @suggestion_token %>
-      <%= render ButtonComponent.new(
-        icon: "icons/skip_forward_fill.svg",
-        color: :blue,
-        variant: :borderless,
+      <%= render ActionButtonComponent.new(
+        leading_icon: "icons/skip_forward_fill.svg",
+        size: :small,
+        variant: :secondary,
         type: :submit,
         text: "Skip",
         disable_with: "Skipping..."
       ) %>
     <% end %>
 
-    <div class="votes-new__main" data-controller="vote-tracker" data-action="keydown.esc->vote-tracker#closePanel">
+    <div class="votes-new__main">
       <%= render "project_showcase", project: @project, posts: @posts %>
 
       <aside
         id="votes-score-card"
-        class="votes-new__score-card"
-        data-vote-tracker-target="panel"
-        aria-hidden="true">
+        class="votes-new__score-card">
         <button
           type="button"
           class="votes-new__score-card-toggle"
-          data-action="click->vote-tracker#togglePanel"
-          data-vote-tracker-target="toggleButton"
-          aria-controls="votes-score-card"
-          aria-expanded="false">
+          aria-controls="votes-score-card">
           Score Card
         </button>
 

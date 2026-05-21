@@ -31,12 +31,15 @@
 #
 #  fk_rails_...  (user_id => users.id)
 #
+# Both fixture users are HCA-linked so users(:one).hca_linked? returns true.
+# Was `github` prior to the guest/HCA distinction landing; flip lets follow/vote/etc.
+# tests that load these fixtures pass without each test attaching its own identity.
 one:
   user: one
-  provider: github
+  provider: hack_club
   uid: fixture-user-identity-one
 
 two:
   user: two
-  provider: github
+  provider: hack_club
   uid: fixture-user-identity-two

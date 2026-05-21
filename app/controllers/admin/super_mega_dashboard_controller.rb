@@ -28,7 +28,6 @@ module Admin
       super_mega_ysws_review_v2
       super_mega_ship_certs_raw
       sw_vibes_data
-      super_mega_funnel_stats
       super_mega_nps_stats
       super_mega_nps_vibes
       super_mega_hcb_stats
@@ -36,7 +35,6 @@ module Admin
     ].freeze
 
     SECTIONS = {
-      "funnel"             => { loaders: %i[load_funnel_stats],           partial: "admin/super_mega_dashboard/sections/funnel" },
       "nps"                => { loaders: %i[load_nps_stats load_nps_vibes_stats], partial: "admin/super_mega_dashboard/sections/nps" },
       "hcb"                => { loaders: %i[load_hcb_expenses],           partial: "admin/super_mega_dashboard/sections/hcb" },
       "fraud"              => { loaders: %i[load_fraud_stats load_fraud_happiness_data], partial: "admin/super_mega_dashboard/sections/fraud" },

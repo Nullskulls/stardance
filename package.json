@@ -8,6 +8,7 @@
     "build": "esbuild app/javascript/*.* --bundle --sourcemap --format=esm --outdir=app/assets/builds --public-path=/assets"
   },
   "dependencies": {
+    "@emoji-mart/data": "^1.2.1",
     "@fullstory/browser": "^2.0.6",
     "@hotwired/stimulus": "^3.2.2",
     "@hotwired/turbo-rails": "^8.0.20",
@@ -15,6 +16,7 @@
     "chart.js": "^4.5.1",
     "chartkick": "^5.0.1",
     "d3": "^7.9.0",
+    "emoji-mart": "^5.6.0",
     "gsap": "^3.14.2",
     "xp.css": "^0.2.6"
   },

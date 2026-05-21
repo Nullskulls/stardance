@@ -14,7 +14,7 @@
 
     <% og_title = content_for?(:og_title) ? yield(:og_title) : (content_for?(:title) ? "#{yield(:title)} - Stardance" : "Stardance - Hack Club") %>
     <% og_description = content_for?(:og_description) ? yield(:og_description) : "The largest STEM event of the summer: make anything you want and earn free prizes." %>
-    <% og_image = content_for?(:og_image) ? yield(:og_image) : image_url("landing/space/moon-opp.png") %>
+    <% og_image = content_for?(:og_image) ? yield(:og_image) : image_url("landing/space/moon.png") %>
     <% og_url = content_for?(:og_url) ? yield(:og_url) : request.original_url %>
     <% twitter_card = content_for?(:twitter_card) ? yield(:twitter_card) : "summary" %>
 
@@ -34,7 +34,7 @@
     <meta name="turbo-prefetch" content="false">
     <% if @active_nav_slug.present? %><meta name="active-nav-slug" content="<%= @active_nav_slug %>"><% end %>
 
-    <%= preload_link_tag image_path("landing/space/moon-opp.png"), as: "image", fetchpriority: "high" if controller_name == "landing" %>
+    <%= preload_link_tag image_path("landing/space/moon.png"), as: "image", fetchpriority: "high" if controller_name == "landing" %>
     <%= preload_link_tag asset_path("Roboto.ttf"), as: "font", type: "font/ttf", crossorigin: true %>
 
     <%= yield :head %>
@@ -57,7 +57,7 @@
     <%= Sentry.get_trace_propagation_meta.html_safe %> <%# erb_lint:disable ErbSafety %>
   </head>
 
-  <body class="<%= current_user.present? && !@hide_sidebar ? 'signed-in' : '' %> <%= @body_class %> <%= 'christmas-theme' if current_user && Flipper.enabled?(:christmas_theme, current_user) %>" <%= 'data-controller="snow"'.html_safe if current_user && Flipper.enabled?(:christmas_theme, current_user) %>>
+  <body class="<%= current_user.present? && !@hide_sidebar ? 'signed-in' : '' %> <%= @body_class %> <%= 'christmas-theme' if current_user && Flipper.enabled?(:christmas_theme, current_user) %>">
     <% if impersonating? %>
       <div class="impersonation-banner">
         <div class="impersonation-content">
@@ -80,6 +80,7 @@
       <%= render CommandPaletteComponent.new(current_user: current_user) %>
     <% end %>
     <%= render "shared/flash" %>
+    <%= render Onboarding::GuestBannerComponent.new %>
     <% if tutorial_messages.present? %>
       <%= render DialogueBoxComponent.new(text: tutorial_messages) %>
     <% end %>

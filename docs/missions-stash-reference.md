@@ -164,7 +164,7 @@ end
 @available_expeditions = Expedition.enabled.order(:id)
 ```
 
-`projects/new.html.erb` renders `_expedition_picker`. The form permits `:expedition_id` and tracks an `expedition_attached_at_creation` funnel event on save.
+`projects/new.html.erb` renders `_expedition_picker`. The form permits `:expedition_id` on save.
 
 ### 2. Work the expedition on the project page
 

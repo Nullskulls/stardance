@@ -1,0 +1,15 @@
+<% inner = capture do %>
+  <%= leading_icon_tag %>
+  <% if content? %>
+    <%= content %>
+  <% else %>
+    <span class="action-btn__label"><%= display_text %></span>
+  <% end %>
+  <%= trailing_icon_tag %>
+<% end %>
+
+<% if link? %>
+  <%= link_to href, **link_attributes do %><%= inner %><% end %>
+<% else %>
+  <%= tag.button type: type, **button_attributes do %><%= inner %><% end %>
+<% end %>

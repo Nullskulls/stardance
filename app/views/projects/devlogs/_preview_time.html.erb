@@ -1,0 +1,8 @@
+<turbo-frame id="devlog-preview-time">
+  <span hidden data-seconds="<%= preview_seconds.to_i %>"></span>
+  <% if preview_time %>
+    <span class="feed-composer__info-text"><%= preview_time %> will be logged</span>
+  <% else %>
+    <span class="feed-composer__info-text">Could not load coding time</span>
+  <% end %>
+</turbo-frame>

@@ -1,6 +1,5 @@
 module Seller
   class OrdersController < ApplicationController
-    before_action :authenticate_seller
     before_action :set_paper_trail_whodunnit
     before_action -> { authorize :seller, :access? }
     before_action :set_order, only: %i[show reveal_address mark_fulfilled]
@@ -60,10 +59,6 @@ module Seller
 
     def set_order
       @order = seller_orders.includes(:shop_item, :user).find(params[:id])
-    end
-
-    def authenticate_seller
-      redirect_to root_path, alert: "no" and return unless current_user && current_user.seller?
     end
 
     def audit!(type, id, event, **changes)

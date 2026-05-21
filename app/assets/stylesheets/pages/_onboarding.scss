@@ -1,0 +1,749 @@
+// Onboarding wizard page styles. One file for all 9 screens — they share most rules.
+
+.onboarding-body {
+  background: var(--color-space-bg);
+  margin: 0;
+  min-height: 100vh;
+}
+
+.onboarding-screen {
+  align-items: center;
+  background: var(--color-space-bg);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  font-family: "Exo 2", sans-serif;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 6rem 2rem 3rem;
+  position: relative;
+  text-align: center;
+
+  // Star-field tint on every screen except welcome.
+  &::before {
+    background:
+      radial-gradient(
+        ellipse at center,
+        rgba(149, 219, 255, 0.06),
+        transparent 60%
+      ),
+      radial-gradient(
+        ellipse at top right,
+        rgba(235, 183, 255, 0.08),
+        transparent 60%
+      );
+    content: "";
+    inset: 0;
+    opacity: 0.5;
+    pointer-events: none;
+    position: absolute;
+    z-index: 0;
+  }
+
+  &__content {
+    max-width: 1100px;
+    position: relative;
+    width: 100%;
+    z-index: 1;
+  }
+
+  &__eyebrow {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem;
+  }
+
+  &__title {
+    font-size: clamp(2rem, 5vw, 4.5rem);
+    font-weight: 700;
+    line-height: 1.1;
+    margin: 0 0 1rem;
+
+    &--lower {
+      text-transform: none;
+    }
+  }
+
+  &__subhead {
+    font-size: clamp(1rem, 1.5vw, 1.4rem);
+    font-weight: 700;
+    margin: 0 0 2rem;
+  }
+
+  &__body {
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.5;
+    margin: 0 auto 2rem;
+    max-width: 60ch;
+  }
+
+  @media (max-width: 768px) {
+    padding: 6rem 1.5rem 2rem;
+  }
+}
+
+// Welcome — different from other screens (planet bg, no progress bar)
+.onboarding-screen--welcome {
+  align-items: center;
+  animation: welcome-fade-in 1900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  background: linear-gradient(180deg, #0a0820 0%, #100735 70%, #1a0a4a 100%);
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+  text-align: center;
+
+  &::before {
+    display: none;
+  }
+}
+
+@keyframes welcome-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes moon-slide-up {
+  from {
+    transform: translate(-51.5%, 65%) rotate(75deg);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-51.5%, 0) rotate(75deg);
+    opacity: 1;
+  }
+}
+
+@keyframes welcome-cta-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Exit animation when leaving welcome → birthday
+.onboarding-screen--welcome.is-leaving {
+  animation: welcome-fade-out 600ms cubic-bezier(0.7, 0, 0.84, 0) forwards;
+
+  .onboarding-welcome__planet {
+    animation: moon-slide-out 700ms cubic-bezier(0.7, 0, 0.84, 0) forwards;
+  }
+}
+
+@keyframes welcome-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes moon-slide-out {
+  to {
+    transform: translate(-51.5%, 80%) rotate(75deg);
+    opacity: 0;
+  }
+}
+
+// Entrance + exit animations for the wizard screens (excluding welcome + complete)
+.onboarding-screen:not(.onboarding-screen--welcome):not(
+    .onboarding-screen--complete
+  ) {
+  .onboarding-screen__content {
+    animation: screen-content-in 1000ms ease both;
+    opacity: 0;
+  }
+
+  &.is-leaving .onboarding-screen__content {
+    animation: screen-content-out 600ms ease forwards;
+  }
+}
+
+// Complete: fade the whole screen (background + content) as one unit
+.onboarding-screen--complete {
+  animation: screen-content-in 1000ms ease both;
+  opacity: 0;
+
+  &.is-leaving {
+    animation: screen-content-out 600ms ease forwards;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-screen:not(.onboarding-screen--welcome):not(
+      .onboarding-screen--complete
+    )
+    .onboarding-screen__content,
+  .onboarding-screen--complete {
+    opacity: 1;
+  }
+}
+
+@keyframes progress-fill {
+  from {
+    width: var(--progress-prev, 0%);
+  }
+  to {
+    width: var(--progress-width);
+  }
+}
+
+@keyframes progress-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes screen-content-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes screen-content-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes option-fade-out {
+  to {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-screen--welcome,
+  .onboarding-welcome__planet,
+  .onboarding-welcome__cta,
+  .onboarding-screen--welcome.is-leaving,
+  .onboarding-screen--welcome.is-leaving .onboarding-welcome__planet,
+  .onboarding-screen:not(.onboarding-screen--welcome) .onboarding-progress-bar,
+  .onboarding-screen:not(.onboarding-screen--welcome)
+    .onboarding-screen__content {
+    animation: none;
+  }
+}
+
+.onboarding-welcome {
+  &__background {
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    position: absolute;
+    z-index: 0;
+  }
+
+  &__video {
+    height: 100%;
+    inset: 0;
+    object-fit: cover;
+    position: absolute;
+    width: 100%;
+  }
+
+  &__planet {
+    animation: moon-slide-up 3000ms cubic-bezier(0.22, 1, 0.36, 1) 150ms both;
+    bottom: -148%;
+    display: block;
+    height: auto;
+    left: 50%;
+    max-width: none;
+    position: absolute;
+    transform: translate(-51.5%, 0) rotate(75deg);
+    transform-origin: center center;
+    width: min(180vw, 2200px);
+  }
+
+  &__partnership {
+    align-items: center;
+    display: flex;
+    gap: 0.75rem;
+    position: absolute;
+    right: 2rem;
+    top: 2rem;
+    z-index: 2;
+  }
+
+  &__partnership-label {
+    color: white;
+    font-size: 1.2rem;
+  }
+
+  &__partnership-logos {
+    align-items: center;
+    color: white;
+    display: flex;
+    font-weight: 700;
+    gap: 1rem;
+  }
+
+  &__content {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    max-width: 1380px;
+    position: relative;
+    z-index: 2;
+  }
+
+  &__title {
+    color: white;
+    font-size: clamp(2.25rem, 6vw, 5rem);
+    font-weight: 700;
+    line-height: 1;
+    margin: 0 0 2.5rem;
+    text-align: center;
+  }
+
+  &__title-line {
+    display: block;
+  }
+
+  &__title-em {
+    display: block;
+    font-family: "Playfair Display", serif;
+    font-size: 1.15em;
+    font-style: italic;
+    font-weight: 700;
+    margin-top: 0.6em;
+  }
+
+  &__subhead {
+    color: white;
+    font-size: clamp(1rem, 1.5vw, 1.4rem);
+    font-weight: 700;
+    margin: 0 0 5rem;
+  }
+
+  &__cta {
+    background: rgba(8, 6, 31, 0.85);
+    border: 1.5px solid rgba(255, 255, 255, 0.5);
+    border-radius: 0.4rem;
+    color: white;
+    cursor: pointer;
+    display: inline-block;
+    font-family: "Exo 2", sans-serif;
+    font-size: clamp(1.5rem, 2.5vw, 2.5rem);
+    font-weight: 700;
+    padding: 1.5rem 4rem;
+    text-decoration: none;
+    transition:
+      transform 150ms ease,
+      background 150ms ease;
+
+    &:hover,
+    &:focus-visible {
+      background: rgba(8, 6, 31, 1);
+      transform: translateY(-2px);
+    }
+  }
+
+  &__cta:not(.is-pressed) {
+    animation: welcome-cta-in 800ms cubic-bezier(0.16, 1, 0.3, 1) 2200ms both;
+  }
+
+  &__cta-form {
+    display: inline;
+  }
+
+  @media (max-width: 768px) {
+    &__partnership {
+      flex-direction: column;
+      gap: 0.5rem;
+      right: 1rem;
+      top: 1rem;
+    }
+    &__cta {
+      padding: 1rem 2rem;
+    }
+  }
+}
+
+// Birthday — two big cards
+.onboarding-birthday__form {
+  width: 100%;
+}
+
+.onboarding-birthday__cards {
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: repeat(2, minmax(0, 400px));
+  justify-content: center;
+  margin-top: 3rem;
+
+  .onboarding-choice-card {
+    aspect-ratio: 1;
+    min-height: 320px;
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    .onboarding-choice-card {
+      aspect-ratio: auto;
+      min-height: 120px;
+    }
+  }
+}
+
+// Age-gate
+.onboarding-screen--age-gate {
+  background: var(--color-space-bg);
+}
+
+.onboarding-screen--age-gate .onboarding-screen__title {
+  font-size: clamp(1.6rem, 4vw, 3.25rem);
+  font-weight: 600;
+}
+
+.onboarding-age-gate {
+  &__illustration {
+    margin-bottom: 2.5rem;
+    min-height: 8rem;
+  }
+
+  &__dino {
+    display: block;
+    height: auto;
+    margin: 0 auto;
+    max-width: min(60vw, 320px);
+  }
+
+  &__body {
+    color: white;
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1.7;
+    margin: 1.5rem auto 3.5rem;
+    max-width: 56ch;
+
+    p {
+      margin: 0 0 1.5rem;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+
+    a {
+      color: white;
+      text-decoration: underline;
+    }
+  }
+
+  &__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem 2.5rem;
+    justify-content: center;
+    margin: 0 auto;
+  }
+
+  &__links-label {
+    color: white;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+
+  &__link {
+    color: white;
+    font-weight: 700;
+    text-decoration: underline;
+
+    &--centered {
+      flex-basis: 100%;
+      text-align: center;
+      margin-top: 0.5rem;
+    }
+  }
+}
+
+// Experience — 4 stacked cards
+.onboarding-experience__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 2.5rem;
+}
+
+// Result-page Next pill spacing below the celebratory copy
+.onboarding-screen--experience-result .special-action-btn,
+.onboarding-screen--interests-result .special-action-btn {
+  margin-top: 2.5rem;
+}
+
+// Interests — multi-select grid
+.onboarding-interests__form {
+  width: 100%;
+}
+
+.onboarding-interests__grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(2, minmax(0, 411px));
+  justify-content: center;
+  margin: 2rem 0;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.onboarding-interests__tile {
+  align-items: center;
+  background: transparent;
+  border: 2px solid white;
+  border-radius: 0.3rem;
+  cursor: pointer;
+  display: flex;
+  height: 140px;
+  justify-content: center;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  &:has(input[type="checkbox"]:checked) {
+    background: rgba(244, 235, 185, 0.15);
+    border-color: var(--color-brand-highlight);
+  }
+
+  &--unknown {
+    border-style: dashed;
+    grid-column: 1 / -1;
+    height: 96px;
+
+    .onboarding-interests__label {
+      font-size: 1.5rem;
+    }
+  }
+}
+
+.onboarding-interests__checkbox {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.onboarding-interests__label {
+  color: white;
+  font-size: 2rem;
+  font-weight: 700;
+  text-transform: lowercase;
+}
+
+.onboarding-interests__submit {
+  display: block;
+  margin: 1rem auto 0;
+}
+
+// Interests-result
+.onboarding-interests-result {
+  &__featured {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    margin: 2rem 0;
+
+    @media (max-width: 768px) {
+      grid-auto-flow: column;
+      grid-template-columns: none;
+      overflow-x: auto;
+    }
+  }
+
+  &__featured-card {
+    aspect-ratio: 358 / 264;
+    border: 2px solid white;
+    border-radius: 0.3rem;
+    min-width: 200px;
+  }
+
+  &__prize-label {
+    font-weight: 700;
+    margin: 1.5rem 0 0.5rem;
+    text-align: left;
+  }
+
+  &__prizes {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-bottom: 2rem;
+    min-height: 200px;
+  }
+
+  &__prize {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    height: 150px;
+    width: 150px;
+
+    &--0 {
+      transform: rotate(-3deg);
+    }
+    &--1 {
+      transform: rotate(19deg);
+    }
+    &--2 {
+      transform: rotate(11deg);
+    }
+    &--3 {
+      transform: rotate(-10deg);
+    }
+    &--4 {
+      transform: rotate(4deg);
+    }
+  }
+
+  &__next {
+    color: white;
+    display: block;
+    font-weight: 700;
+    margin-top: 1.5rem;
+    text-align: right;
+    text-decoration: underline;
+  }
+}
+
+// Name
+.onboarding-name__form {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 2rem;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
+}
+
+.onboarding-name__input {
+  background: rgba(8, 6, 31, 0.75);
+  border: 2px solid white;
+  border-radius: 0.5rem;
+  color: white;
+  font-family: "Exo 2", sans-serif;
+  font-size: 1.4rem;
+  padding: 0.8rem 1.2rem;
+  width: 425px;
+
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  @media (max-width: 768px) {
+    width: 100%;
+  }
+}
+
+// Fade-out keyframe for the welcome overlay
+// Complete (final welcome) — full-screen celebratory step
+.onboarding-screen--complete {
+  background: linear-gradient(180deg, #0a0820 0%, #100735 70%, #1a0a4a 100%);
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+
+  &::before {
+    display: none;
+  }
+}
+
+.onboarding-complete {
+  &__background {
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    position: absolute;
+    z-index: 0;
+  }
+
+  &__video {
+    height: 100%;
+    inset: 0;
+    object-fit: cover;
+    position: absolute;
+    width: 100%;
+  }
+
+  &__planet {
+    bottom: -150%;
+    display: block;
+    height: auto;
+    left: 50%;
+    max-width: none;
+    position: absolute;
+    transform: translateX(-51.5%) rotate(75deg);
+    transform-origin: center center;
+    width: min(180vw, 2200px);
+  }
+
+  &__content {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    max-width: 1389px;
+    position: relative;
+    text-align: center;
+    z-index: 1;
+  }
+
+  &__mascots {
+    display: block;
+    height: auto;
+    margin: 0 auto 1.5rem;
+    max-width: 100%;
+    width: clamp(220px, 30vw, 360px);
+  }
+
+  &__title {
+    color: white;
+    font-family: "Exo 2", sans-serif;
+    font-size: clamp(2.5rem, 6vw, 7rem);
+    font-weight: 700;
+    line-height: 1.05;
+    margin: 0 0 1rem;
+  }
+
+  &__subtitle {
+    color: white;
+    font-family: "Exo 2", sans-serif;
+    font-size: clamp(1.1rem, 2vw, 2rem);
+    font-weight: 700;
+    margin: 0 0 2rem;
+  }
+
+  &__continue {
+    margin-top: 1rem;
+  }
+}

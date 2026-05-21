@@ -28,7 +28,7 @@ class Mission::Step < ApplicationRecord
 
   has_paper_trail
 
-  belongs_to :mission, inverse_of: :steps
+  belongs_to :mission, inverse_of: :steps, counter_cache: true
   has_many :step_completions, class_name: "Mission::StepCompletion",
                               foreign_key: :mission_step_id,
                               dependent: :destroy

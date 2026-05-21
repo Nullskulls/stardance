@@ -1,0 +1,180 @@
+.welcome-tour {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  pointer-events: none;
+  color: var(--color-space-text);
+
+  &__overlay {
+    position: absolute;
+    inset: 0;
+    background: transparent;
+    pointer-events: auto;
+  }
+
+  &__spotlight {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    background: transparent;
+    box-shadow: 0 0 0 9999px rgba(8, 6, 30, 0.8);
+    pointer-events: none;
+    opacity: 0;
+    transition:
+      top 280ms ease,
+      left 280ms ease,
+      width 280ms ease,
+      height 280ms ease,
+      border-radius 280ms ease,
+      opacity 220ms ease;
+  }
+
+  &__tooltip {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-s);
+    width: min(420px, calc(100vw - 32px));
+    padding: var(--space-s) 0;
+    pointer-events: auto;
+    opacity: 0;
+    transition:
+      top 280ms ease,
+      left 280ms ease,
+      opacity 220ms ease 80ms;
+  }
+
+  &--ready &__spotlight,
+  &--ready &__tooltip {
+    opacity: 1;
+  }
+
+  &__arrow {
+    width: 64px;
+    height: auto;
+    color: var(--color-space-text);
+  }
+
+  &--intro {
+    .welcome-tour__arrow {
+      display: none;
+    }
+
+    .welcome-tour__tooltip {
+      align-items: center;
+      text-align: center;
+    }
+
+    .welcome-tour__text {
+      font-size: var(--font-size-xxl);
+    }
+
+    .welcome-tour__actions {
+      justify-content: center;
+    }
+  }
+
+  &--placement-above,
+  &--placement-below {
+    .welcome-tour__tooltip {
+      align-items: center;
+      text-align: center;
+    }
+
+    .welcome-tour__actions {
+      justify-content: center;
+    }
+  }
+
+  &--placement-above,
+  &--arrow-bottom {
+    .welcome-tour__arrow {
+      order: 1;
+      transform: scaleY(-1);
+    }
+
+    .welcome-tour__actions {
+      order: 0;
+    }
+
+    .welcome-tour__text {
+      order: -1;
+    }
+  }
+
+  &__text {
+    margin: 0;
+    font-family: "Exo 2", sans-serif;
+    font-weight: 700;
+    font-size: var(--font-size-l);
+    line-height: 1.25;
+    color: var(--color-space-text);
+  }
+
+  &__actions {
+    display: flex;
+    gap: var(--space-s);
+    align-items: center;
+  }
+
+  &__back,
+  &__next {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+    padding: 0 var(--space-m);
+    border-radius: 999px;
+    font-family: "Exo 2", sans-serif;
+    font-weight: 700;
+    font-size: var(--font-size-m);
+    line-height: 1;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: filter 120ms ease;
+
+    &:hover,
+    &:focus-visible {
+      filter: brightness(1.05);
+      outline: none;
+    }
+  }
+
+  &__back {
+    background: var(--color-set-2-bg);
+    border-color: var(--color-space-border);
+    color: var(--color-space-text);
+
+    &[hidden] {
+      display: none;
+    }
+  }
+
+  &__next {
+    background: var(--color-brand-highlight);
+    color: var(--color-set-1-bg);
+  }
+
+  &__counter {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+
+@media (max-width: 900px) {
+  .welcome-tour {
+    display: none;
+  }
+}

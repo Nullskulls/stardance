@@ -13,11 +13,11 @@
               <h6>~<%= featured_item.hours_estimated %> hours</h6>
           <% end %>
 
-          <%= render ButtonComponent.new(
+          <%= render ActionButtonComponent.new(
             text: "Order #{featured_item.name}",
             href: "/shop/order?shop_item_id=#{featured_item.id}",
-            color: :brown,
-            variant: :borderless,
+            size: :large,
+            variant: :primary,
             data: { turbo_frame: "_top"}
           ) %>
         </div>

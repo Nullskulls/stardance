@@ -1,6 +1,6 @@
 class Projects::ReportsController < ApplicationController
   def create
-    authorize :report, :create?
+    authorize :report
     @project = ::Project.find(params[:project_id])
 
     if current_user.reports.exists?(project: @project)

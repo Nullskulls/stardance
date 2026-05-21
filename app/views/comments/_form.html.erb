@@ -16,11 +16,11 @@
               rows: 2 %>
 
         <div class="comment-form__actions">
-          <%= render ButtonComponent.new(
+          <%= render ActionButtonComponent.new(
                 text: "Post Comment",
-                color: :brown,
-                type: :submit,
-                size: :sm
+                size: :small,
+                variant: :primary,
+                type: :submit
               ) %>
         </div>
       <% end %>

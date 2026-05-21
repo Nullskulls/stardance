@@ -3,6 +3,7 @@
 # Table name: users
 #
 #  id                           :bigint           not null, primary key
+#  age_attestation              :string
 #  banned                       :boolean          default(FALSE), not null
 #  banned_at                    :datetime
 #  banned_reason                :text
@@ -10,15 +11,18 @@
 #  display_name                 :string
 #  email                        :string
 #  enriched_ref                 :string
+#  experience_level             :string
 #  first_name                   :string
 #  granted_roles                :string           default([]), not null, is an Array
 #  has_gotten_free_stickers     :boolean          default(FALSE)
 #  has_pending_achievements     :boolean          default(FALSE), not null
 #  hcb_email                    :string
+#  interests                    :string           default([]), is an Array
 #  internal_notes               :text
 #  last_name                    :string
 #  manual_ysws_override         :boolean
 #  mission_review_notifications :boolean          default(TRUE), not null
+#  onboarded_at                 :datetime
 #  ref                          :string
 #  regions                      :string           default([]), is an Array
 #  session_token                :string
@@ -37,9 +41,11 @@
 #
 # Indexes
 #
-#  index_users_on_email          (email)
-#  index_users_on_session_token  (session_token) UNIQUE
-#  index_users_on_slack_id       (slack_id) UNIQUE
+#  index_users_on_email               (email)
+#  index_users_on_lower_email_unique  (lower((email)::text)) UNIQUE WHERE ((email IS NOT NULL) AND ((email)::text <> ''::text))
+#  index_users_on_onboarded_at        (onboarded_at)
+#  index_users_on_session_token       (session_token) UNIQUE
+#  index_users_on_slack_id            (slack_id) UNIQUE
 #
 class User < ApplicationRecord
   has_paper_trail ignore: [ :votes_count, :updated_at, :shop_region ], on: [ :update, :destroy ]
@@ -101,11 +107,34 @@ class User < ApplicationRecord
     XX: "XX"
   }
 
+  attribute :age_attestation, :string
+  attribute :experience_level, :string
+
+  enum :age_attestation, {
+    teen_13_18: "teen_13_18",
+    ineligible: "ineligible"
+  }, prefix: :age_attestation
+
+  enum :experience_level, {
+    none: "none",
+    little: "little",
+    some: "some",
+    experienced: "experienced"
+  }, prefix: :experience
+
+  ALLOWED_INTERESTS = %w[web_dev hardware app_dev game_dev].freeze
+  INTERESTS_UNKNOWN = "dont_know".freeze
+
+  validate :interests_must_be_allowed
+
+  scope :discoverable, -> { joins(:hack_club_identity).distinct }
+
   validates :banner, content_type: [ "image/png", "image/jpeg", "image/webp", "image/gif" ],
                      size: { less_than: 8.megabytes }
   validates :bio, length: { maximum: 1000 }
   validates :verification_status, presence: true
-  validates :slack_id, presence: true, uniqueness: true
+  validates :slack_id, uniqueness: true, allow_nil: true
+  validates :email, uniqueness: { case_sensitive: false }, allow_blank: true
   validates :hcb_email, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_blank: true
 
   include User::Notifications
@@ -121,4 +150,24 @@ class User < ApplicationRecord
   include User::Social
   include User::Profile
   include User::Preferences
+
+  KERBAL_FIRST_NAMES = %w[
+    Jebediah Bill Bob Valentina Lodwig Shepard Gus Wernher Gene
+    Mortimer Linus Genekin Bobnik Billard Valentik Aldler Orlas
+    Neilbur Buzzig Mikevin Aldous Yurgus Laikus Grissom Shepnik
+    Aldorf Scottbert Rodbur Danwig Franklis Aldwig Gordox
+  ].freeze
+
+  def self.random_funny_display_name
+    "#{KERBAL_FIRST_NAMES.sample} Kerman"
+  end
+
+  private
+
+  def interests_must_be_allowed
+    return if interests.blank?
+    return if Array(interests) == [ INTERESTS_UNKNOWN ]
+    invalid = Array(interests) - ALLOWED_INTERESTS
+    errors.add(:interests, "contains invalid values: #{invalid.join(', ')}") if invalid.any?
+  end
 end

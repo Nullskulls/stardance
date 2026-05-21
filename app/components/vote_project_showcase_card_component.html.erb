@@ -6,10 +6,10 @@
       <div class="votes-new__project-card-content-header">
         <h1><%= project.title %></h1>
         <% if show_report_button? %>
-          <%= render ButtonComponent.new(
-                color: :brown,
-                variant: :borderless,
-                icon: "icons/flag.svg",
+          <%= render ActionButtonComponent.new(
+                size: :small,
+                variant: :secondary,
+                leading_icon: "icons/flag.svg",
                 aria: { label: "Report project" },
                 class: "votes-new__project-report-btn",
                 onclick: "document.getElementById(#{report_modal_id.to_json}).showModal()"
@@ -52,38 +52,38 @@
   <% if has_any_links? %>
     <div class="votes-new__project-buttons">
       <% if project.demo_url.present? %>
-        <%= render ButtonComponent.new(
+        <%= render ActionButtonComponent.new(
               href: project.demo_url,
-              color: :brown,
-              variant: :borderless,
+              size: :small,
+              variant: :secondary,
               text: "Demo",
-              icon: "icons/globe2.svg",
+              leading_icon: "icons/globe2.svg",
               aria: { label: "Demo" },
               target: "_blank",
-              data: { action: "click->vote-tracker#trackDemoClick auxclick->vote-tracker#trackDemoClick" }
+              data: {}
             ) %>
       <% end %>
 
       <% if project.repo_url.present? %>
-        <%= render ButtonComponent.new(
+        <%= render ActionButtonComponent.new(
               href: project.repo_url,
-              color: :brown,
-              variant: :borderless,
+              size: :small,
+              variant: :secondary,
               text: "Repository",
-              icon: "icons/code.svg",
+              leading_icon: "icons/code.svg",
               aria: { label: "Repository" },
               target: "_blank",
-              data: { action: "click->vote-tracker#trackRepoClick auxclick->vote-tracker#trackRepoClick" }
+              data: {}
             ) %>
       <% end %>
 
       <% if project.readme_url.present? %>
-        <%= render ButtonComponent.new(
+        <%= render ActionButtonComponent.new(
               href: project.readme_url,
-              color: :brown,
-              variant: :borderless,
+              size: :small,
+              variant: :secondary,
               text: "Readme",
-              icon: "icons/paper.svg",
+              leading_icon: "icons/paper.svg",
               aria: { label: "Readme" },
               target: "_blank",
               rel: "noopener noreferrer"

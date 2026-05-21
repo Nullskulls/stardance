@@ -50,7 +50,7 @@
           <p>Join <%= link_to "Hack Club Stardance", "/" %> to start earning Stardust by building personal projects!</p>
         </div>
         <div class="shop__signup-cta-buttons">
-          <%= link_to "Get building!", root_path, class: "btn btn-cta" %>
+          <%= link_to "Get building!", root_path, class: "action-btn action-btn--large action-btn--primary shop__signup-cta-btn" %>
           <%= form_tag "/auth/hack_club", method: :post, data: { turbo: false }, class: "shop__signin-form" do %>
             <button type="submit" class="shop__signin-link">Already a member? Sign in</button>
           <% end %>
@@ -60,11 +60,11 @@
 
     <div class="shop__buttons">
       <% if current_user %>
-        <%= render ButtonComponent.new(
+        <%= render ActionButtonComponent.new(
           text: "View My Orders",
           href: "/shop/my_orders",
-          color: :brown,
-          variant: :borderless
+          size: :small,
+          variant: :secondary
         ) %>
       <% end %>
       <%= render DropdownComponent.new(
@@ -222,7 +222,7 @@
                           maxlength: 2000 %>
         </div>
 
-        <%= f.submit "Submit Suggestion", class: "btn btn-primary" %>
+        <%= f.submit "Submit Suggestion", class: "action-btn action-btn--large action-btn--primary" %>
       <% end %>
   </dialog>
 <% end %>

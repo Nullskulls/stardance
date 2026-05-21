@@ -171,21 +171,6 @@
     gap: var(--space-l);
     margin-top: 0.5em;
     align-items: stretch;
-
-    .btn {
-      width: 100%;
-      justify-content: center;
-      height: 120%;
-      border-radius: calc(var(--border-radius));
-      font-size: var(--font-size-xxl);
-      padding: var(--space-xs) var(--space-xl);
-      gap: var(--space-s);
-
-      svg {
-        width: 1.5rem;
-        height: 1.5rem;
-      }
-    }
   }
 }
 

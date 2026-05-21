@@ -36,6 +36,7 @@
   &__header,
   &__stepper,
   &__subtitle,
+  &__video,
   &__body {
     position: relative;
     z-index: 1;
@@ -45,13 +46,12 @@
     width: 100%;
     max-width: 1296px;
     margin: 0 auto;
-    padding-top: 16px;
     text-align: center;
   }
 
   &__back {
     position: absolute;
-    top: 136px;
+    top: calc(60px + clamp(72px, 5.5vw, 104px));
     left: clamp(20px, 2.4vw, 46px);
     z-index: 2;
     font-family: var(--font-family-text);
@@ -163,6 +163,12 @@
     color: var(--color-space-text);
   }
 
+  &__video {
+    width: 100%;
+    max-width: var(--ship-form-width);
+    margin: 0 auto 32px;
+  }
+
   &__body {
     width: 100%;
     max-width: var(--ship-form-width);
@@ -189,6 +195,18 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+
+    &[hidden] {
+      display: none;
+    }
+
+    &--locked {
+      .ship__input {
+        opacity: 0.65;
+        cursor: not-allowed;
+        filter: saturate(0.7);
+      }
+    }
   }
 
   &__label-with-info {

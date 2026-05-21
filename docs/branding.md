@@ -148,8 +148,8 @@ Two type families:
 | **Title** | Exo 2 _or_ Playfair Display _bold italic_ | 70px | Bold | normal | Hero-level page titles (one per page max). The Playfair variant is the editorial flourish; Exo 2 is the plain variant. Pick one per title. |
 | **Title 2** | Exo 2 _or_ Playfair Display _bold italic_ | 56px | Bold | normal | Secondary page titles, large section titles, modal titles. Same Exo/Playfair pairing as Title. |
 | **Heading** | Exo 2 | 40px | Bold | normal | Section headings inside a page. |
-| **Small heading** | Exo 2 | 22px | Bold | **ALL CAPS** | Subsection / group labels above lists or cards. The all-caps cue distinguishes it from Body at the same size. |
-| **Body** | Exo 2 | 22px | Regular | normal | Default page text. |
+| **Small heading** | Exo 2 | 19px | Bold | **ALL CAPS** | Subsection / group labels above lists or cards. The all-caps cue distinguishes it from Body at the same size. |
+| **Body** | Exo 2 | 19px | Regular | normal | Default page text. |
 | **Label** | Exo 2 | 16px | Regular | normal | Form labels, captions, metadata, fine print. |
 
 ### 2.2 Notes
@@ -255,7 +255,7 @@ pattern but pushes Normal one step lighter (`brand-highlight` →
 
 ### 4.2 Large action buttons
 
-- **Text:** 22px, bold.
+- **Text:** 19px, bold.
 - **Border:** 2px.
 - **Padding:** ≥32px horizontal _or_ fill the row horizontally; 12px vertical.
 - **End icon:** optional. When present, **the icon translates right on
@@ -285,7 +285,7 @@ pattern but pushes Normal one step lighter (`brand-highlight` →
   rounded-rect button overlaps a star shape so a few of the star's points peek
   out behind the pill. The star and the pill share the same fill colour at
   every state.
-- **Text:** 22px, bold.
+- **Text:** 19px, bold.
 - **Border:** the pill itself has a 2px transparent border (so the star fill
   shows through underneath); the star isn't bordered, it's filled.
 - **Padding:** ≥32px horizontal, 12px vertical.

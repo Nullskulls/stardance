@@ -31,6 +31,7 @@ class Post::Devlog < ApplicationRecord
   has_paper_trail ignore: [ :likes_count, :comments_count, :hackatime_pulled_at, :synced_at ]
 
   BODY_MAX_LENGTH = 4_000
+  MAX_ATTACHMENTS = 4
 
   # flag for tracking if attachments are being uploaded during an update
   attr_accessor :uploading_attachments
@@ -83,6 +84,7 @@ class Post::Devlog < ApplicationRecord
             size: { less_than: 50.megabytes, message: "is too large (max 50 MB)" },
             processable_file: true
   validate :at_least_one_attachment
+  validate :at_most_max_attachments
   validates :duration_seconds,
             numericality: {
               greater_than_or_equal_to: 15.minutes,
@@ -151,9 +153,15 @@ class Post::Devlog < ApplicationRecord
   private
 
   def at_least_one_attachment
-    return if uploading_attachments # allow update as long as they're planning to include an attachment
+    return if uploading_attachments
 
     errors.add(:attachments, "must include at least one image or video") unless attachments.attached?
+  end
+
+  def at_most_max_attachments
+    if attachments.size > MAX_ATTACHMENTS
+      errors.add(:attachments, "can't exceed #{MAX_ATTACHMENTS} files")
+    end
   end
 
   def handle_post_creation

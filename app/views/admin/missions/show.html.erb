@@ -9,11 +9,11 @@
       <% end %>
     </h1>
     <div class="admin-missions__actions">
-      <%= link_to "Edit", edit_admin_mission_path(@mission.slug), class: "btn btn--brown btn--sm" %>
+      <%= link_to "Edit", edit_admin_mission_path(@mission.slug), class: "action-btn action-btn--small action-btn--secondary" %>
       <% if @mission.deleted_at? %>
-        <%= button_to "Restore", restore_admin_mission_path(@mission.slug), method: :post, class: "btn btn--green btn--sm" %>
+        <%= button_to "Restore", restore_admin_mission_path(@mission.slug), method: :post, class: "action-btn action-btn--small action-btn--primary" %>
       <% else %>
-        <%= button_to "Soft-delete", admin_mission_path(@mission.slug), method: :delete, data: { turbo_confirm: "Soft-delete this mission?" }, class: "btn btn--red btn--sm" %>
+        <%= button_to "Soft-delete", admin_mission_path(@mission.slug), method: :delete, data: { turbo_confirm: "Soft-delete this mission?" }, class: "action-btn action-btn--small action-btn--destructive" %>
       <% end %>
     </div>
   </header>

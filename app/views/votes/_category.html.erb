@@ -14,7 +14,7 @@
   end
 end %>
 
-<div class="vote-category <%= theme %>" data-controller="vote-category">
+<div class="vote-category <%= theme %>">
   <div class="vote-category__header">
     <%= category.to_s.humanize %>
   </div>
@@ -25,7 +25,7 @@ end %>
         <% hint = score_tooltip.call(i) %>
         <% star_id = "vote_#{category}_star_#{i}" %>
         <% score_column = Vote.score_column_for!(category) %>
-        <%= form.radio_button score_column, i, class: "vote-category__input", id: "vote_#{score_column}_#{i}", data: { action: "change->vote-category#updateScore" } %>
+        <%= form.radio_button score_column, i, class: "vote-category__input", id: "vote_#{score_column}_#{i}" %>
         <%= form.label score_column, value: i, for: "vote_#{score_column}_#{i}", class: class_names("vote-category__star", "vote-category__star--typical" => (4..6).cover?(i)), id: star_id, aria: { label: "#{i} out of 9. #{hint}" } do %>
           <%= inline_svg_tag "icons/star_fill.svg" %>
         <% end %>
@@ -34,7 +34,7 @@ end %>
         <% end %>
       <% end %>
     </div>
-    <span class="vote-category__score" data-vote-category-target="score">-</span>
+    <span class="vote-category__score">-</span>
   </div>
 
   <div class="vote-category__footer">

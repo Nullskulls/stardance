@@ -1,0 +1,215 @@
+// First-project setup wizard. Shares the `.onboarding-screen` shell (see
+// pages/_onboarding.scss) for layout, background, and entry/exit animations.
+// Everything here is the project-flow-specific bits.
+
+.project-setup-screen {
+  .onboarding-screen__title em {
+    font-family: "Playfair Display", serif;
+    font-style: italic;
+  }
+}
+
+// Idea step — two big choice cards, same shape as the birthday step.
+.project-setup-idea {
+  &__form {
+    width: 100%;
+  }
+
+  &__cards {
+    display: grid;
+    gap: 2rem;
+    grid-template-columns: repeat(2, minmax(0, 400px));
+    justify-content: center;
+    margin-top: 3rem;
+
+    .onboarding-choice-card {
+      aspect-ratio: 1;
+      min-height: 280px;
+    }
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+
+      .onboarding-choice-card {
+        aspect-ratio: auto;
+        min-height: 120px;
+      }
+    }
+  }
+}
+
+// Name step — title + description fields stacked.
+.project-setup-name {
+  &__form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.2rem;
+    margin: 2rem auto 0;
+    max-width: 560px;
+  }
+
+  &__input,
+  &__textarea {
+    background: rgba(8, 6, 31, 0.75);
+    border: 2px solid white;
+    border-radius: 0.5rem;
+    color: white;
+    font-family: "Exo 2", sans-serif;
+    padding: 0.8rem 1.2rem;
+    width: 100%;
+
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+  }
+
+  &__input {
+    font-size: 1.6rem;
+    font-weight: 700;
+  }
+
+  &__textarea {
+    font-size: 1.05rem;
+    line-height: 1.4;
+    resize: vertical;
+  }
+
+  &__submit {
+    margin-top: 0.75rem;
+  }
+}
+
+// Missions step — grid of mission cards + escape hatch.
+.project-setup-missions {
+  &__grid {
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 2rem 0 1.5rem;
+    text-align: left;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__card-form {
+    display: contents;
+  }
+
+  &__card {
+    align-items: stretch;
+    background: rgba(8, 6, 31, 0.75);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 0.5rem;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    font-family: "Exo 2", sans-serif;
+    gap: 1rem;
+    padding: 1rem 1.1rem;
+    text-align: left;
+    transition:
+      border-color 150ms ease,
+      background 150ms ease,
+      transform 150ms ease;
+    width: 100%;
+
+    &:hover,
+    &:focus-visible {
+      background: rgba(8, 6, 31, 0.95);
+      border-color: var(--color-brand-mint);
+      transform: translateY(-2px);
+    }
+  }
+
+  &__card-media {
+    align-items: center;
+    display: flex;
+    flex-shrink: 0;
+    height: 64px;
+    justify-content: center;
+    width: 64px;
+  }
+
+  &__card-icon {
+    height: 100%;
+    object-fit: contain;
+    width: 100%;
+  }
+
+  &__card-placeholder {
+    color: var(--color-brand-yellow);
+    font-size: 2rem;
+  }
+
+  &__card-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  &__card-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+
+  &__card-description {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9rem;
+    line-height: 1.35;
+  }
+
+  &__card-difficulty {
+    align-self: flex-start;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    color: var(--color-brand-cream);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 0.15rem 0.55rem;
+    text-transform: uppercase;
+  }
+
+  &__empty {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1rem;
+    margin: 2rem 0;
+  }
+
+  &__later-form {
+    display: inline-block;
+    margin-top: 0.5rem;
+  }
+
+  &__later {
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-family: "Exo 2", sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 0.5rem 0.75rem;
+    text-decoration: underline;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-brand-mint);
+    }
+  }
+}
+
+// Link-account gate — the "finish setting up your account" screen.
+.project-setup-link {
+  &__form {
+    margin: 0;
+  }
+
+  &__cta {
+    margin-top: 2rem;
+  }
+}

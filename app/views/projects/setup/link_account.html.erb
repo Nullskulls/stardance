@@ -1,0 +1,24 @@
+<% content_for :title, "Finish setting up your account" %>
+<main class="onboarding-screen onboarding-screen--project-link project-setup-screen"
+      data-controller="onboarding-transition">
+  <%= render Projects::Setup::ProgressBarComponent.new(action: :link) %>
+
+  <div class="onboarding-screen__content">
+    <h1 class="onboarding-screen__title">To get started on your project,<br>finish setting up your account!</h1>
+    <p class="onboarding-screen__body">
+      You'll link (or create) your Hack Club account so we can save your project,
+      pay out prizes, and keep your devlogs synced. It only takes a minute.
+    </p>
+
+    <%= form_with url: hack_club_auth_path(login_hint: current_user.email),
+                   method: :post, local: true,
+                   class: "project-setup-link__form" do %>
+      <%= render SpecialActionButtonComponent.new(
+            text: "Link or create my Hack Club account",
+            type: :submit,
+            class: "project-setup-link__cta",
+            data: { action: "click->onboarding-transition#press" }
+          ) %>
+    <% end %>
+  </div>
+</main>

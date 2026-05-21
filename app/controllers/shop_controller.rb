@@ -1,6 +1,5 @@
 class ShopController < ApplicationController
   skip_before_action :refresh_identity_on_portal_return, only: [ :index ]
-  before_action :require_login, except: [ :index, :update_region ]
 
   def index
     @shop_open = Flipper.enabled?(:shop_open, current_user)
@@ -24,6 +23,8 @@ class ShopController < ApplicationController
   end
 
   def my_orders
+    authorize :shop
+
     @orders = current_user.shop_orders
                           .where(parent_order_id: nil)
                           .includes(accessory_orders: { shop_item: { image_attachment: :blob } }, shop_item: { image_attachment: :blob })
@@ -32,6 +33,8 @@ class ShopController < ApplicationController
   end
 
   def cancel_order
+    authorize :shop
+
     @order = current_user.shop_orders.find(params[:order_id])
     if @order.aasm_state == "fulfilled"
       redirect_to shop_my_orders_path, alert: "You cannot cancel an already fulfilled order."
@@ -47,6 +50,8 @@ class ShopController < ApplicationController
   end
 
   def order
+    authorize :shop
+
     @shop_item = ShopItem.find(params[:shop_item_id])
     @mission_submission = load_redeemable_submission(@shop_item)
 
@@ -104,6 +109,8 @@ class ShopController < ApplicationController
   end
 
   def create_order
+    authorize :shop
+
     if current_user.should_reject_orders?
       redirect_to shop_path, alert: "You're not eligible to place orders."
       return
@@ -312,10 +319,6 @@ class ShopController < ApplicationController
     return tz_region if tz_region.present? && tz_region != "XX"
 
     "US"
-  end
-
-  def require_login
-    redirect_to root_path, alert: "Please log in first" and return unless current_user
   end
 
   # Returns the user's redeemable Mission::Submission if `mission_submission_id`

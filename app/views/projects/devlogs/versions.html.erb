@@ -26,7 +26,7 @@
     <% end %>
 
     <div class="projects-new__actions" style="margin-top: 2rem;">
-      <%= render ButtonComponent.new(text: "Back to Edit", href: edit_project_devlog_path(@project, @devlog), color: :brown) %>
+      <%= render ActionButtonComponent.new(text: "Back to Edit", href: edit_project_devlog_path(@project, @devlog), size: :small, variant: :secondary) %>
     </div>
   </div>
 </div>

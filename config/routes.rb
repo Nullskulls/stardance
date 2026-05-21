@@ -190,7 +190,6 @@
 #                                         membership DELETE /memberships/:id(.:format)                                                                        projects/memberships#destroy
 #                            versions_project_devlog GET    /projects/:project_id/devlogs/:id/versions(.:format)                                              projects/devlogs#versions
 #                                    project_devlogs POST   /projects/:project_id/devlogs(.:format)                                                           projects/devlogs#create
-#                                 new_project_devlog GET    /projects/:project_id/devlogs/new(.:format)                                                       projects/devlogs#new
 #                                edit_project_devlog GET    /projects/:project_id/devlogs/:id/edit(.:format)                                                  projects/devlogs#edit
 #                                     project_devlog PATCH  /projects/:project_id/devlogs/:id(.:format)                                                       projects/devlogs#update
 #                                                    PUT    /projects/:project_id/devlogs/:id(.:format)                                                       projects/devlogs#update
@@ -201,11 +200,11 @@
 #                                      project_ships POST   /projects/:project_id/ships(.:format)                                                             projects/ships#create
 #                                    project_mission DELETE /projects/:project_id/mission(.:format)                                                           projects/missions#destroy
 #                                                    POST   /projects/:project_id/mission(.:format)                                                           projects/missions#create
+#                                      project_magic DELETE /projects/:project_id/magic(.:format)                                                             projects/magic#destroy
+#                                                    POST   /projects/:project_id/magic(.:format)                                                             projects/magic#create
 #                   project_mission_step_completions POST   /projects/:project_id/mission_step_completions(.:format)                                          projects/mission_step_completions#create
 #                            mission_step_completion DELETE /mission_step_completions/:mission_step_id(.:format)                                              projects/mission_step_completions#destroy
 #                                     readme_project GET    /projects/:id/readme(.:format)                                                                    projects#readme
-#                                  mark_fire_project POST   /projects/:id/mark_fire(.:format)                                                                 projects#mark_fire
-#                                unmark_fire_project POST   /projects/:id/unmark_fire(.:format)                                                               projects#unmark_fire
 #                                     follow_project POST   /projects/:id/follow(.:format)                                                                    projects#follow
 #                                   unfollow_project DELETE /projects/:id/unfollow(.:format)                                                                  projects#unfollow
 #                                           projects POST   /projects(.:format)                                                                               projects#create
@@ -543,6 +542,23 @@ Rails.application.routes.draw do
     end
   end
 
+  namespace :onboarding do
+    post :start,                     to: "wizard#start"
+    get  :welcome,                   to: "wizard#welcome"
+    get  :birthday,                  to: "wizard#birthday"
+    post :birthday,                  to: "wizard#submit_birthday"
+    get  :age_gate,                  to: "wizard#age_gate"
+    get  :experience,                to: "wizard#experience"
+    post :experience,                to: "wizard#submit_experience"
+    get  :experience_result,         to: "wizard#experience_result"
+    get  :interests,                 to: "wizard#interests"
+    post :interests,                 to: "wizard#submit_interests"
+    get  :interests_result,          to: "wizard#interests_result"
+    get  :name,                      to: "wizard#name"
+    post :name,                      to: "wizard#submit_name"
+    get  :complete,                  to: "wizard#complete"
+  end
+
   namespace :helper, constraints: HelperConstraint do
     root to: "application#index"
     resources :users, only: [ :index, :show ] do
@@ -714,13 +730,30 @@ Rails.application.routes.draw do
 
   get "queue", to: "queue#index"
 
+  # First-project setup flow — onboarding-style wizard for users creating their
+  # first project. Mounted before `resources :projects` so /projects/setup/*
+  # doesn't match the project show route.
+  namespace :projects do
+    get  "setup",               to: "setup#idea",          as: :setup
+    post "setup/idea",          to: "setup#submit_idea",   as: :setup_submit_idea
+    get  "setup/name",          to: "setup#name",          as: :setup_name
+    post "setup/name",          to: "setup#submit_name",   as: :setup_submit_name
+    get  "setup/missions",      to: "setup#missions",      as: :setup_missions
+    post "setup/missions",      to: "setup#submit_mission", as: :setup_submit_mission
+    get  "setup/link_account",  to: "setup#link_account",  as: :setup_link_account
+    get  "setup/welcome",       to: "setup#welcome",       as: :setup_welcome
+  end
+
   # Projects — public index lives on the user profile projects section; only
   # show/new/edit/update/destroy and the nested resources are exposed here.
   resources :projects, shallow: true, except: [ :index ] do
     resources :memberships, only: [ :create, :destroy ], module: :projects
-    resources :devlogs, only: %i[new create edit update destroy], module: :projects, shallow: false do
+    resources :devlogs, only: %i[create edit update destroy], module: :projects, shallow: false do
       member do
         get :versions
+      end
+      collection do
+        get :preview_time
       end
     end
     resources :reports, only: [ :create ], module: :projects
@@ -729,14 +762,13 @@ Rails.application.routes.draw do
       resource :review, only: [ :create ], module: :ships
     end
     resource :mission, only: [ :create, :destroy ], module: :projects, controller: "missions"
+    resource :magic, only: [ :create, :destroy ], module: :projects, controller: "magic"
     resources :mission_step_completions,
               only: [ :create, :destroy ],
               module: :projects,
               param: :mission_step_id
     member do
       get :readme
-      post :mark_fire
-      post :unmark_fire
       post :follow
       delete :unfollow
     end
@@ -753,9 +785,9 @@ Rails.application.routes.draw do
     resource :og_image, only: [ :show ], module: :users, defaults: { format: :png }
     resource :follow, only: [ :create, :destroy ]
     member do
-      get :devlogs
-      get :replies
-      get :projects
+      get :devlogs,  action: :show, defaults: { tab: "devlogs" }
+      get :replies,  action: :show, defaults: { tab: "replies" }
+      get :projects, action: :show, defaults: { tab: "projects" }
       get :followers
       get :following
     end

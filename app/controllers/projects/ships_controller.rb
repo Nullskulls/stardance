@@ -75,17 +75,6 @@ class Projects::ShipsController < ApplicationController
         payout_path: payout_path,
         status: "awaiting_certification"
       )
-
-      if defined?(FunnelTrackerService)
-        FunnelTrackerService.track(
-          event_name: "mission_submission_created",
-          user: current_user,
-          properties: {
-            project_id: @project.id, mission_id: mission.id,
-            mission_slug: mission.slug, payout_path: payout_path
-          }
-        )
-      end
     end
 
     def resolve_payout_path(mission, payout_path_param)

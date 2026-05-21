@@ -1,0 +1,9 @@
+<% content_for :title, "Sign in with Hack Club" %>
+<div class="upgrade-prompt">
+  <div class="upgrade-card">
+    <%= render "onboarding/upgrade_content" %>
+    <% if (back_url = @back_path).present? %>
+      <%= link_to "Back", back_url, class: "upgrade-card__back" %>
+    <% end %>
+  </div>
+</div>

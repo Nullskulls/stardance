@@ -46,7 +46,7 @@
 
         <% if @submission.may_approve? %>
           <%= button_to "Approve", approve_mission_submission_path(@submission),
-                        method: :post, class: "btn btn--green" %>
+                        method: :post, class: "action-btn action-btn--large action-btn--primary" %>
         <% end %>
 
         <% if @submission.may_reject? %>
@@ -54,13 +54,13 @@
             <label>Rejection reason
               <%= text_area_tag :rejection_message, "", rows: 3, required: true %>
             </label>
-            <%= submit_tag "Reject", class: "btn btn--red" %>
+            <%= submit_tag "Reject", class: "action-btn action-btn--small action-btn--destructive" %>
           <% end %>
         <% end %>
 
         <% if @submission.may_undo? %>
           <%= button_to "Undo decision", undo_mission_submission_path(@submission),
-                        method: :post, class: "btn btn--brown" %>
+                        method: :post, class: "action-btn action-btn--small action-btn--secondary" %>
         <% end %>
       </section>
     <% end %>
@@ -68,7 +68,7 @@
     <% if policy_obj.redeem? %>
       <section class="submission-show__redeem">
         <%= link_to "Pick a prize to redeem →", redeem_mission_submission_path(@submission),
-                    class: "btn btn--green" %>
+                    class: "action-btn action-btn--large action-btn--primary" %>
       </section>
     <% end %>
 

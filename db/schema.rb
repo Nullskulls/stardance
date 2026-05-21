@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_14_191951) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_19_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -272,20 +272,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_14_191951) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "funnel_events", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "email"
-    t.string "event_name", null: false
-    t.jsonb "properties", default: {}, null: false
-    t.datetime "updated_at", null: false
-    t.bigint "user_id"
-    t.index ["created_at"], name: "index_funnel_events_on_created_at"
-    t.index ["email"], name: "index_funnel_events_on_email"
-    t.index ["event_name", "created_at"], name: "index_funnel_events_on_event_name_and_created_at"
-    t.index ["event_name"], name: "index_funnel_events_on_event_name"
-    t.index ["user_id"], name: "index_funnel_events_on_user_id"
-  end
-
   create_table "hcb_credentials", force: :cascade do |t|
     t.text "access_token_ciphertext"
     t.string "base_url"
@@ -428,8 +414,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_14_191951) do
     t.datetime "end_at"
     t.datetime "featured_at"
     t.string "name", null: false
+    t.integer "prizes_count", default: 0, null: false
     t.string "slug", null: false
     t.datetime "start_at"
+    t.integer "steps_count", default: 0, null: false
     t.datetime "updated_at", null: false
     t.index ["deleted_at"], name: "index_missions_on_deleted_at"
     t.index ["enabled"], name: "index_missions_on_enabled"
@@ -935,6 +923,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_14_191951) do
   end
 
   create_table "users", force: :cascade do |t|
+    t.string "age_attestation"
     t.boolean "banned", default: false, null: false
     t.datetime "banned_at"
     t.text "banned_reason"
@@ -943,15 +932,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_14_191951) do
     t.string "display_name"
     t.string "email"
     t.string "enriched_ref"
+    t.string "experience_level"
     t.string "first_name"
     t.string "granted_roles", default: [], null: false, array: true
     t.boolean "has_gotten_free_stickers", default: false
     t.boolean "has_pending_achievements", default: false, null: false
     t.string "hcb_email"
+    t.string "interests", default: [], array: true
     t.text "internal_notes"
     t.string "last_name"
     t.boolean "manual_ysws_override"
     t.boolean "mission_review_notifications", default: true, null: false
+    t.datetime "onboarded_at"
     t.string "ref"
     t.string "regions", default: [], array: true
     t.string "session_token"
@@ -966,7 +958,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_14_191951) do
     t.integer "votes_count"
     t.boolean "voting_locked", default: false, null: false
     t.boolean "ysws_eligible", default: false, null: false
+    t.index "lower((email)::text)", name: "index_users_on_lower_email_unique", unique: true, where: "((email IS NOT NULL) AND ((email)::text <> ''::text))"
     t.index ["email"], name: "index_users_on_email"
+    t.index ["onboarded_at"], name: "index_users_on_onboarded_at"
     t.index ["session_token"], name: "index_users_on_session_token", unique: true
     t.index ["slack_id"], name: "index_users_on_slack_id", unique: true
   end

@@ -1,20 +1,33 @@
-<section class="feed-composer" aria-label="Create a devlog">
-  <div class="feed-composer__chips" aria-label="Posting project">
-    <% visible_projects.each do |project| %>
-      <% selected = project == selected_project %>
-      <%= link_to project.title,
-            home_path(project_id: project.id),
-            class: class_names("feed-composer__chip", "feed-composer__chip--active": selected),
-            aria: (selected ? { current: "true" } : {}) %>
-    <% end %>
+<% if enabled? %>
+  <section class="feed-composer"
+           aria-label="Create a devlog"
+           data-controller="composer emoji-picker"
+           data-composer-target="dropZone"
+           data-composer-max-files-value="<%= Post::Devlog::MAX_ATTACHMENTS %>"
+           data-composer-preview-time-url-value="<%= preview_time_url %>"
+           data-composer-hackatime-linked-value="<%= hackatime_linked? %>"
+           data-action="drop->composer#drop dragover->composer#dragover dragleave->composer#dragleave">
+    <div class="feed-composer__chips" aria-label="Posting project">
+      <% projects.each do |project| %>
+        <% selected = project == selected_project %>
+        <%= link_to project.title,
+              home_path(project_id: project.id),
+              class: class_names("feed-composer__chip", "feed-composer__chip--active": selected),
+              aria: (selected ? { current: "true" } : {}),
+              data: { turbo: false,
+                      action: "click->composer#selectProject",
+                      composer_post_url_param: project_devlogs_path(project),
+                      composer_preview_url_param: preview_time_project_devlogs_path(project),
+                      composer_edit_url_param: project_path(project, editing: true),
+                      composer_hackatime_linked_param: project.hackatime_keys.present? } %>
+      <% end %>
+    </div>
 
-    <%= link_to "new project +", new_project_path, class: "feed-composer__chip feed-composer__chip--new" %>
-  </div>
-
-  <% if enabled? %>
     <%= form_with model: [selected_project, post],
           url: project_devlogs_path(selected_project),
-          html: { multipart: true, data: { controller: "upload-form" } },
+          html: { multipart: true,
+                  data: { composer_target: "form",
+                          action: "paste->composer#paste" } },
           class: "feed-composer__form",
           local: true do |f| %>
       <div class="feed-composer__main">
@@ -24,42 +37,96 @@
           <%= f.label :body, "What are you working on?", class: "feed-composer__label" %>
           <%= f.text_area :body,
                 class: "feed-composer__textarea",
-                rows: 3,
+                rows: 1,
                 maxlength: Post::Devlog::BODY_MAX_LENGTH,
                 placeholder: "What are you working on?",
-                aria: { label: "Devlog text" } %>
+                aria: { label: "Devlog text" },
+                data: { composer_target: "textarea",
+                        emoji_picker_target: "textarea",
+                        action: "focus->composer#showInfo input->composer#autogrow input->composer#refreshSubmit blur->composer#collapseIfEmpty" } %>
         </div>
       </div>
 
-      <div class="feed-composer__footer">
-        <div class="feed-composer__tools">
-          <label class="feed-composer__tool" aria-label="Attach media">
-            <%= inline_svg_tag "icons/paper.svg", class: "feed-composer__tool-icon" %>
-            <%= f.file_field :attachments,
-                  multiple: true,
-                  accept: Post::Devlog::ACCEPTED_CONTENT_TYPES.join(","),
-                  class: "feed-composer__file-input" %>
-          </label>
+      <%= f.file_field :attachments,
+            multiple: true,
+            accept: Post::Devlog::ACCEPTED_CONTENT_TYPES.join(","),
+            class: "feed-composer__file-input",
+            data: { composer_target: "fileInput",
+                    action: "change->composer#selectFiles" } %>
 
-          <button type="button" class="feed-composer__tool" aria-label="Emoji picker">
-            <%= inline_svg_tag "icons/star_outline.svg", class: "feed-composer__tool-icon" %>
+      <div class="feed-composer__grid" data-composer-target="grid" data-count="0" hidden></div>
+
+      <div class="feed-composer__info-wrap" data-composer-target="footer" hidden>
+        <div class="feed-composer__info">
+          <turbo-frame id="devlog-preview-time"
+                       data-composer-target="timeFrame"
+                       <%= "hidden" unless hackatime_linked? %>>
+            <span class="feed-composer__info-text">Loading time...</span>
+          </turbo-frame>
+          <%= link_to "Link a Hackatime project to post",
+                project_path(selected_project, editing: true),
+                class: "feed-composer__info-text feed-composer__info-text--warn",
+                data: { composer_target: "warn", turbo: false },
+                hidden: hackatime_linked? %>
+        </div>
+      </div>
+
+      <div class="feed-composer__toolbar">
+        <div class="feed-composer__tools">
+          <button type="button"
+                  class="feed-composer__tool-btn"
+                  aria-label="Attach media"
+                  data-action="composer#openFilePicker">
+            <%= inline_svg_tag "icons/attachment.svg", class: "feed-composer__tool-icon" %>
           </button>
+
+          <div class="feed-composer__emoji-wrap">
+            <button type="button"
+                    class="feed-composer__tool-btn"
+                    aria-label="Add emoji"
+                    data-emoji-picker-target="trigger"
+                    data-action="emoji-picker#toggle">
+              <%= inline_svg_tag "icons/emoji.svg", class: "feed-composer__tool-icon" %>
+            </button>
+            <div class="feed-composer__emoji-popover"
+                 data-emoji-picker-target="popover"
+                 hidden></div>
+          </div>
         </div>
 
-        <%= render SpecialActionButtonComponent.new(
+        <%= render ActionButtonComponent.new(
               text: "Post",
+              size: :small,
               type: :submit,
               disable_with: "Posting...",
+              disabled: true,
               class: "feed-composer__submit",
-              data: { "upload-form-target": "submit" }
+              data: { composer_target: "submit" }
             ) %>
       </div>
     <% end %>
-  <% else %>
-    <div class="feed-composer__empty">
-      <%= image_tag current_user.avatar, alt: "", class: "feed-composer__avatar" %>
-      <p class="feed-composer__empty-copy">Create a project before posting your first devlog.</p>
-      <%= render ButtonComponent.new(text: "New project", color: :bg_yellow, href: new_project_path, class: "feed-composer__submit") %>
-    </div>
+  </section>
+<% elsif setup_pending? %>
+  <%= link_to projects_setup_link_account_path,
+              class: "empty-project-banner",
+              aria: { label: "Finish setting up your account to continue your project" } do %>
+    <p class="empty-project-banner__headline">
+      <span class="empty-project-banner__word">Finish setting up your </span><span class="empty-project-banner__word empty-project-banner__word--emph">account</span>
+    </p>
+    <p class="empty-project-banner__subhead">to continue making your project</p>
+    <span class="empty-project-banner__reward">
+      <span class="empty-project-banner__reward-label">LINK HACK CLUB →</span>
+    </span>
   <% end %>
-</section>
+<% else %>
+  <%= link_to new_project_path, class: "empty-project-banner", aria: { label: "Create your first project" } do %>
+    <p class="empty-project-banner__headline">
+      <span class="empty-project-banner__word">Create your </span><span class="empty-project-banner__word empty-project-banner__word--emph">first project</span><span class="empty-project-banner__word"> +</span>
+    </p>
+    <p class="empty-project-banner__subhead">to begin posting</p>
+    <span class="empty-project-banner__reward">
+      <span class="empty-project-banner__reward-label">EARNS 10 STARDUST</span>
+      <%= image_tag "icons/stardust.png", alt: "", class: "empty-project-banner__reward-icon" %>
+    </span>
+  <% end %>
+<% end %>

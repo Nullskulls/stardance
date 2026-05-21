@@ -1,0 +1,397 @@
+// Onboarding wizard components — BEM, mobile-first.
+//
+// Conventions: dark `--color-space-bg`, white-50% borders on choice cards,
+// cream highlight pill (`--color-brand-highlight`) for forward CTAs.
+
+$onboarding-card-bg: rgba(8, 6, 31, 0.75);
+$onboarding-card-border: rgba(255, 255, 255, 0.5);
+
+.onboarding-top-bar {
+  align-items: flex-end;
+  display: flex;
+  gap: 1.25rem;
+  left: 50%;
+  position: absolute;
+  top: 2.5rem;
+  transform: translateX(-50%);
+  width: min(85vw, 1200px);
+
+  .onboarding-progress-bar {
+    flex: 1;
+    position: static;
+    transform: none;
+    width: auto;
+  }
+
+  @media (max-width: 768px) {
+    top: 1.5rem;
+    gap: 0.75rem;
+  }
+}
+
+.onboarding-back-button {
+  align-items: center;
+  background: transparent;
+  border: 1.5px solid rgba(255, 255, 255, 0.55);
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  display: inline-flex;
+  flex-shrink: 0;
+  height: 2.4rem;
+  justify-content: center;
+  margin-bottom: 0.1rem;
+  padding: 0;
+  text-decoration: none;
+  transition:
+    background 150ms ease,
+    transform 150ms ease,
+    border-color 150ms ease;
+  width: 2.4rem;
+
+  &__icon {
+    display: block;
+    height: 1.1rem;
+    width: 1.1rem;
+  }
+
+  &:hover,
+  &:focus-visible {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: white;
+    transform: translateX(-2px);
+  }
+
+  @media (max-width: 768px) {
+    height: 2rem;
+    width: 2rem;
+
+    &__icon {
+      height: 0.9rem;
+      width: 0.9rem;
+    }
+  }
+}
+
+// Layout (position/width/flex) lives on `.onboarding-top-bar .onboarding-progress-bar`.
+// This block is only the visual rules.
+.onboarding-progress-bar {
+  &__label {
+    color: white;
+    font-size: 0.9rem;
+    margin: 0 0 0.4rem;
+    font-weight: 400;
+    text-align: left;
+  }
+
+  &__track {
+    background: #d9d9d9;
+    border-radius: 999px;
+    height: 1.5rem;
+    overflow: hidden;
+    padding: 0.2rem;
+  }
+
+  &__fill {
+    animation: progress-fill 550ms cubic-bezier(0.34, 1.3, 0.64, 1) both;
+    background: #000;
+    border-radius: 999px;
+    height: 100%;
+    width: var(--progress-width);
+  }
+
+  &--animated {
+    animation: progress-pop-in 500ms cubic-bezier(0.16, 1, 0.3, 1) both;
+
+    .onboarding-progress-bar__fill {
+      animation-delay: 450ms;
+    }
+  }
+
+  @media (max-width: 768px) {
+    &__track {
+      height: 1.1rem;
+    }
+    &__label {
+      font-size: 0.75rem;
+    }
+  }
+}
+
+.is-fading-out {
+  animation: option-fade-out 350ms cubic-bezier(0.7, 0, 0.84, 0) forwards;
+  pointer-events: none;
+}
+
+.onboarding-counter {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-fading-out {
+    animation: none;
+  }
+}
+
+.onboarding-choice-card {
+  align-items: center;
+  background: $onboarding-card-bg;
+  border: 2px solid $onboarding-card-border;
+  border-radius: 0.5rem;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  font-family: "Exo 2", sans-serif;
+  font-weight: 700;
+  justify-content: center;
+  padding: 1.5rem;
+  position: relative;
+  text-align: center;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    transform 150ms ease;
+  width: 100%;
+
+  &:hover,
+  &:focus-visible {
+    background: rgba(8, 6, 31, 0.9);
+    border-color: rgba(255, 255, 255, 0.85);
+    transform: translateY(-2px);
+  }
+
+  &__label {
+    font-size: 2.5rem;
+    line-height: 1.1;
+    z-index: 1;
+  }
+
+  &--pair &__label {
+    font-size: 2.5rem;
+  }
+  &--stacked &__label {
+    font-size: 1.3rem;
+  }
+
+  &__ornament {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 1rem;
+    position: absolute;
+
+    &--top-left {
+      top: 0.4rem;
+      left: 0.6rem;
+    }
+    &--bottom-right {
+      bottom: 0.4rem;
+      right: 0.6rem;
+      letter-spacing: 0.15em;
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+    &__label {
+      font-size: 1.5rem;
+    }
+    &--pair &__label {
+      font-size: 1.5rem;
+    }
+  }
+}
+
+.guest-banner {
+  align-items: center;
+  background: var(--color-brand-yellow);
+  color: #1a1a2e;
+  display: flex;
+  font-family: "Exo 2", sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  gap: 1rem;
+  justify-content: center;
+  padding: 0.6rem 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+
+  &__copy {
+    margin: 0;
+  }
+
+  &__cta {
+    background: #1a1a2e;
+    border-radius: 999px;
+    color: var(--color-brand-yellow);
+    padding: 0.3rem 0.9rem;
+    text-decoration: none;
+
+    &:hover {
+      background: #000;
+    }
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+  }
+}
+
+// Home fade-in when arriving from the onboarding complete step (/home?welcome=1)
+body.home-welcoming {
+  animation: home-welcoming-in 1200ms ease both;
+
+  .guest-banner {
+    animation: guest-banner-drop-in 900ms cubic-bezier(0.22, 1, 0.36, 1) 250ms
+      both;
+  }
+}
+
+// Project page fade-in when arriving from the first-project setup welcome
+// step (/projects/:id?welcome=1).
+body.project-welcoming {
+  animation: home-welcoming-in 1200ms ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.project-welcoming {
+    animation: none;
+  }
+}
+
+@keyframes home-welcoming-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes guest-banner-drop-in {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+// Upgrade modal (turbo-stream variant — overlays the current page)
+.upgrade-card {
+  background: var(--color-space-bg);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 1rem;
+  color: white;
+  max-width: 500px;
+  padding: 2.5rem;
+  position: relative;
+  text-align: center;
+
+  &__title {
+    font-family: "Exo 2", sans-serif;
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0 0 1rem;
+  }
+
+  &__body {
+    font-size: 1rem;
+    line-height: 1.5;
+    margin: 0 0 2rem;
+  }
+
+  &__cta {
+    background: var(--color-brand-highlight);
+    border: none;
+    border-radius: 999px;
+    color: #000;
+    cursor: pointer;
+    display: inline-block;
+    font-family: "Exo 2", sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 0.7rem 1.6rem;
+    text-decoration: none;
+  }
+
+  &__close {
+    align-items: center;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    display: inline-flex;
+    height: 2rem;
+    justify-content: center;
+    padding: 0;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.75rem;
+    width: 2rem;
+
+    svg {
+      height: 1.1rem;
+      width: 1.1rem;
+    }
+
+    &:hover {
+      color: white;
+    }
+  }
+
+  &__back {
+    color: rgba(255, 255, 255, 0.7);
+    display: block;
+    margin-top: 1rem;
+    text-decoration: underline;
+  }
+}
+
+.upgrade-modal {
+  align-items: center;
+  animation: upgrade-modal-fade-in 200ms ease both;
+  background: rgba(8, 6, 31, 0.8);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 2rem;
+  position: fixed;
+  z-index: 200;
+
+  .upgrade-card {
+    animation: upgrade-modal-rise-in 250ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+@keyframes upgrade-modal-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes upgrade-modal-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.upgrade-prompt {
+  align-items: center;
+  background: rgba(8, 6, 31, 0.8);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 2rem;
+  position: fixed;
+  z-index: 100;
+}

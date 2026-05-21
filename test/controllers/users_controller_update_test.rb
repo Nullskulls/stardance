@@ -31,10 +31,4 @@ class UsersControllerUpdateTest < ActionDispatch::IntegrationTest
     assert_response :forbidden
     assert_not_equal "hi", @alice.reload.bio
   end
-
-  private
-
-  def create_user(slack_id:, display_name:)
-    User.create!(slack_id: slack_id, display_name: display_name, email: "#{display_name}@example.test")
-  end
 end

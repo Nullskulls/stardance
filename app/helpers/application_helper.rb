@@ -3,6 +3,20 @@ module ApplicationHelper
     image_tag "icons/stardust.png", alt: "Stardust", class: [ "currency-icon", extra_class ].compact.join(" ")
   end
 
+  def hack_club_auth_path(login_hint: nil)
+    if login_hint.present?
+      "/auth/hack_club?login_hint=#{CGI.escape(login_hint.to_s)}"
+    else
+      "/auth/hack_club"
+    end
+  end
+
+  def onboarding_count_up(n)
+    content_tag(:span, number_with_delimiter(n),
+      class: "onboarding-counter",
+      data: { controller: "count-up", count_up_target_value: n })
+  end
+
   def admin_tool(&block)
     if current_user&.admin?
       content_tag(:div, class: "admin tools-do", &block)
@@ -63,6 +77,13 @@ module ApplicationHelper
   end
   def random_carousel_transform
     "rotate(#{rand(-3..3)}deg) scale(#{(rand(97..103).to_f / 100).round(2)}) translateY(#{rand(-8..8)}px)"
+  end
+
+  def back_path(fallback = home_path)
+    pages = session[:previous_pages]
+    return fallback if pages.blank? || pages.size < 2
+
+    pages[-2]
   end
 
   def safe_external_url(url)

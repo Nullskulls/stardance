@@ -28,7 +28,7 @@
               <td><%= vote.send(:"#{category}_score") || "-" %>/6</td>
             <% end %>
             <td>
-              <%= link_to "View Project", project_path(vote.project), class: "btn btn--brown slim" %>
+              <%= link_to "View Project", project_path(vote.project), class: "action-btn action-btn--small action-btn--secondary" %>
             </td>
           </tr>
         <% end %>

@@ -6,13 +6,7 @@ class MissionSubmissionsController < ApplicationController
   def index
     authorize Mission::Submission
 
-    scope = Mission::Submission.includes(:mission, ship_event: { post: [ :user, :project ] })
-
-    # Restrict scope based on role.
-    unless current_user.admin? || current_user.has_role?(:helper) || current_user.has_role?(:mission_reviewer)
-      mission_ids = current_user.mission_memberships.pluck(:mission_id)
-      scope = scope.where(mission_id: mission_ids)
-    end
+    scope = policy_scope(Mission::Submission).includes(:mission, ship_event: { post: [ :user, :project ] })
 
     if params[:status].present? && Mission::Submission.aasm.states.map(&:name).map(&:to_s).include?(params[:status])
       scope = scope.where(status: params[:status])
@@ -33,39 +27,36 @@ class MissionSubmissionsController < ApplicationController
   end
 
   def approve
-    authorize @submission, :approve?
+    authorize @submission
     Mission::Submission.transaction do
       @submission.update!(reviewed_by: current_user, reviewed_at: Time.current)
       @submission.approve!
       grant_mission_achievement_if_configured
     end
     notify_builder("submission_approved")
-    track_funnel("mission_submission_approved")
     redirect_to @submission, notice: "Submission approved."
   end
 
   def reject
-    authorize @submission, :reject?
+    authorize @submission
     message = params[:rejection_message].to_s.strip
     return redirect_to(@submission, alert: "Provide a rejection reason.") if message.blank?
 
     @submission.update!(reviewed_by: current_user, reviewed_at: Time.current, rejection_message: message)
     @submission.reject!
     notify_builder("submission_rejected")
-    track_funnel("mission_submission_rejected")
     redirect_to @submission, notice: "Submission rejected."
   end
 
   def undo
-    authorize @submission, :undo?
+    authorize @submission
     @submission.update!(reviewed_by: nil, reviewed_at: nil, rejection_message: nil)
     @submission.undo!
-    track_funnel("mission_submission_undone")
     redirect_to @submission, notice: "Submission moved back to pending."
   end
 
   def redeem
-    authorize @submission, :redeem?
+    authorize @submission
     @prizes = @submission.mission.prizes.ordered.includes(:shop_item).to_a
   end
 
@@ -109,14 +100,5 @@ class MissionSubmissionsController < ApplicationController
     )
   rescue StandardError => e
     Rails.logger.warn("MissionSubmissions notify_builder: #{e.message}")
-  end
-
-  def track_funnel(event)
-    return unless defined?(FunnelTrackerService)
-    FunnelTrackerService.track(
-      event_name: event,
-      user: current_user,
-      properties: { submission_id: @submission.id, mission_id: @submission.mission_id }
-    )
   end
 end

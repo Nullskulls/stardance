@@ -1,7 +1,7 @@
 class User::TutorialSteps::CompletionsController < ApplicationController
-  before_action :require_login
-
   def create
+    authorize :tutorial_step_completion
+
     current_user.complete_tutorial_step!(params[:tutorial_step_id].to_sym)
 
     respond_to do |format|
@@ -21,9 +21,4 @@ class User::TutorialSteps::CompletionsController < ApplicationController
       format.html { head :ok }
     end
   end
-
-  private
-    def require_login
-      redirect_to root_path, alert: "Please log in first" and return unless current_user
-    end
 end

@@ -3,9 +3,14 @@
   placeholder   = local_assigns[:placeholder] || "jebediah@hackclub.com"
   leading       = local_assigns[:leading]
   trailing      = local_assigns[:trailing]
+  signup_mode   = Flipper.enabled?(:new_onboarding)
+  form_url      = signup_mode ? onboarding_start_path : rsvps_path
+  form_scope    = signup_mode ? nil : :rsvp
+  submit_label  = signup_mode ? "Get started →" : "RSVP →"
 %>
 <div class="<%= ["rsvp-form", wrapper_class].compact.join(" ") %>">
-  <%= form_with url: rsvps_path, scope: :rsvp, method: :post, local: true do |form| %>
+  <%= form_with url: form_url, scope: form_scope, method: :post, local: true,
+                 data: { controller: "form-submit-once" } do |form| %>
     <div class="rsvp-form__row">
       <%= leading %>
       <div class="input-yellow">
@@ -14,8 +19,8 @@
         </div>
       </div>
 
-      <%= form.button type: "submit", class: "btn btn--yellow btn--striped" do %>
-        <div>RSVP &rarr;</div>
+      <%= form.button type: "submit", class: "rsvp-form__submit" do %>
+        <div><%= submit_label %></div>
       <% end %>
 
       <%= trailing %>

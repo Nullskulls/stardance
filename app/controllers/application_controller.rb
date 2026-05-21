@@ -8,6 +8,7 @@ class ApplicationController < ActionController::Base
   include Achievementable
 
   before_action :store_referral_code
+  before_action :remember_page
   before_action :enforce_ban
   before_action :refresh_identity_on_portal_return
   before_action :initialize_cache_counters
@@ -72,6 +73,23 @@ class ApplicationController < ActionController::Base
 
   private
 
+  # https://stackoverflow.com/questions/70960161/ruby-on-rails-back-button-that-will-take-you-back-to-the-previous-page
+  # improvised a bit. a linked list sorta..
+  def remember_page
+    return unless request.get? && request.format.html?
+    return if request.xhr?
+
+    current_path = request.path
+    pages = session[:previous_pages] ||= []
+
+    if (idx = pages.index(current_path))
+      session[:previous_pages] = pages[0..idx]
+    elsif pages.last != current_path
+      pages << current_path
+      session[:previous_pages] = pages.last(10)
+    end
+  end
+
   def store_referral_code
     return unless params[:ref].present? && params[:ref].length <= 64
 
@@ -87,6 +105,25 @@ class ApplicationController < ActionController::Base
   end
 
   def user_not_authorized(exception)
+    if current_user.nil?
+      store_return_to
+      respond_to do |format|
+        format.html { redirect_to root_path, alert: "Please sign in to continue." }
+        format.json { render json: { error: "You must be signed in to do that." }, status: :unauthorized }
+      end
+      return
+    end
+
+    if current_user.guest?
+      store_return_to
+      respond_to do |format|
+        format.turbo_stream { render "onboarding/upgrade_prompt", status: :forbidden }
+        format.html { render "onboarding/upgrade_prompt", status: :forbidden, layout: "application" }
+        format.json { render json: { error: "Sign in with Hack Club to do that." }, status: :forbidden }
+      end
+      return
+    end
+
     @error_title = "Whoa there, explorer!"
     @error_message = exception.message.presence || "You don't have the right ingredients to access this page."
     @back_path = safe_referrer
@@ -95,6 +132,14 @@ class ApplicationController < ActionController::Base
       format.html { render "errors/not_authorized", status: :forbidden }
       format.json { render json: { error: @error_message }, status: :forbidden }
     end
+  end
+
+  # Skip oversized fullpaths so the cookie session can't overflow on long URLs.
+  def store_return_to
+    return unless request.get?
+    return if request.fullpath.bytesize > 1000
+
+    session[:return_to] = request.fullpath
   end
 
   def safe_referrer
