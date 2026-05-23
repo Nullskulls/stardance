@@ -57,24 +57,29 @@
     <%= Sentry.get_trace_propagation_meta.html_safe %> <%# erb_lint:disable ErbSafety %>
   </head>
 
-  <body class="<%= current_user.present? && !@hide_sidebar ? 'signed-in' : '' %> <%= @body_class %> <%= 'christmas-theme' if current_user && Flipper.enabled?(:christmas_theme, current_user) %>">
-    <% if impersonating? %>
-      <div class="impersonation-banner">
-        <div class="impersonation-content">
-          <div style="display: flex; align-items: center;">
-            <div class="impersonation-text">
-              <strong>IMPERSONATING:</strong> <%= current_user.display_name %>
-              <span class="impersonation-admin">(as <%= real_user.display_name %>)</span>
-            </div>
-          </div>
-          <%= button_to "Stop Impersonating",
-                        stop_impersonating_admin_users_path,
-                        method: :post,
-                        class: "btn-stop-impersonation",
-                        form: { style: "margin: 0;" } %>
+  <body class="<%= current_user.present? && !@hide_sidebar ? 'signed-in' : '' %> <%= @body_class %> <%= 'christmas-theme' if current_user && Flipper.enabled?(:christmas_theme, current_user) && current_user.special_effects_enabled %>" <%= 'data-controller="snow"'.html_safe if current_user && Flipper.enabled?(:christmas_theme, current_user) && current_user.special_effects_enabled %>>
+    <div class="top-banners">
+      <% if in_beta? %>
+        <div class="top-banner top-banner--beta">
+          <strong>Beta</strong> &mdash; This is a testing environment. Your data may be reset at any time.
         </div>
-      </div>
-    <% end %>
+      <% end %>
+      <% if impersonating? %>
+        <div class="top-banner top-banner--impersonation">
+          <div class="top-banner__content">
+            <div class="top-banner__text">
+              <strong>Impersonating:</strong> <%= current_user.display_name %>
+              <span class="top-banner__detail">(as <%= real_user.display_name %>)</span>
+            </div>
+            <%= button_to "Stop Impersonating",
+                          stop_impersonating_admin_users_path,
+                          method: :post,
+                          class: "top-banner__action",
+                          form: { style: "margin: 0;" } %>
+          </div>
+        </div>
+      <% end %>
+    </div>
     <% if current_user.present? && !current_user.banned? && !@hide_sidebar %>
       <%= render SidebarComponent.new(user: current_user, active_slug_override: @active_nav_slug) %>
       <%= render CommandPaletteComponent.new(current_user: current_user) %>

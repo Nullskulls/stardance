@@ -38,6 +38,8 @@ class ApplicationController < ActionController::Base
   end
   helper_method :current_user
 
+  def in_beta? = request.host.include?("beta")
+
   def impersonating?
     session[:impersonator_user_id].present? && session[:user_id].present?
   end
