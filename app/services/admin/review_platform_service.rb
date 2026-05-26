@@ -1,9 +1,6 @@
-require "net/http"
-require "json"
-
 module Admin
   class ReviewPlatformService
-    GITHUB_CONTRIBUTIONS_API = "https://github-contributions-api.jogruber.de/v4"
+    GITHUB_CONTRIBUTIONS_API = "https://github-contributions-api.jogruber.de"
 
     # Fetch contribution stats for a given platform and username
     # Returns a hash with contribution data or error state
@@ -25,38 +22,44 @@ module Admin
       end
     end
 
-    private
+    class << self
+      private
 
-    # Fetch GitHub contributions for the last 365 days
-    def self.fetch_github_contributions(username)
-      uri = URI("#{GITHUB_CONTRIBUTIONS_API}/#{username}")
+      # Fetch GitHub contributions for the last 365 days
+      def fetch_github_contributions(username)
+        response = github_connection.get("/v4/#{username}")
 
-      response = Net::HTTP.start(uri.host, uri.port, use_ssl: true, read_timeout: 5, open_timeout: 5) do |http|
-        request = Net::HTTP::Get.new(uri)
-        http.request(request)
-      end
-
-      case response.code.to_i
-      when 200
-        data = JSON.parse(response.body)
-        contributions = filter_last_365_days(data["contributions"])
-        total = contributions.sum { |day| day["count"] }
-        { total: total, contributions: contributions }
-      when 404
-        { error: :org_repo }
-      else
-        Rails.logger.warn("GitHub API returned #{response.code} for user #{username}")
+        case response.status
+        when 200
+          data = JSON.parse(response.body)
+          contributions = filter_last_365_days(data["contributions"])
+          total = contributions.sum { |day| day["count"] }
+          { total: total, contributions: contributions }
+        when 404
+          { error: :org_repo }
+        else
+          Rails.logger.warn("GitHub API returned #{response.status} for user #{username}")
+          { error: :fetch_failed }
+        end
+      rescue Faraday::TimeoutError => e
+        Rails.logger.error("GitHub API timeout for #{username}: #{e.message}")
+        { error: :timeout }
+      rescue JSON::ParserError => e
+        Rails.logger.error("GitHub API JSON parse error for #{username}: #{e.message}")
+        { error: :parse_error }
+      rescue StandardError => e
+        Rails.logger.error("GitHub API error for #{username}: #{e.message}")
         { error: :fetch_failed }
       end
-    rescue Net::OpenTimeout, Net::ReadTimeout => e
-      Rails.logger.error("GitHub API timeout for #{username}: #{e.message}")
-      { error: :timeout }
-    rescue JSON::ParserError => e
-      Rails.logger.error("GitHub API JSON parse error for #{username}: #{e.message}")
-      { error: :parse_error }
-    rescue StandardError => e
-      Rails.logger.error("GitHub API error for #{username}: #{e.message}")
-      { error: :fetch_failed }
+
+      def github_connection
+        @github_connection ||= Faraday.new(url: GITHUB_CONTRIBUTIONS_API) do |conn|
+          conn.options.timeout = 5
+          conn.options.open_timeout = 5
+          conn.headers["Content-Type"] = "application/json"
+          conn.headers["User-Agent"] = Rails.application.config.user_agent
+        end
+      end
     end
 
     # Filter contributions to only include the last 365 days
