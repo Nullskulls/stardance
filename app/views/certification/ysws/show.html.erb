@@ -1,6 +1,6 @@
 <% content_for :title, "YSWS Review ##{@review.id}" %>
 
-<main class="certification-ysws" role="main" data-controller="review-sidebar fraud-report media-viewer" data-fraud-report-review-id-value="<%= @review.id %>">
+<main class="certification-ysws" role="main" data-controller="certification--ysws--review-sidebar certification--ysws--fraud-report certification--ysws--media-viewer" data-certification--ysws--fraud-report-review-id-value="<%= @review.id %>">
   <!-- Header Section -->
   <div class="review-detail-header">
     <%= link_to "← back", admin_reviews_path, class: "btn-back", "aria-label": "Back to review queue" %>
@@ -44,8 +44,8 @@
             <% calendar_data = prepare_contribution_calendar_data(@repo_info[:platform], @repo_info[:username], @contribution_data) %>
             <% if calendar_data %>
               <div class="contribution-calendar"
-                   data-controller="github-calendar"
-                   data-github-calendar-days-value="<%= calendar_data.to_json %>">
+                   data-controller="certification--ysws--github-calendar"
+                   data-certification--ysws--github-calendar-days-value="<%= calendar_data.to_json %>">
               </div>
             <% end %>
           </div>
@@ -57,7 +57,7 @@
           </button>
         <% end %>
 
-        <button class="btn-action btn-report" data-action="click->fraud-report#open">
+        <button class="btn-action btn-report" data-action="click->certification--ysws--fraud-report#open">
           🚩 Report to Fraud Squad!
         </button>
       </div>
@@ -67,8 +67,8 @@
   <!-- Popup Toggle Button (only visible in popup mode) -->
   <button type="button"
           class="review-sidebar-toggle"
-          data-review-sidebar-target="toggle"
-          data-action="click->review-sidebar#togglePopup"
+          data-certification--ysws--review-sidebar-target="toggle"
+          data-action="click->certification--ysws--review-sidebar#togglePopup"
           aria-label="Toggle project details">
     Details
   </button>
@@ -125,8 +125,8 @@
                 }
               end
             %>
-            <div data-controller="devlog-time-chart"
-                 data-devlog-time-chart-data-value="<%= chart_data.to_json %>"
+            <div data-controller="certification--ysws--devlog-time-chart"
+                 data-certification--ysws--devlog-time-chart-data-value="<%= chart_data.to_json %>"
                  class="d3-chart-container">
             </div>
           <% else %>
@@ -153,7 +153,7 @@
     </div>
 
     <!-- Right Column -->
-    <div class="review-detail-right" data-review-sidebar-target="sidebar">
+    <div class="review-detail-right" data-certification--ysws--review-sidebar-target="sidebar">
       <!-- Details Card -->
       <section class="review-card details-card">
         <div class="details-list">
@@ -276,11 +276,11 @@
       <div class="devlogs-list">
         <% @review.devlog_reviews.each_with_index do |devlog_review, index| %>
           <div class="devlog-item"
-               data-controller="devlog-review"
-               data-devlog-review-id-value="<%= devlog_review.id %>"
-               data-devlog-review-original-minutes-value="<%= devlog_review.original_minutes || 0 %>"
-               data-devlog-review-status-value="<%= devlog_review.status %>"
-               <%= 'data-review-sidebar-target="trigger"'.html_safe if index == 0 %>>
+               data-controller="certification--ysws--devlog-review"
+               data-certification--ysws--devlog-review-id-value="<%= devlog_review.id %>"
+               data-certification--ysws--devlog-review-original-minutes-value="<%= devlog_review.original_minutes || 0 %>"
+               data-certification--ysws--devlog-review-status-value="<%= devlog_review.status %>"
+               <%= 'data-certification--ysws--review-sidebar-target="trigger"'.html_safe if index == 0 %>>
             <div class="devlog-main">
               <div class="devlog-header-row">
                 <span class="devlog-id">Devlog #<%= devlog_review.post_devlog.id %></span>
@@ -303,14 +303,14 @@
                   <div class="media-grid">
                     <% devlog_review.post_devlog.attachments.each do |attachment| %>
                       <% if attachment.video? %>
-                        <a href="<%= url_for(attachment) %>" class="media-item video-item" data-action="click->media-viewer#open">
+                        <a href="<%= url_for(attachment) %>" class="media-item video-item" data-action="click->certification--ysws--media-viewer#open">
                           <video class="media-thumbnail" muted>
                             <source src="<%= url_for(attachment) %>" type="<%= attachment.content_type %>">
                           </video>
                           <div class="media-type-badge">Video</div>
                         </a>
                       <% else %>
-                        <a href="<%= url_for(attachment) %>" class="media-item image-item" data-action="click->media-viewer#open">
+                        <a href="<%= url_for(attachment) %>" class="media-item image-item" data-action="click->certification--ysws--media-viewer#open">
                           <%= image_tag attachment.variant(:thumb), class: "media-thumbnail", alt: "Devlog attachment" %>
                         </a>
                       <% end %>
@@ -339,20 +339,20 @@
 
             <!-- Review Decision Panel -->
             <div class="devlog-review-panel"
-                 data-devlog-review-target="panel">
+                 data-certification--ysws--devlog-review-target="panel">
               <div class="panel-title">Review Decision</div>
 
               <div class="panel-section">
                 <div class="panel-label">Status:</div>
                 <div class="status-buttons">
                   <button class="status-btn btn-approve"
-                          data-devlog-review-target="approveButton"
-                          data-action="click->devlog-review#approve">
+                          data-certification--ysws--devlog-review-target="approveButton"
+                          data-action="click->certification--ysws--devlog-review#approve">
                     ✓ Approve
                   </button>
                   <button class="status-btn btn-reject"
-                          data-devlog-review-target="rejectButton"
-                          data-action="click->devlog-review#reject">
+                          data-certification--ysws--devlog-review-target="rejectButton"
+                          data-action="click->certification--ysws--devlog-review#reject">
                     ✗ Reject
                   </button>
                 </div>
@@ -364,27 +364,27 @@
                   <input type="number"
                          value="<%= devlog_review.approved_minutes || devlog_review.original_minutes || 0 %>"
                          class="minutes-input"
-                         data-devlog-review-target="minutesInput"
-                         data-action="input->devlog-review#updateMinutes"
+                         data-certification--ysws--devlog-review-target="minutesInput"
+                         data-action="input->certification--ysws--devlog-review#updateMinutes"
                          min="0"
                          autocomplete="off">
                   <span class="minutes-label">minutes</span>
                 </div>
                 <div class="quick-adjust-buttons">
                   <button class="adjust-btn"
-                          data-action="click->devlog-review#quickAdjust"
+                          data-action="click->certification--ysws--devlog-review#quickAdjust"
                           data-adjust-action="50%">50%</button>
                   <button class="adjust-btn"
-                          data-action="click->devlog-review#quickAdjust"
+                          data-action="click->certification--ysws--devlog-review#quickAdjust"
                           data-adjust-action="25%">25%</button>
                   <button class="adjust-btn"
-                          data-action="click->devlog-review#quickAdjust"
+                          data-action="click->certification--ysws--devlog-review#quickAdjust"
                           data-adjust-action="-30">-30min</button>
                   <button class="adjust-btn"
-                          data-action="click->devlog-review#quickAdjust"
+                          data-action="click->certification--ysws--devlog-review#quickAdjust"
                           data-adjust-action="-60">-1hr</button>
                   <button class="adjust-btn"
-                          data-action="click->devlog-review#quickAdjust"
+                          data-action="click->certification--ysws--devlog-review#quickAdjust"
                           data-adjust-action="reset">Reset</button>
                 </div>
               </div>
@@ -393,8 +393,8 @@
                 <div class="panel-label">Internal Notes:</div>
                 <textarea class="notes-textarea"
                           placeholder="notes..."
-                          data-devlog-review-target="notesTextarea"
-                          data-action="input->devlog-review#updateNotes"><%= devlog_review.justification %></textarea>
+                          data-certification--ysws--devlog-review-target="notesTextarea"
+                          data-action="input->certification--ysws--devlog-review#updateNotes"><%= devlog_review.justification %></textarea>
               </div>
             </div>
           </div>
@@ -439,11 +439,11 @@
   </section>
 
   <!-- Fraud Report Modal -->
-  <div class="fraud-report-modal" data-fraud-report-target="modal">
-    <div class="fraud-report-modal__content" data-action="click->fraud-report#stopPropagation">
+  <div class="fraud-report-modal" data-certification--ysws--fraud-report-target="modal">
+    <div class="fraud-report-modal__content" data-action="click->certification--ysws--fraud-report#stopPropagation">
       <div class="fraud-report-modal__header">
         <h2>Report to Fraud Squad</h2>
-        <button class="fraud-report-modal__close" data-action="click->fraud-report#close" aria-label="Close modal">
+        <button class="fraud-report-modal__close" data-action="click->certification--ysws--fraud-report#close" aria-label="Close modal">
           ×
         </button>
       </div>
@@ -455,16 +455,16 @@
         <textarea
           id="fraud-details"
           class="fraud-report-modal__textarea"
-          data-fraud-report-target="textarea"
+          data-certification--ysws--fraud-report-target="textarea"
           placeholder="Explain why you're reporting this project to the fraud squad..."
           rows="6"></textarea>
       </div>
 
       <div class="fraud-report-modal__footer">
-        <button class="fraud-report-modal__cancel" data-action="click->fraud-report#close">
+        <button class="fraud-report-modal__cancel" data-action="click->certification--ysws--fraud-report#close">
           Cancel
         </button>
-        <button class="fraud-report-modal__submit" data-action="click->fraud-report#submit" data-fraud-report-target="submitButton">
+        <button class="fraud-report-modal__submit" data-action="click->certification--ysws--fraud-report#submit" data-certification--ysws--fraud-report-target="submitButton">
           Submit Report
         </button>
       </div>
@@ -472,13 +472,13 @@
   </div>
 
   <!-- Media Viewer Modal -->
-  <div class="media-viewer-modal" data-media-viewer-target="modal">
-    <button class="media-viewer-modal__close" data-action="click->media-viewer#close" aria-label="Close media viewer">
+  <div class="media-viewer-modal" data-certification--ysws--media-viewer-target="modal">
+    <button class="media-viewer-modal__close" data-action="click->certification--ysws--media-viewer#close" aria-label="Close media viewer">
       ×
     </button>
-    <div class="media-viewer-modal__content" data-action="click->media-viewer#stopPropagation" data-media-viewer-target="content">
-      <img class="media-viewer-modal__image hidden" data-media-viewer-target="image" alt="Devlog media">
-      <video class="media-viewer-modal__video hidden" data-media-viewer-target="video" controls autoplay></video>
+    <div class="media-viewer-modal__content" data-action="click->certification--ysws--media-viewer#stopPropagation" data-certification--ysws--media-viewer-target="content">
+      <img class="media-viewer-modal__image hidden" data-certification--ysws--media-viewer-target="image" alt="Devlog media">
+      <video class="media-viewer-modal__video hidden" data-certification--ysws--media-viewer-target="video" controls autoplay></video>
     </div>
   </div>
 </main>
