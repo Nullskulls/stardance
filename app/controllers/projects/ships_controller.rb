@@ -140,8 +140,7 @@ class Projects::ShipsController < ApplicationController
 
     def has_previous_approved_ships?
       @project.posts
-        .joins("INNER JOIN post_ship_events ON posts.postable_id = post_ship_events.id")
-        .where(postable_type: "Post::ShipEvent")
+        .joins("INNER JOIN post_ship_events ON posts.postable_id = post_ship_events.id AND posts.postable_type = 'Post::ShipEvent'")
         .where(post_ship_events: { certification_status: "approved" })
         .exists?
     end
