@@ -25,7 +25,7 @@ class Post::Devlog < ApplicationRecord
   has_paper_trail ignore: [ :likes_count, :comments_count, :hackatime_pulled_at, :synced_at ]
 
   # Ignore devlog_review_id column before removing it in migration
-  self.ignored_columns += ["devlog_review_id"]
+  self.ignored_columns += [ "devlog_review_id" ]
 
   BODY_MAX_LENGTH = 4_000
   MAX_ATTACHMENTS = 4
