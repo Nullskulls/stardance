@@ -586,13 +586,15 @@ Rails.application.routes.draw do
     resources :support_vibes, only: [ :index ]
   end
 
-  namespace :reviewer, path: "admin/ship_cert", constraints: ReviewerConstraint do
-    resources :ships, only: [ :index, :show, :update ], path: "" do
-      collection do
-        get :next
-      end
-      member do
-        post :claim
+  namespace :certification, path: "admin/ship_cert", constraints: ReviewerConstraint do
+    namespace :ship, path: "" do
+      resources :reviews, only: [ :index, :show, :update ], path: "" do
+        collection do
+          get :next
+        end
+        member do
+          post :claim
+        end
       end
     end
   end

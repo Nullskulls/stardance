@@ -4,7 +4,7 @@
   <header class="reviewer-queue__header">
     <h1>Review queue</h1>
     <p><%= pluralize(@reviews.size, "pending review") %></p>
-    <%= link_to "Start reviewing", next_reviewer_ships_path, class: "btn btn-primary" %>
+    <%= link_to "Start reviewing", next_certification_ship_reviews_path, class: "btn btn-primary" %>
   </header>
 
   <% if @reviews.empty? %>
@@ -25,7 +25,7 @@
                 claimed by <%= review.reviewer&.display_name.presence || "another reviewer" %>
               </span>
             <% else %>
-              <%= link_to "Open", reviewer_ship_path(review), class: "btn btn-secondary" %>
+              <%= link_to "Open", certification_ship_review_path(review), class: "btn btn-secondary" %>
             <% end %>
           </div>
         </li>
