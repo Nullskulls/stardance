@@ -55,6 +55,7 @@
 @use "pages/shop/my_orders";
 @use "pages/user/show" as users_show;
 @use "pages/errors/not_authorized";
+@use "pages/errors/error" as errors_error;
 @use "pages/guides";
 @use "pages/missions/index" as missions_index;
 @use "pages/missions/show" as missions_show;

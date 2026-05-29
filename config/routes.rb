@@ -763,5 +763,16 @@ Rails.application.routes.draw do
     end
   end
 
+  # Branded error pages. config.exceptions_app routes failures back through the
+  # router with PATH_INFO set to "/<status>", so each status that can surface
+  # (including from requests that never reach a controller) needs a match for
+  # every verb. Declared before the "/:ref" catch so numeric codes don't fall
+  # through to landing#index.
+  match "/400", to: "errors#bad_request",           via: :all
+  match "/404", to: "errors#not_found",             via: :all
+  match "/406", to: "errors#not_acceptable",        via: :all
+  match "/422", to: "errors#unprocessable_entity",  via: :all
+  match "/500", to: "errors#internal_server_error", via: :all
+
   get "/:ref", to: "landing#index", constraints: { ref: /[a-z0-9][a-z0-9_-]{0,63}/ }
 end
