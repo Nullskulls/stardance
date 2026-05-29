@@ -26,12 +26,13 @@ class IdvBadgeComponent < ViewComponent::Base
   end
 
   def tooltip
+    subject = context == :profile ? "Your account" : "This #{context}"
     if user.verification_pending?
-      "Your identity is under review. Your posts will not be visible to the public until it's approved."
+      "Your identity is under review. #{subject} will not be visible to the public until it's approved."
     elsif user.verification_ineligible?
-      "Your identity verification didn't go through. Your posts will stay private until it's sorted out."
+      "Your identity verification didn't go through. #{subject} will stay private until it's sorted out."
     else
-      "Your posts are only visible to you and Hack Club admins until you verify your identity."
+      "#{subject} is only visible to you and Hack Club admins until you verify your identity."
     end
   end
 end
