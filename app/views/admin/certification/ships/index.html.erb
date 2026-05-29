@@ -163,7 +163,6 @@
           <thead>
             <tr>
               <th>Project</th>
-              <th>Type</th>
               <th>Status</th>
               <th>Claim / Reviewer</th>
               <th>Submitter</th>
@@ -179,15 +178,6 @@
                 <td class="ship-queue__cell-project">
                   <%= link_to ship.project.title, admin_certification_ship_path(ship), class: "ship-queue__project-title" %>
                   <span class="ship-queue__project-id">#<%= ship.id %></span>
-                </td>
-                <td class="ship-queue__cell-type">
-                  <% if ship.project.project_categories.present? %>
-                    <% ship.project.project_categories.each do |category| %>
-                      <span class="ship-queue__type-tag"><%= category %></span>
-                    <% end %>
-                  <% else %>
-                    <span class="ship-queue__muted">—</span>
-                  <% end %>
                 </td>
                 <td>
                   <span class="status-pill status-pill--<%= ship.status %>"><%= ship.status.capitalize %></span>
@@ -235,13 +225,6 @@
               <span class="ship-queue__project-title"><%= ship.project.title %></span>
               <span class="status-pill status-pill--<%= ship.status %>"><%= ship.status.capitalize %></span>
             </div>
-            <% if ship.project.project_categories.present? %>
-              <div class="ship-queue__card-tags">
-                <% ship.project.project_categories.each do |category| %>
-                  <span class="ship-queue__type-tag"><%= category %></span>
-                <% end %>
-              </div>
-            <% end %>
             <div class="ship-queue__card-meta">
               <span class="ship-queue__project-id">#<%= ship.id %></span>
               <span class="ship-queue__muted"><%= time_ago_in_words(ship.created_at) %> ago</span>

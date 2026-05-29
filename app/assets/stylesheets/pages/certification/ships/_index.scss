@@ -430,30 +430,6 @@
     }
   }
 
-  &__cell-type {
-    max-width: 180px;
-  }
-
-  &__type-tag {
-    display: inline-block;
-    margin: 0 2px 2px 0;
-    padding: 2px 8px;
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: var(--color-space-text);
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid var(--card-border);
-    border-radius: 999px;
-    white-space: nowrap;
-  }
-
-  &__card-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    margin-bottom: var(--space-xs);
-  }
-
   // Pagy series_nav renders <nav class="pagy series-nav"> with <a> links; the
   // current page and gaps are marked with aria attributes, not classes.
   &__pagination {
