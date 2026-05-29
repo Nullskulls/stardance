@@ -135,17 +135,17 @@
       <div class="ship-queue__filter">
         <label for="filter-from">From</label>
         <%= date_field_tag :from, @from&.iso8601, id: "filter-from", class: "ship-queue__input",
-              data: { action: "change->certification--queue#submit" } %>
+              autocomplete: "off", data: { action: "change->certification--queue#submit" } %>
       </div>
       <div class="ship-queue__filter">
         <label for="filter-to">To</label>
         <%= date_field_tag :to, @to&.iso8601, id: "filter-to", class: "ship-queue__input",
-              data: { action: "change->certification--queue#submit" } %>
+              autocomplete: "off", data: { action: "change->certification--queue#submit" } %>
       </div>
       <div class="ship-queue__filter ship-queue__filter--search">
         <label for="filter-search">Search</label>
         <%= text_field_tag :search, @search, id: "filter-search", placeholder: "review id or project title",
-              class: "ship-queue__input" %>
+              class: "ship-queue__input", autocomplete: "off" %>
       </div>
       <div class="ship-queue__filter-actions">
         <button type="submit" class="action-btn action-btn--small action-btn--secondary">Apply</button>
