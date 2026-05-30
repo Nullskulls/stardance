@@ -1,4 +1,6 @@
 class SessionsController < ApplicationController
+  include OnboardingResumable
+
   def create
     result = Sessions::HCALoginService.new(
       auth: request.env["omniauth.auth"],
@@ -18,7 +20,20 @@ class SessionsController < ApplicationController
     session[:user_id] = result.user.id
 
     return_to = safe_return_to(session.delete(:return_to))
-    redirect_to(return_to || (result.user.setup_complete? ? profile_projects_path(result.user.display_name) : home_path), notice: "Signed in with Hack Club")
+
+    destination = if result.user.onboarded_at.nil? && result.user.age_attestation_ineligible?
+      onboarding_age_gate_path
+    elsif return_to
+      return_to
+    elsif result.user.onboarded_at.nil?
+      onboarding_resume_path(result.user)
+    elsif result.user.setup_complete?
+      profile_projects_path(result.user.display_name)
+    else
+      home_path
+    end
+
+    redirect_to destination, notice: "Signed in with Hack Club"
   end
 
   def destroy

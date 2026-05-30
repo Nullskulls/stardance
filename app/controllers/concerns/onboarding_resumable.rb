@@ -1,12 +1,11 @@
 # Shared logic for resuming or expiring an interrupted signup-wizard session.
 #
-# A "mid-onboarding" user is a guest who entered the wizard but never reached
-# the final name step (onboarded_at still nil). The freshness window is anchored
-# on when they started the wizard (created_at).
+# A "mid-onboarding" user is one who has never completed onboarding
+# (onboarded_at still nil) — regardless of whether they entered via the email
+# flow (guest) or directly through HCA. The freshness window is anchored on
+# when they started (created_at).
 #
-# Gated on the :new_onboarding flag: only when it's on is the wizard the sole
-# way to become an onboarded_at-nil guest, so the signal can't be confused with
-# project-setup / link-gate guests from the old flow.
+# Gated on the :new_onboarding flag.
 module OnboardingResumable
   extend ActiveSupport::Concern
 
@@ -17,7 +16,7 @@ module OnboardingResumable
   def onboarding_in_progress?(user)
     return false unless Flipper.enabled?(:new_onboarding)
 
-    user&.guest? && user.onboarded_at.nil?
+    user.present? && user.onboarded_at.nil?
   end
 
   # Within the active window, anchored on when they first started onboarding.

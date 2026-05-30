@@ -12,8 +12,8 @@ class Onboarding::WizardController < ApplicationController
                                                       name submit_name]
 
   def start
-    # A fully-linked member has nothing left to onboard.
-    if current_user&.hca_linked?
+    # Already completed onboarding — nothing to do.
+    if current_user&.onboarded_at.present?
       redirect_to home_path and return
     end
 
@@ -26,6 +26,11 @@ class Onboarding::WizardController < ApplicationController
     existing = User.find_by(email: normalized)
 
     if existing&.hca_linked?
+      if existing.onboarded_at.nil?
+        session[:user_id] = existing.id
+        redirect_to onboarding_resume_path(existing) and return
+      end
+
       # OmniAuth 2.x with omniauth-rails_csrf_protection blocks GET, so we
       # render an auto-submitting POST form instead of redirecting.
       @login_hint = normalized
@@ -37,17 +42,25 @@ class Onboarding::WizardController < ApplicationController
 
       if onboarding_in_progress?(existing)
         if onboarding_fresh?(existing)
-          # Started within the window — drop them back where they left off.
           redirect_to onboarding_resume_path(existing) and return
         else
-          # Stale placeholder account — wipe progress and start over.
           restart_onboarding!(existing)
           redirect_to onboarding_welcome_path and return
         end
       end
 
-      # Guest who already finished the wizard (still needs to link HCA later).
       redirect_to home_path and return
+    end
+
+    guest_email_owner = User.find_by(guest_email: normalized)
+    if guest_email_owner
+      session[:guest_email_claim] = normalized
+      redirect_to onboarding_guest_email_path and return
+    end
+
+    if HCAService.email_known?(normalized)
+      @login_hint = normalized
+      return render :redirecting_to_hca
     end
 
     user = create_guest!(normalized)
@@ -57,9 +70,17 @@ class Onboarding::WizardController < ApplicationController
 
   def welcome; end
 
-  def birthday; end
+  def birthday
+    if current_user.age_attestation.present?
+      redirect_to params[:back] ? onboarding_welcome_path : onboarding_resume_path(current_user)
+    end
+  end
 
   def submit_birthday
+    if current_user.age_attestation.present?
+      redirect_to onboarding_resume_path(current_user) and return
+    end
+
     case params[:attestation]
     when "teen_13_18"
       current_user.update!(age_attestation: "teen_13_18")
@@ -142,7 +163,52 @@ class Onboarding::WizardController < ApplicationController
     end
   end
 
+  def guest_email
+    @claimed_email = session[:guest_email_claim]
+    unless @claimed_email
+      redirect_to root_path and return
+    end
+
+    owner = User.find_by(guest_email: @claimed_email)
+    unless owner
+      session.delete(:guest_email_claim)
+      redirect_to root_path and return
+    end
+
+    @censored_hca_email = censor_email(owner.email)
+  end
+
+  def guest_email_yes
+    claimed_email = session.delete(:guest_email_claim)
+    owner = User.find_by(guest_email: claimed_email)
+
+    unless owner
+      redirect_to root_path, alert: "Something went wrong. Please try again." and return
+    end
+
+    @login_hint = owner.email
+    @nudge_email = owner.email
+    render :redirecting_to_hca
+  end
+
+  def guest_email_no
+    claimed_email = session.delete(:guest_email_claim)
+    owner = User.find_by(guest_email: claimed_email)
+    owner&.update!(guest_email: nil)
+
+    user = create_guest!(claimed_email)
+    session[:user_id] = user.id
+    redirect_to onboarding_welcome_path
+  end
+
   private
+
+  def censor_email(email)
+    local, domain = email.split("@", 2)
+    return email if local.length <= 2
+
+    "#{local[0]}#{"*" * (local.length - 2)}#{local[-1]}@#{domain}"
+  end
 
   def create_guest!(email)
     5.times do
@@ -160,7 +226,7 @@ class Onboarding::WizardController < ApplicationController
   end
 
   def require_onboarding_guest!
-    return if current_user&.guest?
+    return if current_user.present? && current_user.onboarded_at.nil?
     redirect_to root_path, alert: "Please start signup from the homepage."
   end
 
