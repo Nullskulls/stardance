@@ -109,4 +109,17 @@ class ShopItemCardComponent < ViewComponent::Base
   def show_stock_indicator?
     limited && remaining_stock.present? && remaining_stock <= 10
   end
+
+  # CTA buttons now show the item's Stardust cost in place of "Buy now" /
+  # "Order now". Free items read "Free" and skip the icon so the button isn't
+  # an awkward "✦ 0".
+  def cta_price_label
+    return "Free" if display_price.to_i.zero?
+    helpers.number_to_currency(display_price, precision: 0).delete("$")
+  end
+
+  def cta_price_icon
+    return nil if display_price.to_i.zero?
+    "icons/stardust.png"
+  end
 end

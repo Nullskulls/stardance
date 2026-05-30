@@ -1,10 +1,13 @@
 class ShopController < ApplicationController
   skip_before_action :refresh_identity_on_portal_return, only: [ :index, :category ]
 
+  discover_rail_widgets :shop_orders, :shop_updates, :shop_wishlist,
+    context: -> { { sidebar_orders: @sidebar_orders || [], user_balance: @user_balance || 0 } }
+
   def index
     prepare_shop_chrome
     load_shop_items
-    load_random_items
+    load_hub_sections
     load_orders_sidebar
   end
 
@@ -312,24 +315,29 @@ class ShopController < ApplicationController
     @categories = Shop::Categorization.all
   end
 
-  # Picks a small randomised subset of the catalogue for the hub's "Discover"
-  # row. Excludes unlisted/tutorial items and anything in a region the viewer
-  # can't actually order from.
-  def load_random_items
-    return @random_items = [] if @shop_items.blank?
+  # Picks two randomised subsets of the catalogue for the hub's "New" and
+  # "Popular" sections. Excludes unlisted/tutorial items and anything in a
+  # region the viewer can't actually order from. Both sections show random
+  # items today; the names are just visual sectioning hints for the user.
+  def load_hub_sections
+    @new_items = []
+    @popular_items = []
+    return if @shop_items.blank?
 
     pool = @shop_items.select { |item| item.image.attached? && item.enabled_in_region?(@user_region) }
 
     # In tutorial mode the stickers/nothing picks get their own leading row, so
-    # keep them out of the Discover grid below.
+    # keep them out of the random sections below.
     if @shop_mode == :tutorial && @tutorial_items
       pick_ids = @tutorial_items.values.compact.map(&:id).to_set
       pool = pool.reject { |item| pick_ids.include?(item.id) }
     end
 
-    # Discover is a 2-row preview clipped in CSS; "See all" leads to the full
-    # listing. Cap the pool so we don't ship a giant hidden grid.
-    @random_items = pool.shuffle.first(12)
+    # Split the pool into two non-overlapping random subsets so a single item
+    # doesn't appear in both sections at once.
+    shuffled = pool.shuffle
+    @new_items     = shuffled.first(8)
+    @popular_items = shuffled.drop(8).first(8)
   end
 
   # Latest non-cancelled orders for the hub sidebar — keep it tiny.

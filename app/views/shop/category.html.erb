@@ -44,28 +44,28 @@
                 { label: "> 1000", value: "1000+" }
               ],
               selected_option: "None",
-              color: :pink,
+              color: :space,
               action: "change->shop#filter"
             ) %>
         <%= render DropdownComponent.new(
               label: "Access",
               options: [ "All", "Available", "Locked" ],
               selected_option: "All",
-              color: :red,
+              color: :space,
               action: "change->shop#filter"
             ) %>
         <%= render DropdownComponent.new(
               label: "Sort by",
               options: [ "Prices", "Alphabetical" ],
               selected_option: "Prices",
-              color: :green,
+              color: :space,
               action: "change->shop#filter"
             ) %>
         <%= render DropdownComponent.new(
               label: "Region",
               options: @region_options,
               selected_option: Shop::Regionalizable::REGIONS.dig(@user_region, :name),
-              color: :blue,
+              color: :space,
               action: "change->shop#filter"
             ) %>
       </div>

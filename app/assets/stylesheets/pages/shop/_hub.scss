@@ -1,31 +1,75 @@
-// Stardance shop hub — category tiles + Discover row on the left, YOUR
-// ORDERS / SHOP UPDATES / WISHLIST rail on the right. The sidebar comes from
-// the application layout; this file only styles the hub content area.
+// Stardance shop hub — tutorial above everything, then category tiles +
+// sidebar rail, then random-item sections (New, Popular) full-width below.
+// The sidebar comes from the application layout; this file only styles the
+// hub content area.
 
 .shop-hub {
   --shop-hub-gutter: 2.5rem;
-  --shop-hub-rail-width: 22rem;
 
   color: var(--color-space-text);
   padding: 1.5rem clamp(1.5rem, 4vw, 3rem) 4rem;
+
+  &__tutorial-card {
+    background: rgba(217, 217, 217, 0.1);
+    border: 2px solid var(--color-brand-highlight);
+    border-radius: 16px;
+    margin: 0 0 2.5rem;
+    padding: 1.75rem 2rem 1rem;
+  }
+
+  &__tutorial-card-header {
+    margin-bottom: 1.25rem;
+  }
+
+  &__tutorial-card-title {
+    color: var(--color-brand-highlight);
+    font-family: "Exo 2", sans-serif;
+    font-size: 1.35rem;
+    font-weight: 800;
+    margin: 0 0 0.35rem;
+  }
+
+  &__tutorial-card-subtitle {
+    color: var(--color-space-text);
+    font-size: 1rem;
+    margin: 0;
+    opacity: 0.8;
+  }
 
   &__layout {
     display: grid;
     column-gap: var(--shop-hub-gutter);
     row-gap: 2rem;
-    grid-template-columns: minmax(0, 1fr) var(--shop-hub-rail-width);
+    grid-template-columns: minmax(0, 1fr) 264px;
     grid-template-areas:
       "topbar topbar"
       "main   rail"
-      "items  items";
+      "new    new"
+      "popular popular";
 
     @media (max-width: 1100px) {
       grid-template-columns: 1fr;
       grid-template-areas:
         "topbar"
         "main"
-        "items"
+        "new"
+        "popular"
         "rail";
+    }
+  }
+
+  &__rail {
+    grid-area: rail;
+
+    .discover-rail {
+      position: static;
+      width: 100%;
+      max-height: none;
+      overflow: visible;
+    }
+
+    .discover-rail__search {
+      display: none;
     }
   }
 
@@ -224,12 +268,20 @@
     margin: 0 0 1rem;
   }
 
-  // "Discover" — the full-width item grid below the categories + sidebar. Uses
-  // the same card component and grid sizing as the category subpages so an item
-  // looks identical here and inside its category.
+  // Full-width item rows ("New", "Popular") below the categories + sidebar.
+  // Use the same card component and grid sizing as the category subpages so
+  // an item looks identical here and inside its category.
   &__items {
-    grid-area: items;
     min-width: 0;
+    overflow: visible;
+  }
+
+  &__items--new {
+    grid-area: new;
+  }
+
+  &__items--popular {
+    grid-area: popular;
   }
 
   &__items-header {
@@ -258,26 +310,91 @@
     }
   }
 
-  // Discover is a 2-row preview: extra rows fall into 0-height implicit rows
-  // and get clipped, so the grid is always at most two cards tall.
-  &__items-grid {
-    display: grid;
-    gap: 1.5rem;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    grid-template-rows: repeat(2, auto);
-    grid-auto-rows: 0;
-    list-style: none;
-    margin: 0;
-    overflow: hidden;
-    padding: 0;
+  // Fade lives on the wrapper so it doesn't clip stars/badges that overflow
+  // the card bounds. The JS controller updates the mask dynamically.
+  &__items-scroll {
+    overflow: visible;
+    position: relative;
+    -webkit-mask-image: linear-gradient(
+      to right,
+      black calc(100% - 56px),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      black calc(100% - 56px),
+      transparent 100%
+    );
   }
 
-  // Flex column so the card stretches to the (grid-stretched) cell height —
-  // that's what keeps every card in a row the same height.
+  &__items-grid {
+    display: flex;
+    gap: 1.5rem;
+    list-style: none;
+    margin: 0;
+    overflow-x: auto;
+    overflow-y: visible;
+    padding: 14px 14px 0.5rem 0;
+    scroll-behavior: smooth;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+
+    scrollbar-width: none;
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  &__scroll-arrow {
+    align-items: center;
+    appearance: none;
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    color: var(--color-space-text);
+    cursor: pointer;
+    display: flex;
+    height: 36px;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: opacity 160ms ease;
+    width: 36px;
+    z-index: 2;
+
+    &[data-visible="true"] {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.75);
+    }
+
+    &--left {
+      left: -12px;
+    }
+
+    &--right {
+      right: -12px;
+    }
+
+    svg {
+      height: 16px;
+      width: 16px;
+    }
+  }
+
   &__items-card {
     display: flex;
+    flex: 0 0 280px;
     flex-direction: column;
     min-width: 0;
+    overflow: visible;
+    scroll-snap-align: start;
   }
 
   // Stickers + nothing get their own leading row, sharing the items grid's
@@ -352,99 +469,6 @@
     &:focus-visible {
       filter: brightness(1.05);
       outline: none;
-    }
-  }
-
-  &__sidebar {
-    display: flex;
-    flex-direction: column;
-    gap: 1.75rem;
-    grid-area: rail;
-  }
-
-  &__sidebar-block {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  &__sidebar-title {
-    color: var(--color-space-text);
-    font-family: "Exo 2", sans-serif;
-    font-size: 1rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    margin: 0;
-  }
-
-  &__sidebar-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.55rem;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-
-  &__sidebar-card {
-    background: rgba(217, 217, 217, 0.18);
-    border-radius: 8px;
-    color: var(--color-space-text);
-    min-height: 64px;
-    padding: 0.75rem 0.9rem;
-  }
-
-  &__sidebar-card-title {
-    font-size: 0.95rem;
-    font-weight: 700;
-    margin: 0;
-    text-decoration: underline;
-  }
-
-  &__sidebar-card-body {
-    color: var(--color-brand-off-white);
-    font-size: 0.85rem;
-    margin: 0.2rem 0 0;
-    opacity: 0.85;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  &__sidebar-empty {
-    background: rgba(217, 217, 217, 0.08);
-    border-radius: 8px;
-    color: var(--color-brand-off-white);
-    font-size: 0.9rem;
-    margin: 0;
-    opacity: 0.75;
-    padding: 0.7rem 0.9rem;
-  }
-
-  &__sidebar-link {
-    align-self: flex-end;
-    color: var(--color-space-text);
-    font-size: 0.95rem;
-    text-decoration: underline;
-
-    &:hover,
-    &:focus-visible {
-      color: var(--color-brand-highlight);
-    }
-  }
-
-  &__sidebar-block--wishlist {
-    .shop-goals__container {
-      background: transparent;
-      border: 0;
-      margin: 0;
-      padding: 0;
-    }
-
-    .shop-goals__items {
-      display: flex;
-      flex-direction: column;
-      gap: 0.55rem;
     }
   }
 

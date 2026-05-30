@@ -13,6 +13,52 @@
   <% end %>
 
   <% tutorial_active = @shop_mode == :tutorial && @tutorial_items.values.all?(&:present?) %>
+  <% pick_ids = tutorial_active ? @tutorial_items.values.compact.map(&:id) : [] %>
+  <%# Once a user has verified IDV but still owes the address step, re-show the
+      picks intro spotlight regardless of prior dismissal — the picks now lead
+      to the address screen instead of the IDV modal, so it's a fresh "next
+      step" cue rather than a repeat of the original one. %>
+  <% post_verify_address_step = tutorial_active && current_user && current_user.identity_verified? && current_user.addresses.empty? %>
+  <% show_picks_intro = tutorial_active && current_user && (!current_user.has_dismissed?("shop_picks_intro") || post_verify_address_step) %>
+
+  <% if tutorial_active %>
+    <section class="shop-hub__tutorial-card" aria-label="Shop tutorial">
+      <div class="shop-hub__tutorial-card-header">
+        <h2 class="shop-hub__tutorial-card-title">Complete the tutorial to unlock the shop</h2>
+        <p class="shop-hub__tutorial-card-subtitle">Pick one of these to walk through how ordering works.</p>
+      </div>
+      <div class="shop-hub__picks">
+        <ul class="shop-hub__picks-row" id="shop-picks">
+          <% [ @tutorial_items[:stickers], @tutorial_items[:nothing] ].compact.each do |item| %>
+            <li class="shop-hub__items-card">
+              <%= render "shop/item_card",
+                    item: item,
+                    mode: :tutorial,
+                    region: @user_region,
+                    balance: @user_balance,
+                    tutorial_item_ids: pick_ids,
+                    spotlight: false %>
+            </li>
+          <% end %>
+          <li class="shop-hub__picks-cue">
+            <%= image_tag "shop/buy_something.png", alt: "", class: "shop-hub__picks-cue-graphic", aria: { hidden: true } %>
+            <span class="shop-hub__picks-cue-row">
+              <%= inline_svg_tag "icons/tour-arrow.svg", class: "shop-hub__picks-cue-arrow", aria: { hidden: true }, focusable: false %>
+              <span class="shop-hub__picks-cue-text">Choose one to go through the tutorial.</span>
+            </span>
+            <% unless current_user&.has_dismissed?("shop_picks_intro") %>
+              <button type="button"
+                      class="shop-hub__picks-cue-dismiss"
+                      onclick="document.dispatchEvent(new CustomEvent('welcome-tour:dismiss')); this.remove()">Ok, I'll do it!</button>
+            <% end %>
+          </li>
+        </ul>
+      </div>
+      <% if show_picks_intro %>
+        <%= render "shop/picks_intro_tour" %>
+      <% end %>
+    </section>
+  <% end %>
 
   <div class="shop-hub__layout">
     <header class="shop-hub__topbar">
@@ -32,7 +78,7 @@
                 label: "Region",
                 options: @region_options,
                 selected_option: Shop::Regionalizable::REGIONS.dig(@user_region, :name),
-                color: :blue,
+                color: :space,
                 action: "change->shop#filter"
               ) %>
         </div>
@@ -47,7 +93,6 @@
     </header>
 
     <% if @shop_open %>
-      <% pick_ids = tutorial_active ? @tutorial_items.values.compact.map(&:id) : [] %>
       <section class="shop-hub__main">
         <ul class="shop-hub__category-grid" aria-label="Shop categories">
           <% @categories.each do |category| %>
@@ -71,98 +116,25 @@
         </ul>
       </section>
 
-      <aside class="shop-hub__sidebar" aria-label="Shop status">
-        <section class="shop-hub__sidebar-block">
-          <h2 class="shop-hub__sidebar-title">YOUR ORDERS</h2>
-          <% if current_user && @sidebar_orders.any? %>
-            <ul class="shop-hub__sidebar-list">
-              <% @sidebar_orders.each do |order| %>
-                <li class="shop-hub__sidebar-card">
-                  <p class="shop-hub__sidebar-card-title">Order (ID: <%= order.id %>) <%= order.aasm_state&.humanize&.downcase %></p>
-                  <p class="shop-hub__sidebar-card-body"><%= truncate(order.shop_item&.name.to_s, length: 60) %></p>
-                </li>
-              <% end %>
-            </ul>
-            <%= link_to "see more →", shop_my_orders_path, class: "shop-hub__sidebar-link" %>
-          <% else %>
-            <p class="shop-hub__sidebar-empty">No orders yet.</p>
-          <% end %>
-        </section>
+      <div class="shop-hub__rail">
+        <%= render DiscoverRailComponent.new %>
+      </div>
 
-        <section class="shop-hub__sidebar-block">
-          <h2 class="shop-hub__sidebar-title">SHOP UPDATES</h2>
-          <p class="shop-hub__sidebar-empty">No updates right now.</p>
-        </section>
-
-        <section class="shop-hub__sidebar-block shop-hub__sidebar-block--wishlist">
-          <h2 class="shop-hub__sidebar-title">WISHLIST</h2>
-
-          <div class="shop-goals"
-               data-controller="shop-goals"
-               data-shop-goals-balance-value="<%= @user_balance %>"
-               data-shop-goals-stardust-icon-url-value="<%= image_path('icons/stardust.png') %>">
-            <div class="shop-goals__container" data-shop-goals-target="container" style="display: none;">
-              <div class="shop-goals__items" data-shop-goals-target="items"></div>
-            </div>
-            <p class="shop-hub__sidebar-empty" data-shop-goals-empty>
-              Tap the star on any item to add it here.
-            </p>
-            <script>
-              try {
-                var w = JSON.parse(localStorage.getItem("shop_wishlist"));
-                if (w && Object.keys(w).length) {
-                  document.currentScript.previousElementSibling.style.display = "none";
-                  document.currentScript.previousElementSibling.previousElementSibling.style.display = "block";
-                }
-              } catch (e) {}
-            </script>
-          </div>
-        </section>
-      </aside>
-
-      <% if tutorial_active || @random_items&.any? %>
-        <section class="shop-hub__items" aria-label="Items">
+      <% if @new_items&.any? %>
+        <section class="shop-hub__items shop-hub__items--new" aria-label="New items">
           <div class="shop-hub__items-header">
-            <h2 class="shop-hub__section-title">Discover</h2>
+            <h2 class="shop-hub__section-title">New</h2>
             <%= link_to "See all →", shop_category_path("all"), class: "shop-hub__see-all", data: { turbo: true } %>
           </div>
-
-          <% if tutorial_active %>
-            <div class="shop-hub__picks">
-              <ul class="shop-hub__picks-row" id="shop-picks">
-                <% [ @tutorial_items[:stickers], @tutorial_items[:nothing] ].compact.each do |item| %>
-                  <li class="shop-hub__items-card">
-                    <%= render "shop/item_card",
-                          item: item,
-                          mode: :tutorial,
-                          region: @user_region,
-                          balance: @user_balance,
-                          tutorial_item_ids: pick_ids,
-                          spotlight: false %>
-                  </li>
-                <% end %>
-                <li class="shop-hub__picks-cue">
-                  <%= image_tag "shop/buy_something.png", alt: "", class: "shop-hub__picks-cue-graphic", aria: { hidden: true } %>
-                  <span class="shop-hub__picks-cue-row">
-                    <%= inline_svg_tag "icons/tour-arrow.svg", class: "shop-hub__picks-cue-arrow", aria: { hidden: true }, focusable: false %>
-                    <span class="shop-hub__picks-cue-text">Pick one of these to try buying something!</span>
-                  </span>
-                  <% unless current_user&.has_dismissed?("shop_picks_intro") %>
-                    <button type="button"
-                            class="shop-hub__picks-cue-dismiss"
-                            onclick="document.dispatchEvent(new CustomEvent('welcome-tour:dismiss')); this.remove()">Ok, I'll do it!</button>
-                  <% end %>
-                </li>
-              </ul>
-            </div>
-            <% if current_user && !current_user.has_dismissed?("shop_picks_intro") %>
-              <%= render "shop/picks_intro_tour" %>
-            <% end %>
-          <% end %>
-
-          <% if @random_items&.any? %>
-            <ul class="shop-hub__items-grid">
-              <% @random_items.each do |item| %>
+          <div class="shop-hub__items-scroll" data-controller="horizontal-scroll">
+            <button type="button" class="shop-hub__scroll-arrow shop-hub__scroll-arrow--left"
+                    data-horizontal-scroll-target="left"
+                    data-action="click->horizontal-scroll#scrollLeft"
+                    aria-label="Scroll left">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"> <polyline points="15 18 9 12 15 6" /> </svg>
+            </button>
+            <ul class="shop-hub__items-grid" data-horizontal-scroll-target="track">
+              <% @new_items.each do |item| %>
                 <li class="shop-hub__items-card">
                   <%= render "shop/item_card",
                         item: item,
@@ -173,7 +145,48 @@
                 </li>
               <% end %>
             </ul>
-          <% end %>
+            <button type="button" class="shop-hub__scroll-arrow shop-hub__scroll-arrow--right"
+                    data-horizontal-scroll-target="right"
+                    data-action="click->horizontal-scroll#scrollRight"
+                    aria-label="Scroll right">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"> <polyline points="9 18 15 12 9 6" /> </svg>
+            </button>
+          </div>
+        </section>
+      <% end %>
+
+      <% if @popular_items&.any? %>
+        <section class="shop-hub__items shop-hub__items--popular" aria-label="Popular items">
+          <div class="shop-hub__items-header">
+            <h2 class="shop-hub__section-title">Popular</h2>
+            <%= link_to "See all →", shop_category_path("all"), class: "shop-hub__see-all", data: { turbo: true } %>
+          </div>
+          <div class="shop-hub__items-scroll" data-controller="horizontal-scroll">
+            <button type="button" class="shop-hub__scroll-arrow shop-hub__scroll-arrow--left"
+                    data-horizontal-scroll-target="left"
+                    data-action="click->horizontal-scroll#scrollLeft"
+                    aria-label="Scroll left">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"> <polyline points="15 18 9 12 15 6" /> </svg>
+            </button>
+            <ul class="shop-hub__items-grid" data-horizontal-scroll-target="track">
+              <% @popular_items.each do |item| %>
+                <li class="shop-hub__items-card">
+                  <%= render "shop/item_card",
+                        item: item,
+                        mode: @shop_mode,
+                        region: @user_region,
+                        balance: @user_balance,
+                        tutorial_item_ids: pick_ids %>
+                </li>
+              <% end %>
+            </ul>
+            <button type="button" class="shop-hub__scroll-arrow shop-hub__scroll-arrow--right"
+                    data-horizontal-scroll-target="right"
+                    data-action="click->horizontal-scroll#scrollRight"
+                    aria-label="Scroll right">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"> <polyline points="9 18 15 12 9 6" /> </svg>
+            </button>
+          </div>
         </section>
       <% end %>
     <% else %>
