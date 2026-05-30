@@ -79,11 +79,39 @@ module Certification
         case status.to_sym
         when :approved
           project.approve! if project.may_approve?
-          project.last_ship_event&.update!(certification_status: "approved")
+          ship_event = project.last_ship_event
+          ship_event&.update!(certification_status: "approved")
+          create_ysws_review_for_ship(ship_event) if ship_event
         when :returned
           project.return_for_changes! if project.may_return_for_changes?
         end
       end
+    end
+
+    def create_ysws_review_for_ship(ship_event)
+      # Get the project owner who shipped the project
+      owner = project.memberships.owner.first&.user
+
+      unless owner
+        Sentry.capture_message(
+          "Ship certification approved but no owner found to create YSWS review",
+          level: :error,
+          extra: {
+            ship_cert_id: id,
+            project_id: project.id,
+            ship_event_id: ship_event.id
+          }
+        )
+        return
+      end
+
+      # Create YSWS review with all devlog reviews for this ship
+      Certification::YswsReviewCreator.new(
+        ship_event: ship_event,
+        user: owner,
+        project: project,
+        ship_cert_id: id
+      ).call
     end
 
     def notify_owner!
