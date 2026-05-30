@@ -45,8 +45,15 @@
         <%= hidden_field_tag :inline_project_show, "1" %>
 
         <header class="project-show__hero">
-          <div class="project-show__banner" data-controller="file-upload">
+          <div class="project-show__banner<%= ' project-show__banner--empty' unless @project.banner.attached? %>" data-controller="file-upload">
             <%= image_tag banner_url, alt: "", class: "project-show__banner-image", data: { "file-upload-target": "preview" } %>
+            <% unless @project.banner.attached? %>
+              <label class="project-show__banner-placeholder">
+                <span class="project-show__banner-placeholder-text">Upload screenshot</span>
+                <%= form.file_field :banner, accept: Project::ACCEPTED_CONTENT_TYPES.join(","), class: "project-show__banner-input",
+                      data: { "file-upload-target": "input", action: "change->file-upload#change" } %>
+              </label>
+            <% end %>
             <%= link_to back_path,
                         class: "project-show__back",
                         "aria-label": "Back",
@@ -56,11 +63,13 @@
               </svg>
             <% end %>
 
-            <label class="project-show__banner-upload">
-              <span>Change screenshot</span>
-              <%= form.file_field :banner, accept: Project::ACCEPTED_CONTENT_TYPES.join(","), class: "project-show__banner-input",
-                    data: { "file-upload-target": "input", action: "change->file-upload#change" } %>
-            </label>
+            <% if @project.banner.attached? %>
+              <label class="project-show__banner-upload">
+                <span>Change screenshot</span>
+                <%= form.file_field :banner, accept: Project::ACCEPTED_CONTENT_TYPES.join(","), class: "project-show__banner-input",
+                      data: { "file-upload-target": "input", action: "change->file-upload#change" } %>
+              </label>
+            <% end %>
           </div>
 
           <div class="project-show__panel">

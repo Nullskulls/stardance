@@ -87,6 +87,27 @@ turbo-frame#project_hero {
   height: 30px;
 }
 
+.project-show__banner--empty .project-show__banner-image {
+  opacity: 0;
+}
+
+.project-show__banner-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 2px dashed var(--color-space-border);
+  border-radius: var(--profile-radius);
+}
+
+.project-show__banner-placeholder-text {
+  color: var(--color-space-text-muted);
+  font-size: var(--font-size-l);
+  font-weight: 600;
+}
+
 .project-show__banner-upload {
   position: absolute;
   right: 24px;

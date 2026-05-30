@@ -7,6 +7,8 @@ export default class extends Controller {
     const file = this.inputTarget.files?.[0];
     if (!file) return;
     this._previewImage().src = URL.createObjectURL(file);
+    this.element.classList.remove("project-show__banner--empty");
+    this.element.querySelector(".project-show__banner-placeholder")?.remove();
   }
 
   _previewImage() {
