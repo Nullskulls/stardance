@@ -25,6 +25,8 @@ class ProjectsController < ApplicationController
     end
 
     prepare_project_show_context
+
+    render :show_hackpad if @project_onboarding_mission&.slug == "hackpad"
   end
 
   def prepare_project_show_context
