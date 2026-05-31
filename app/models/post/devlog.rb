@@ -95,22 +95,6 @@ class Post::Devlog < ApplicationRecord
   after_update_commit :update_project_duration_if_changed
   after_update_commit :update_devlogs_count_on_soft_delete
 
-  def recalculate_seconds_coded
-    return false unless post.project.hackatime_keys.present?
-    hackatime_uid = post.user.hackatime_identity&.uid
-    previous_devlog = post.project.devlogs.where("post_devlogs.created_at < ?", created_at).order("post_devlogs.created_at desc").first
-    start_date = previous_devlog&.created_at || [ post.project.created_at, Date.parse(HackatimeService::START_DATE).beginning_of_day ].min
-    end_date = created_at
-
-    HackatimeService.sync_devlog_duration(self, hackatime_uid, start_date.iso8601, end_date.iso8601)
-  rescue JSON::ParserError => e
-    Rails.logger.error("JSON parse error in recalculate_seconds_coded for Devlog #{id}: #{e.message}")
-    false
-  rescue => e
-    Rails.logger.error("Unexpected error in recalculate_seconds_coded for Devlog #{id}: #{e.message}")
-    false
-  end
-
   # Version history methods
   def current_version_number
     versions.maximum(:version_number) || 0

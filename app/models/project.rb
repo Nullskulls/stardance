@@ -221,6 +221,15 @@ class Project < ApplicationRecord
     (total_seconds / 3600.0).round(1)
   end
 
+  def seconds_coded_in_devlog_window(hackatime_uid, at: Time.current)
+    HackatimeService.fetch_total_seconds_for_projects(
+      hackatime_uid,
+      hackatime_keys,
+      start_date: devlog_window_start(at).iso8601,
+      end_date: at.iso8601
+    )
+  end
+
   aasm column: :ship_status do
     state :draft, initial: true
     state :submitted
@@ -498,6 +507,11 @@ class Project < ApplicationRecord
   end
 
   private
+
+  def devlog_window_start(at)
+    previous_devlog = devlogs.where("post_devlogs.created_at < ?", at).order("post_devlogs.created_at desc").first
+    previous_devlog&.created_at || [ created_at, Date.parse(HackatimeService::START_DATE).beginning_of_day ].min
+  end
 
   def previous_ship_event_has_payout?
     return true if last_ship_event.nil?
