@@ -16,7 +16,7 @@
         <h2 id="missions-index-drafts" class="missions-index__section-title">Drafts</h2>
         <ul class="missions-index__grid">
           <% @draft_missions.each do |mission| %>
-            <li><%= render "missions/mission_card", mission: mission, badge: "Draft" %></li>
+            <li><%= render "missions/mission_card", mission: mission, badge: "Draft", manageable: true %></li>
           <% end %>
         </ul>
       </section>

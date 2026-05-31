@@ -55,7 +55,7 @@
             <%= button_to "Delete language",
                   admin_mission_language_rename_path(mission.slug, language: current_language),
                   method: :delete,
-                  data: { turbo_confirm: "Delete the "#{current_language}" guide variant and all its step bodies? This can't be undone." },
+                  data: { turbo_confirm: "Delete the '#{current_language}' guide variant and all its step bodies? This can't be undone." },
                   class: "action-btn action-btn--small action-btn--destructive" %>
           </div>
         </details>
