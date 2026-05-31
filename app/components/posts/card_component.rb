@@ -86,7 +86,7 @@ module Posts
     end
 
     def attachments
-      if display_postable.respond_to?(:attachments)
+      @attachments ||= if display_postable.respond_to?(:attachments)
         display_postable.attachments
       else
         []
@@ -94,7 +94,7 @@ module Posts
     end
 
     def attachment_count
-      attachments.respond_to?(:count) ? attachments.count : 0
+      attachments.respond_to?(:size) ? attachments.size : 0
     end
 
     def show_footer?
