@@ -10,8 +10,12 @@ export default class extends Controller {
     this.categoryFilter = "All";
     this.priceRange = "none";
     this.regionFilter = this.userRegionValue;
-    this.searchQuery = "";
     this.accessFilter = "All";
+
+    const searchInput = this.element.querySelector(
+      '[data-action*="shop#search"]',
+    );
+    this.searchQuery = (searchInput?.value || "").toLowerCase();
 
     this.setupSortButton();
     this.applyFiltersAndSort();
@@ -55,7 +59,9 @@ export default class extends Controller {
   }
 
   applyFiltersAndSort() {
-    const itemsContainer = document.querySelector(".shop__items");
+    const itemsContainer =
+      document.querySelector(".shop-category__items") ||
+      document.querySelector(".shop__items");
     if (!itemsContainer) return;
 
     const items = Array.from(
@@ -131,7 +137,9 @@ export default class extends Controller {
   }
 
   sortItems() {
-    const itemsContainer = document.querySelector(".shop__items");
+    const itemsContainer =
+      document.querySelector(".shop-category__items") ||
+      document.querySelector(".shop__items");
     if (!itemsContainer) return;
 
     const items = Array.from(

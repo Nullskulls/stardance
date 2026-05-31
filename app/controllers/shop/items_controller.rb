@@ -5,6 +5,11 @@ class Shop::ItemsController < Shop::BaseController
     context: -> { { sidebar_orders: @sidebar_orders || [], user_balance: @user_balance || 0 } }
 
   def index
+    if params[:q].present?
+      redirect_to shop_category_path("all", q: params[:q])
+      return
+    end
+
     prepare_shop_chrome
     load_shop_items
     load_hub_sections
@@ -96,11 +101,6 @@ class Shop::ItemsController < Shop::BaseController
     return if @shop_items.blank?
 
     pool = @shop_items.select { |item| item.image.attached? && item.enabled_in_region?(@user_region) }
-
-    if @shop_mode == :tutorial && @tutorial_items
-      pick_ids = @tutorial_items.values.compact.map(&:id).to_set
-      pool = pool.reject { |item| pick_ids.include?(item.id) }
-    end
 
     shuffled = pool.shuffle
     @new_items     = shuffled.first(8)
