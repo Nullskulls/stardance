@@ -142,6 +142,7 @@ class Shop::OrdersController < Shop::BaseController
         end
       end
 
+      track_event "order_placed", { order_id: @order.id, shop_item_id: @shop_item.id, total_cost: total_cost }
       current_user.mark_shop_tutorial_completed! if tutorial_item?(@shop_item)
 
       unless current_user.eligible_for_shop?

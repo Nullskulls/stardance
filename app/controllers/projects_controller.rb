@@ -221,6 +221,7 @@ class ProjectsController < ApplicationController
     end
 
     if success
+      track_event "project_created", { project_id: @project.id, source: "new_form" }
       flash[:notice] = "Project created successfully"
 
       project_hours = @project.total_hackatime_hours

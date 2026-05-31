@@ -24,4 +24,12 @@
       g._hierarchyDefaultRegion='main';
     })(window,document,window['_fs_namespace'],'script','user');
   </script>
+  <% if defined?(current_user) && current_user.present? %>
+    <script>
+      FS.identify(<%= current_user.id.to_json %>, {
+        displayName: <%= current_user.display_name.to_json %>,
+        email: <%= current_user.email.to_json %>
+      });
+    </script>
+  <% end %>
 <% end %>
