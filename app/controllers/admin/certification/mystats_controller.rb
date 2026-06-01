@@ -12,6 +12,10 @@ class Admin::Certification::MystatsController < Admin::Certification::Applicatio
       .includes(:project)
       .order(decided_at: :desc)
 
+    @payouts = ReviewerPayoutRequest
+      .where(user_id: current_user.id, aasm_state: "paid")
+      .order(paid_at: :desc)
+
     @total_earned = ReviewerPayoutRequest.total_earned_for(current_user)
     @total_paid = ReviewerPayoutRequest.paid_for(current_user)
     @unclaimed = ReviewerPayoutRequest.unclaimed_for(current_user)
@@ -21,6 +25,35 @@ class Admin::Certification::MystatsController < Admin::Certification::Applicatio
     @approved_count = @reviews.where(status: :approved).count
     @returned_count = @reviews.where(status: :returned).count
     @approval_rate = @total_count.zero? ? 0 : (@approved_count * 100.0 / @total_count).round
+
+    # adding reviews/payouts in one log
+    @history_items = []
+
+    @reviews.each do |review|
+      @history_items << {
+        type: :review,
+        title: review.project.title,
+        id: review.id,
+        path: admin_certification_ship_path(review),
+        status: review.status,
+        amount: review.stardust_earned || 0,
+        date: review.decided_at
+      }
+    end
+
+    @payouts.each do |payout|
+      @history_items << {
+        type: :payout,
+        title: "Payout",
+        id: payout.id,
+        path: nil,
+        status: :paid,
+        amount: payout.paid_amount || payout.amount,
+        date: payout.paid_at
+      }
+    end
+
+    @history_items.sort_by! { |item| item[:date] || Time.at(0) }.reverse!
   end
 
   def create_payout_request

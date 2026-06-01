@@ -345,6 +345,11 @@
     }
   }
 
+  &__payout-log-title {
+    color: var(--color-brand-off-white);
+    font-weight: 600;
+  }
+
   &__review-id {
     color: var(--muted);
     font-size: 0.8rem;
@@ -356,6 +361,10 @@
     font-weight: 700;
     color: var(--color-brand-yellow);
     font-variant-numeric: tabular-nums;
+
+    &--negative {
+      color: var(--color-brand-salmon);
+    }
   }
 
   &__cell-date {

@@ -96,37 +96,40 @@
     </section>
 
     <section class="reviewer-stats__history">
-      <h2>Review History</h2>
-      <% if @reviews.any? %>
+      <h2>History</h2>
+      <% if @history_items.any? %>
         <div class="reviewer-stats__table-wrap">
           <table class="reviewer-stats__table">
             <thead>
               <tr>
-                <th>Project</th>
-                <th>Verdict</th>
-                <th>Earned</th>
+                <th>Activity</th>
+                <th>Status</th>
+                <th>Amount</th>
                 <th>Date</th>
               </tr>
             </thead>
             <tbody>
-              <% @reviews.each do |review| %>
+              <% @history_items.each do |item| %>
                 <tr>
                   <td class="reviewer-stats__cell-project">
-                    <%= link_to review.project.title,
-                          admin_certification_ship_path(review),
-                          class: "reviewer-stats__project-link" %>
-                    <span class="reviewer-stats__review-id">#<%= review.id %></span>
+                    <% if item[:type] == :review %>
+                      <%= link_to item[:title], item[:path], class: "reviewer-stats__project-link" %>
+                      <span class="reviewer-stats__review-id">#<%= item[:id] %></span>
+                    <% else %>
+                      <span class="reviewer-stats__payout-log-title"><%= item[:title] %></span>
+                      <span class="reviewer-stats__review-id">#<%= item[:id] %></span>
+                    <% end %>
                   </td>
                   <td>
-                    <span class="status-pill status-pill--<%= review.status %>">
-                      <%= review.status.capitalize %>
+                    <span class="status-pill status-pill--<%= item[:status] %>">
+                      <%= item[:status].to_s.capitalize %>
                     </span>
                   </td>
-                  <td class="reviewer-stats__cell-earned">
-                    <%= review.stardust_earned || 0 %> ✦
+                  <td class="reviewer-stats__cell-earned <%= 'reviewer-stats__cell-earned--negative' if item[:type] == :payout %>">
+                    <%= item[:type] == :review ? "+" : "-" %><%= item[:amount] %> ✦
                   </td>
                   <td class="reviewer-stats__cell-date">
-                    <%= review.decided_at&.strftime('%b %d, %Y') || '—' %>
+                    <%= item[:date]&.strftime('%b %d, %Y') || '—' %>
                   </td>
                 </tr>
               <% end %>
@@ -135,7 +138,7 @@
         </div>
       <% else %>
         <div class="reviewer-stats__empty">
-          <p>No reviews yet. Start reviewing to earn stardust!</p>
+          <p>No activity yet. Start reviewing to earn Stardust!</p>
         </div>
       <% end %>
     </section>
