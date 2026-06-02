@@ -693,6 +693,7 @@ Rails.application.routes.draw do
       resources :ships, path: "ship", only: [ :index, :show, :update ] do
         collection do
           get :next
+          get :logs
         end
         member do
           post :claim
