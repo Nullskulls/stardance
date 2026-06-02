@@ -89,6 +89,10 @@ gem "omniauth"
 gem "omniauth-rails_csrf_protection"
 gem "omniauth_openid_connect"
 gem "omniauth-oauth2"
+gem "omniauth-github"
+
+# Referral raffle (GitHub-login engine mounted on the raffle. subdomain)
+gem "raffle", path: "engines/raffle"
 gem "slack-ruby-client"
 gem "blazer"
 gem "flipper"
