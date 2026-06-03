@@ -1,11 +1,6 @@
 .like-button {
   display: inline-flex;
 
-  &__form {
-    display: inline-flex;
-    margin: 0;
-  }
-
   &__btn {
     display: flex;
     align-items: flex-end;
@@ -23,10 +18,6 @@
       background: var(--yellow);
       border-color: var(--brown);
       color: var(--brown);
-
-      .like-button__icon {
-        fill: var(--brown);
-      }
     }
 
     &--disabled {
@@ -65,13 +56,6 @@
       mask-position: -1400px 0;
       will-change: mask-position;
     }
-  }
-
-  &__icon {
-    width: 25px;
-    height: 25px;
-    fill: var(--brown);
-    transition: fill 0.15s ease;
   }
 
   &__count {

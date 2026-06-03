@@ -12,9 +12,7 @@ export default class extends Controller {
     const nowLiked = !this.likedValue;
 
     if (nowLiked) {
-      // Reset to frame 0 without transition, then kick off the sprite animation.
       this.spriteTarget.classList.remove("is-liked", "is-animating");
-      // One rAF to let the browser register the class removal before re-adding.
       requestAnimationFrame(() => {
         this.spriteTarget.classList.add("is-animating");
         setTimeout(() => {
@@ -23,7 +21,6 @@ export default class extends Controller {
         }, 1000);
       });
     } else {
-      // Unlike — snap back instantly (transition-duration is 0s without is-animating).
       this.spriteTarget.classList.remove("is-liked", "is-animating");
     }
 
