@@ -4,7 +4,7 @@
   approved = decision.approved?
   title = approved ? "Project certified" : "Returned for changes"
   message = if approved
-    "This ship is approved and ready for voting."
+    "This project was vetted by Shipwrights and is now up for voting. You can ship again after making more updates."
   else
     "This needs changes before we can consider it shipped. Review the Shipwright feedback, make updates, then ship again."
   end
