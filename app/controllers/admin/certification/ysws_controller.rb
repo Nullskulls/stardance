@@ -125,7 +125,7 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
     prior_ship = project.ship_event_posts
       .where("posts.created_at < ?", ship_post&.created_at || project.created_at)
       .order("posts.created_at DESC").first
-    review_start = prior_ship&.created_at || project.created_at
+    review_start = prior_ship&.created_at || Time.utc(2026, 5, 30)
 
     all_posts = project.posts
       .where(postable_type: "Post::Devlog")

@@ -1,7 +1,7 @@
 class ProjectsController < ApplicationController
   # Mission + payout-votes render as discover-rail modules on the project page.
   # The expanded mission module also previews the next guide step.
-  discover_rail_widgets :project_mission_expanded, :ship_intro, :payout_votes,
+  discover_rail_widgets :project_mission_expanded, :mission_browse, :ship_intro, :payout_votes,
                         context: -> { { project: @project, votes_for_payout: @votes_for_payout } }
 
   before_action :set_project_minimal, only: [ :edit, :update, :destroy ]
@@ -98,6 +98,21 @@ class ProjectsController < ApplicationController
 
     @show_project_onboarding = @is_member && @posts.empty?
     @project_onboarding_mission = @project.current_mission
+
+    if @is_member && @project.current_mission.nil? && !@project.shipped?
+      taken_mission_ids = current_user.projects
+                                      .where(deleted_at: nil)
+                                      .joins(:mission_attachments)
+                                      .where(project_mission_attachments: { detached_at: nil, deleted_at: nil })
+                                      .pluck("project_mission_attachments.mission_id")
+                                      .uniq
+      @available_missions = Mission.available
+                                   .where.not(id: taken_mission_ids)
+                                   .with_attached_icon
+                                   .order(featured_at: :desc)
+                                   .limit(12)
+                                   .to_a
+    end
 
     @show_project_tour = params[:welcome] == "1" && current_user.present? && @is_member &&
                          current_user.projects.count == 1 && !session[:project_tour_seen]
@@ -371,6 +386,13 @@ class ProjectsController < ApplicationController
     end
   end
 
+  def followers
+    @project = Project.find(params[:id])
+    authorize @project, :show?
+    @followers = @project.followers.order(:display_name)
+    render "users/followers", layout: false
+  end
+
   def readme
     unless turbo_frame_request?
       redirect_to project_path(@project)
@@ -446,8 +468,6 @@ class ProjectsController < ApplicationController
 
   def validate_url_not_dead(attribute, name)
     require "uri"
-    require "faraday"
-    require "faraday/follow_redirects"
 
     return unless @project.send(attribute).present?
 
@@ -457,20 +477,19 @@ class ProjectsController < ApplicationController
       return
     end
 
-    conn = Faraday.new(
-      url: uri.to_s,
-      headers: { "User-Agent" => "Stardance project validator (https://stardance.hackclub.com/)" }
-    ) do |faraday|
-      faraday.response :follow_redirects, max_redirects: 3
-      faraday.adapter Faraday.default_adapter
-    end
-    response = conn.get() do |req|
-      req.options.timeout = 5
-      req.options.open_timeout = 5
-    end
+    # Pinned probe: resolves+verifies the host and connects to that exact IP, so
+    # the address we vetted is the one we hit even across redirects. This is the
+    # SSRF-safe path the model's url_reachable? already uses — keep both on it.
+    response = SafeUrl.safe_get(
+      uri.to_s,
+      headers: { "User-Agent" => "Stardance project validator (https://stardance.hackclub.com/)" },
+      open_timeout: 5,
+      read_timeout: 5
+    )
+    status = response.code.to_i
 
-    unless (200..299).cover?(response.status)
-      @project.errors.add(attribute, "Your #{name} needs to return a 200 status. I got #{response.status}, is your code/website set to public!?!?")
+    unless (200..299).cover?(status)
+      @project.errors.add(attribute, "Your #{name} needs to return a 200 status. I got #{status}, is your code/website set to public!?!?")
     end
 
 
@@ -516,12 +535,19 @@ class ProjectsController < ApplicationController
 
   rescue URI::InvalidURIError
     @project.errors.add(attribute, "#{name} is not a valid URL")
-  rescue Faraday::ConnectionFailed => e
-    @project.errors.add(attribute, "Please make sure the URL is valid and reachable: #{e.message}")
+  rescue SafeUrl::Error => e
+    # Host failed SSRF verification (non-public IP, unresolvable, bad scheme).
+    # Keep the real reason in the logs; give the user a cheeky generic message
+    # so we don't confirm whether an internal host exists.
+    Rails.logger.warn("URL validation rejected #{attribute}: #{e.message}")
+    @project.errors.add(attribute, "nice try ding dong — #{name} has to be a real, public URL")
+  rescue SocketError, Errno::ECONNREFUSED, Errno::EHOSTUNREACH, Net::OpenTimeout, Net::ReadTimeout, OpenSSL::SSL::SSLError => e
+    Rails.logger.warn("URL validation failed for #{attribute}: #{e.class}: #{e.message}")
+    @project.errors.add(attribute, "#{name} could not be reached. Please make sure the URL is valid and publicly accessible.")
   rescue StandardError => e
-    @project.errors.add(attribute, "#{name} could not be verified (idk why, pls let a admin know if this is happening a lot and your sure that the URL is valid): #{e.message}")
+    Rails.logger.warn("URL validation error for #{attribute}: #{e.class}: #{e.message}")
+    @project.errors.add(attribute, "#{name} could not be verified. Please try again or contact support if the issue persists.")
   end
-
   def link_hackatime_projects
     # Unlink hackatime projects that were removed
     @project.hackatime_projects.where.not(id: hackatime_project_ids).find_each do |hp|
