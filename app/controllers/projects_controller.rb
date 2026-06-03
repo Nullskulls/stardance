@@ -75,13 +75,15 @@ class ProjectsController < ApplicationController
     load_posts = ->(include_deleted_devlogs: false) {
       scope = @project.posts
                        .visible_to(current_user)
-                       .includes(postable: [ :attachments_attachments ])
+                       .preload(:project, :user, :postable)
                        .order(created_at: :desc)
       unless include_deleted_devlogs
         scope = scope.joins("LEFT JOIN post_devlogs ON posts.postable_type = 'Post::Devlog' AND posts.postable_id = post_devlogs.id")
                      .where("posts.postable_type != 'Post::Devlog' OR post_devlogs.deleted_at IS NULL")
       end
-      scope.select { |post| post.postable.present? }
+      posts = scope.select { |post| post.postable.present? }
+      preload_timeline_postables(posts)
+      posts
     }
 
     @posts = if policy(@project).view_deleted_devlogs?
@@ -168,6 +170,20 @@ class ProjectsController < ApplicationController
     end
   end
   private :prepare_project_show_context
+
+  def preload_timeline_postables(posts)
+    grouped = posts.group_by(&:postable_type)
+    preloader = ->(records, associations) { ActiveRecord::Associations::Preloader.new(records: records, associations: associations).call }
+
+    if (devlogs = grouped["Post::Devlog"])
+      preloader.call(devlogs, postable: :attachments_attachments)
+    end
+
+    if (ships = grouped["Post::ShipEvent"])
+      preloader.call(ships, postable: [ :attachments_attachments, { mission_submission: :mission } ])
+    end
+  end
+  private :preload_timeline_postables
 
   def add_test_time
     authorize @project

@@ -134,6 +134,7 @@ module Certification
     before_save :stamp_decided_at, if: -> { will_save_change_to_status? && status_change&.last != "pending" && decided_at.nil? }
     before_save :assign_stardust_earned, if: -> { will_save_change_to_status? && status_change&.last != "pending" && reviewer_id.present? }
     after_save :apply_verdict_to_project!, if: :saved_change_to_status?
+    after_save_commit :post_decision_to_timeline!, if: -> { saved_change_to_status? && !pending? }
     after_save_commit :notify_owner!, if: -> { saved_change_to_status? && !pending? }
 
     private
@@ -167,9 +168,6 @@ module Certification
     end
 
     def create_ysws_review_for_ship(ship_event)
-      # Get the project owner who shipped the project
-      owner = project.memberships.owner.first&.user
-
       unless owner
         Sentry.capture_message(
           "Ship certification approved but no owner found to create YSWS review",
@@ -192,8 +190,23 @@ module Certification
       ).call
     end
 
+    def owner
+      @owner ||= project.memberships.owner.first&.user
+    end
+
+    def post_decision_to_timeline!
+      return unless owner
+      return unless Flipper.enabled?(:week_1_release, owner)
+
+      Post.create_or_find_by!(postable_type: "Post::ShipDecision", postable_id: id) do |post|
+        post.user = owner
+        post.project = project
+        post.created_at = decided_at if decided_at.present?
+        post.updated_at = decided_at if decided_at.present?
+      end
+    end
+
     def notify_owner!
-      owner = project.memberships.owner.first&.user
       return unless owner&.slack_id.present?
 
       case status.to_sym

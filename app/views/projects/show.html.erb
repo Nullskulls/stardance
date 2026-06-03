@@ -615,6 +615,8 @@
                        post: post,
                        project: @project,
                        ship_number: ship_count - ship_index + 1 %>
+          <% elsif post.postable_type == "Post::ShipDecision" %>
+            <%= render "users/ship_decision_card", post: post, decision: post.postable, project: @project %>
           <% else %>
             <%= render PostComponent.new(post: post, current_user: current_user, theme: :profile_dark) %>
           <% end %>
