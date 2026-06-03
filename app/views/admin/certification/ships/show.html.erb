@@ -2,7 +2,7 @@
 
 <%
   owner = @ship.project.memberships.find(&:owner?)&.user
-  can_review = @ship.reviewer_id == current_user.id && @ship.pending?
+  can_review = @ship.claim_held_by?(current_user) && @ship.pending?
 %>
 
 <div class="app-layout app-layout--wide"
@@ -78,7 +78,7 @@
         <% else %>
           <div class="ship-review__claim">
             <p>You don't currently hold the claim on this review.</p>
-            <%= button_to "Claim this review", claim_admin_certification_ship_path(@ship), method: :post,
+            <%= button_to "Claim this review", admin_certification_ship_claim_path(@ship), method: :post,
                   class: "action-btn action-btn--large action-btn--primary" %>
             <%= link_to "Back to queue", admin_certification_ships_path,
                   class: "action-btn action-btn--small action-btn--secondary" %>

@@ -12,13 +12,6 @@ class Admin::Certification::ShipPolicy < ApplicationPolicy
 
   def next? = user&.can_review?
 
-  def claim? = user&.can_review? && not_own_project?
-
-  def unclaim?
-    return false unless user&.can_review? && not_own_project?
-    record.claim_held_by?(user) || (record.reviewer_id == user.id && record.claim_expired?)
-  end
-
   class Scope < ApplicationPolicy::Scope
     def resolve
       return scope.none unless user&.can_review?
