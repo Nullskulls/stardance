@@ -751,6 +751,24 @@
 }
 
 // ── Odds ─────────────────────────────────────────────────────────────────────
+.raffle-hca-notice {
+  margin-bottom: var(--space-l);
+  padding: var(--space-m) var(--space-l);
+  background: var(--color-brand-salmon-soft);
+  border: 2px solid var(--color-brand-salmon);
+  border-radius: var(--profile-radius);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-m);
+
+  p {
+    margin: 0;
+    font-size: var(--font-size-s);
+    color: var(--color-space-text);
+  }
+}
+
 .raffle-odds {
   margin: 0 0 var(--space-l);
 }
@@ -836,11 +854,10 @@
 
 // ── Referral banner (shown in main app after HCA link) ───────────────────────
 .raffle-referral-banner {
-  width: 100%;
-  margin: 0 0 var(--space-l);
+  margin-bottom: var(--space-m);
   padding: var(--space-m) var(--space-l);
-  background: var(--color-overlay-light-soft);
-  border: 1px solid var(--color-overlay-light);
+  background: var(--color-brand-highlight-faint);
+  border: 1px solid var(--color-brand-highlight-soft);
   border-radius: var(--profile-radius);
   display: flex;
   align-items: center;

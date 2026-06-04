@@ -30,6 +30,16 @@
       <%= render "raffle/shared/week_track", current: @week_number %>
     <% end %>
 
+    <% if current_participant.age_group_teen? && !current_participant.hca_linked? %>
+      <div class="raffle-hca-notice">
+        <p>
+          <strong>Link your Hack Club account</strong> to activate your raffle entry.
+          Your base entry and referral entries won't count until you do.
+        </p>
+        <a href="<%= main_app_base_url %>/projects/setup" class="raffle-btn raffle-btn--sm">Create a project to link</a>
+      </div>
+    <% end %>
+
     <% if @week && @entry_count.to_i > 0 %>
       <div class="raffle-odds">
         <div class="raffle-odds__meter">

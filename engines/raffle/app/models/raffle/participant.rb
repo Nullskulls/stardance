@@ -65,6 +65,7 @@ module Raffle
 
     def entry_count(week)
       return 0 unless week && eligible?
+      return 0 if age_group_teen? && !hca_linked?
 
       base = (age_group_teen? && signup_week_id == week.id) ? 1 : 0
       referral_entries = referrals.status_verified.where(credited_week_id: week.id).count * 20
@@ -74,6 +75,11 @@ module Raffle
     def eligible?
       return eligible unless age_group_teen?
       eligible && self.class.country_eligible?(user)
+    end
+
+    def hca_linked?
+      return true unless age_group_teen?
+      user&.hca_linked?
     end
 
     def self.country_eligible?(user)

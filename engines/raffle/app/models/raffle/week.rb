@@ -21,19 +21,27 @@ module Raffle
     end
 
     # { participant_id => total_entries } for this week.
-    # Base entry (1) for participants who signed up this week +
+    # Base entry (1) for teens who signed up this week AND linked HCA +
     # 20 per verified referral credited to this week.
+    # Teens without HCA linked get 0 entries (excluded entirely).
     def standings
-      base = signup_participants.where(eligible: true).pluck(:id).each_with_object({}) do |pid, h|
-        h[pid] = 1
+      hca_linked_user_ids = ::User::Identity.where(provider: "hack_club").pluck(:user_id)
+
+      base = signup_participants.where(eligible: true).each_with_object({}) do |p, h|
+        next if p.age_group_teen? && !hca_linked_user_ids.include?(p.user_id)
+        h[p.id] = 1
       end
 
       referral_counts = credited_referrals.status_verified
                                           .group(:participant_id)
                                           .count
 
-      referral_counts.each do |pid, count|
-        base[pid] = (base[pid] || 0) + (count * 20)
+      activated_pids = Raffle::Participant.where(id: referral_counts.keys).select do |p|
+        p.age_group_adult? || hca_linked_user_ids.include?(p.user_id)
+      end.map(&:id)
+
+      activated_pids.each do |pid|
+        base[pid] = (base[pid] || 0) + (referral_counts[pid] * 20)
       end
 
       base
