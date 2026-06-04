@@ -53,7 +53,7 @@
       <% end %>
 
       <% if quote_repost? && body.present? %>
-        <div class="feed-post-card__body feed-post-card__body--inline">
+        <div class="feed-post-card__body feed-post-card__body--inline markdown-content">
           <%= helpers.md(body, allow_images: false) %>
         </div>
       <% end %>
@@ -61,7 +61,7 @@
   </header>
 
   <% if body.present? && !quote_repost? %>
-    <div class="feed-post-card__body">
+    <div class="feed-post-card__body markdown-content">
       <%= helpers.md(body, allow_images: false) %>
     </div>
   <% end %>
@@ -118,7 +118,7 @@
                       <span class="comment-modal__post-author">@<%= author_name %></span>
                     <% end %>
                     <% if body.present? %>
-                      <div class="comment-modal__post-body"><%= helpers.md(body, allow_images: false) %></div>
+                      <div class="comment-modal__post-body markdown-content"><%= helpers.md(body, allow_images: false) %></div>
                     <% end %>
                     <p class="comment-modal__replying-to">Replying to <span class="comment-modal__replying-to-name">@<%= author_name %></span></p>
                   </div>
