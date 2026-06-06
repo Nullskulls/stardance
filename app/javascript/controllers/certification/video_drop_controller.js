@@ -6,7 +6,6 @@ import { DirectUpload } from "@rails/activestorage";
 // submit) also a progress bar tracks the
 // transfer; and the submit button is locked/waiting until the upload finishes :)
 const ACCEPTED = ["video/mp4", "video/webm", "video/quicktime"];
-const MAX_BYTES = 250 * 1024 * 1024;
 
 export default class extends Controller {
   static targets = [
@@ -124,9 +123,6 @@ export default class extends Controller {
   validate(file) {
     if (!ACCEPTED.includes(file.type)) {
       return "That's not a supported video. Use mp4, webm, or mov.";
-    }
-    if (file.size > MAX_BYTES) {
-      return `That video is ${this.mb(file.size)}. The max is 250 MB.`;
     }
     return null;
   }

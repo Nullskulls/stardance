@@ -49,12 +49,10 @@ module Certification
     }, default: :pending
 
     ACCEPTED_VIDEO_TYPES = %w[video/mp4 video/webm video/quicktime].freeze
-    MAX_VIDEO_SIZE = 250.megabytes
 
     validates :feedback, length: { maximum: 10_000 }, allow_blank: true
     validates :verdict_video,
-              content_type: { in: ACCEPTED_VIDEO_TYPES, spoofing_protection: true },
-              size: { less_than: MAX_VIDEO_SIZE, message: "is too large (max 250 MB)" }
+              content_type: { in: ACCEPTED_VIDEO_TYPES, spoofing_protection: true }
 
     scope :for_reviewer, ->(user) {
       joins(:project)
