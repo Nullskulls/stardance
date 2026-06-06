@@ -16,7 +16,7 @@
 
   <% if week %>
     <div class="raffle-widget__raffle-link">
-      <%= link_to "GPU Raffle →", raffle_base_url, class: "raffle-widget__raffle-link-anchor" %>
+      <a href="<%= helpers.raffle_base_url %>/">GPU Raffle &rarr;</a>
       <span><%= entry_count %> <%= "entry".pluralize(entry_count) %> · week <%= week.number %>/16</span>
     </div>
   <% end %>
