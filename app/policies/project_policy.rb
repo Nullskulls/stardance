@@ -36,7 +36,7 @@ class ProjectPolicy < ApplicationPolicy
     end
 
     def request_recertification?
-        member? && record.needs_changes?
+        (member? || user&.can_review?) && record.needs_changes?
     end
 
     def follow?

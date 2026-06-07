@@ -932,13 +932,20 @@ turbo-frame#project_hero {
 
     &:hover,
     &:focus-visible {
-      background: color-mix(in srgb, var(--color-brand-salmon) 30%, transparent);
-      border-color: color-mix(in srgb, var(--color-brand-salmon) 65%, transparent);
+      background: color-mix(
+        in srgb,
+        var(--color-brand-salmon) 30%,
+        transparent
+      );
+      border-color: color-mix(
+        in srgb,
+        var(--color-brand-salmon) 65%,
+        transparent
+      );
       outline: none;
     }
   }
 }
-
 
 .project-show__latest-ship-mission-link {
   color: var(--color-brand-yellow);
@@ -1588,7 +1595,6 @@ turbo-frame#project_hero {
   min-width: 0;
 }
 
-
 .recert-modal {
   border: none;
   padding: 0;
@@ -1617,7 +1623,8 @@ turbo-frame#project_hero {
   gap: var(--space-m);
   padding: var(--space-l);
   background: var(--color-space-bg-2, #0d0b2e);
-  border: 1px solid color-mix(in srgb, var(--color-brand-salmon) 45%, transparent);
+  border: 1px solid
+    color-mix(in srgb, var(--color-brand-salmon) 45%, transparent);
   border-radius: var(--border-radius);
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.04),
@@ -1641,7 +1648,9 @@ turbo-frame#project_hero {
   font-size: 1.25rem;
   line-height: 1;
   cursor: pointer;
-  transition: background 120ms ease, color 120ms ease;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
 
   &:hover,
   &:focus-visible {
@@ -1686,8 +1695,13 @@ turbo-frame#project_hero {
   flex-direction: column;
   gap: var(--space-xs);
   padding: var(--space-m);
-  background: color-mix(in srgb, var(--color-brand-salmon) 5%, rgba(255, 255, 255, 0.02));
-  border: 1px solid color-mix(in srgb, var(--color-brand-salmon) 22%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--color-brand-salmon) 5%,
+    rgba(255, 255, 255, 0.02)
+  );
+  border: 1px solid
+    color-mix(in srgb, var(--color-brand-salmon) 22%, transparent);
   border-radius: calc(var(--border-radius) - 2px);
 }
 
