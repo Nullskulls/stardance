@@ -19,7 +19,9 @@ export default class extends Controller {
     this.buttonTarget.textContent = "Completing...";
 
     try {
-      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+      const csrfToken = document.querySelector(
+        'meta[name="csrf-token"]',
+      )?.content;
       const response = await fetch(
         `/admin/certification/review/${this.reviewIdValue}/complete`,
         {
@@ -34,8 +36,13 @@ export default class extends Controller {
       const data = await response.json();
 
       if (response.ok) {
-        this.showFlash(data.message || "Review completed successfully! Redirecting to review queue...", "success");
-        window.location.href = data.redirect_url || "/admin/certification/review";
+        this.showFlash(
+          data.message ||
+            "Review completed successfully! Redirecting to review queue...",
+          "success",
+        );
+        window.location.href =
+          data.redirect_url || "/admin/certification/review";
       } else {
         const errorMessage =
           data.error || data.errors?.join(", ") || "Failed to complete review";
@@ -45,7 +52,10 @@ export default class extends Controller {
       }
     } catch (error) {
       console.error("Error completing review:", error);
-      this.showFlash("An unexpected error occurred. Please try again.", "error");
+      this.showFlash(
+        "An unexpected error occurred. Please try again.",
+        "error",
+      );
       this.buttonTarget.disabled = false;
       this.buttonTarget.textContent = "Complete Review";
     }

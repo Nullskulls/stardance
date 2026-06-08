@@ -191,7 +191,7 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
   rescue StandardError => e
     skip_authorization unless pundit_policy_authorized?
     Rails.logger.error "[YSWS#complete] user=#{current_user&.id} review=#{params[:id]} #{e.class}: #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
-    Sentry.capture_exception(e, tags: { category: 'certification.ysws' }, extra: { ysws_review_id: params[:id], user_id: current_user&.id })
+    Sentry.capture_exception(e, tags: { category: "certification.ysws" }, extra: { ysws_review_id: params[:id], user_id: current_user&.id })
     render json: {
       success: false,
       error: "Failed to complete review: #{e.message}. Let AVD know!"
