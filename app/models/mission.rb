@@ -15,6 +15,7 @@
 #  estimated_completion_minutes :integer
 #  featured_at                  :datetime
 #  fixed_stardust_payout        :integer
+#  guide_sections_count         :integer
 #  guide_url                    :string
 #  name                         :string           not null
 #  prizes_count                 :integer          default(0), not null

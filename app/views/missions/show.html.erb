@@ -64,8 +64,9 @@
               <% if @estimated_label.present? %>
                 <li class="mission-home__hero-chip mission-home__hero-chip--time"><%= @estimated_label %></li>
               <% end %>
-              <% if @mission.has_guide? %>
-                <li class="mission-home__hero-chip mission-home__hero-chip--sections"><%= pluralize(@guide_outline.length, "section") %></li>
+              <% sections_count = @mission.external_guide? ? @mission.guide_sections_count : @guide_outline.length %>
+              <% if sections_count&.positive? %>
+                <li class="mission-home__hero-chip mission-home__hero-chip--sections"><%= pluralize(sections_count, "section") %></li>
               <% end %>
             </ul>
 

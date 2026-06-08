@@ -466,6 +466,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_08_154500) do
     t.integer "estimated_completion_minutes"
     t.datetime "featured_at"
     t.integer "fixed_stardust_payout"
+    t.integer "guide_sections_count"
     t.string "guide_url"
     t.string "name", null: false
     t.integer "prizes_count", default: 0, null: false
