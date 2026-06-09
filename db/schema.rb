@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_09_150529) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_09_182122) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -1187,6 +1187,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_09_150529) do
     t.boolean "manual_ysws_override"
     t.boolean "mission_review_notifications", default: true, null: false
     t.datetime "onboarded_at"
+    t.datetime "outpost_email_sent_at"
     t.string "ref"
     t.string "regions", default: [], array: true
     t.string "session_token"

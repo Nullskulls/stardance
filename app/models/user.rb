@@ -274,6 +274,19 @@ class User < ApplicationRecord
       .first
   end
 
+  # Fires the Outpost email at most once per user. Uses a conditional UPDATE so
+  # concurrent /outpost hits can't enqueue the mail twice.
+  def deliver_outpost_email!
+    return if outpost_email_sent_at.present? || email.blank?
+
+    claimed = self.class.where(id: id, outpost_email_sent_at: nil)
+                  .update_all(outpost_email_sent_at: Time.current)
+    return unless claimed == 1
+
+    self.outpost_email_sent_at = Time.current
+    UserMailer.outpost(self).deliver_later
+  end
+
   private
 
   def increment_signup_counter
