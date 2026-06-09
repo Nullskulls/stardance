@@ -18,16 +18,30 @@ class OutpostEmailTest < ActionDispatch::IntegrationTest
     assert_nil @user.reload.outpost_email_sent_at
   end
 
-  test "logged-in visitor to /outpost gets the email exactly once" do
+  test "logged-in visitor to /outpost gets the email and is added to #outpost exactly once" do
     sign_in @user
 
-    assert_enqueued_email_with UserMailer, :outpost, args: [ @user ] do
-      get "/outpost"
+    assert_enqueued_with job: AddUserToOutpostChannelJob, args: [ @user.id ] do
+      assert_enqueued_email_with UserMailer, :outpost, args: [ @user ] do
+        get "/outpost"
+      end
     end
     assert_not_nil @user.reload.outpost_email_sent_at
 
-    # A second visit must not enqueue another email.
+    # A second visit must not enqueue another email or channel add.
     assert_no_enqueued_emails { get "/outpost" }
+    assert_no_enqueued_jobs(only: AddUserToOutpostChannelJob) { get "/outpost" }
+  end
+
+  test "user without a slack_id gets the email but is not added to #outpost" do
+    @user.update!(slack_id: nil)
+    sign_in @user
+
+    assert_no_enqueued_jobs(only: AddUserToOutpostChannelJob) do
+      assert_enqueued_email_with UserMailer, :outpost, args: [ @user ] do
+        get "/outpost"
+      end
+    end
   end
 
   test "logged-out /outpost visit defers the email until sign in" do

@@ -274,8 +274,9 @@ class User < ApplicationRecord
       .first
   end
 
-  # Fires the Outpost email at most once per user. Uses a conditional UPDATE so
-  # concurrent /outpost hits can't enqueue the mail twice.
+  # Fires the Outpost email at most once per user, and adds them to the #outpost
+  # Slack channel. Uses a conditional UPDATE so concurrent /outpost hits can't
+  # enqueue the work twice.
   def deliver_outpost_email!
     return if outpost_email_sent_at.present? || email.blank?
 
@@ -285,6 +286,7 @@ class User < ApplicationRecord
 
     self.outpost_email_sent_at = Time.current
     UserMailer.outpost(self).deliver_later
+    AddUserToOutpostChannelJob.perform_later(id) if slack_id.present?
   end
 
   private
