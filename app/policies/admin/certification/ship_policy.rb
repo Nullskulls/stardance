@@ -3,7 +3,7 @@
 class Admin::Certification::ShipPolicy < ApplicationPolicy
   def index? = user&.can_review?
 
-  def show? = user&.can_review?
+  def show? = user&.can_review? && not_own_project?
 
   def update?
     return false unless user&.can_review? && not_own_project?
