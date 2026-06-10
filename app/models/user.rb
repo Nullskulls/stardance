@@ -286,7 +286,7 @@ class User < ApplicationRecord
 
     self.outpost_email_sent_at = Time.current
     UserMailer.outpost(self).deliver_later
-    AddUserToOutpostChannelJob.perform_later(id) if slack_id.present?
+    AddUserToOutpostChannelJob.perform_later(id)
   end
 
   private

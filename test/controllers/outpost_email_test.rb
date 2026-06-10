@@ -33,11 +33,11 @@ class OutpostEmailTest < ActionDispatch::IntegrationTest
     assert_no_enqueued_jobs(only: AddUserToOutpostChannelJob) { get "/outpost" }
   end
 
-  test "user without a slack_id gets the email but is not added to #outpost" do
+  test "user without a slack_id still enqueues the channel add (job resolves the id via email)" do
     @user.update!(slack_id: nil)
     sign_in @user
 
-    assert_no_enqueued_jobs(only: AddUserToOutpostChannelJob) do
+    assert_enqueued_with job: AddUserToOutpostChannelJob, args: [ @user.id ] do
       assert_enqueued_email_with UserMailer, :outpost, args: [ @user ] do
         get "/outpost"
       end
