@@ -153,6 +153,12 @@ production:
     concurrency: 1
     description: "Recalculate approx_balance and approx_total_earned from ledger entries"
 
+  certification_ysws_airtable_resync:
+    class: Certification::YswsAirtableResyncJob
+    schedule: every day at 4pm America/New_York
+    concurrency: 1
+    description: "Enqueue airtable sync for reviews where sync initially failed"
+
   ahoy_backfill_project_created_ahoy_events:
     class: AhoyBackfillProjectCreatedJob
     schedule: every day at 5am America/New_York
