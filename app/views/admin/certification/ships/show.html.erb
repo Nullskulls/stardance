@@ -117,7 +117,7 @@
                   <%= link_to admin_certification_ship_path(review), target: "_blank", rel: "noopener",
                         class: class_names("submitter-history__card", "submitter-history__card--current" => current) do %>
                     <div class="submitter-history__card-head">
-                      <span class="status-pill status-pill--<%= review.status %>"><%= review.status %></span>
+                      <span class="status-pill status-pill--<%= review.status %>"><%= review.status.capitalize %></span>
                       <span class="submitter-history__card-id">#<%= review.id %></span>
                       <% if current %>
                         <span class="submitter-history__card-here">&larr; you're here</span>

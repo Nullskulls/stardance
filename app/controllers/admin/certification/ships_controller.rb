@@ -71,7 +71,7 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
   # Also loaded for update so the re-rendered show page keeps the submitter
   # panel when the verdict form fails validation.
   def set_submitter_context
-    @owner = @ship.project.memberships.find(&:owner?)&.user
+    @owner = @ship.owner
     @submitter_history = @owner && ::Certification::Ship.submitter_history(@owner)
   end
 
