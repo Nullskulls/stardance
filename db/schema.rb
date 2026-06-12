@@ -166,6 +166,32 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_150742) do
     t.index ["ysws_review_id"], name: "index_certification_devlog_reviews_on_ysws_review_id"
   end
 
+  create_table "certification_funding_requests", force: :cascade do |t|
+    t.integer "approved_amount_cents"
+    t.datetime "claim_expires_at"
+    t.datetime "claimed_at"
+    t.integer "complexity_tier", null: false
+    t.datetime "created_at", null: false
+    t.datetime "decided_at"
+    t.integer "discount_stardust_awarded"
+    t.text "feedback"
+    t.text "internal_reason"
+    t.integer "lock_version", default: 0, null: false
+    t.bigint "project_id", null: false
+    t.integer "requested_amount_cents", null: false
+    t.bigint "reviewer_id"
+    t.integer "stardust_earned"
+    t.integer "status", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["decided_at"], name: "index_certification_funding_requests_on_decided_at"
+    t.index ["project_id"], name: "index_certification_funding_requests_on_project_id"
+    t.index ["project_id"], name: "index_funding_requests_unique_pending_project", unique: true, where: "(status = 0)"
+    t.index ["reviewer_id"], name: "index_certification_funding_requests_on_reviewer_id"
+    t.index ["status", "claim_expires_at"], name: "idx_funding_requests_on_status_claim_expires"
+    t.index ["user_id"], name: "index_certification_funding_requests_on_user_id"
+  end
+
   create_table "certification_ship_reviews", force: :cascade do |t|
     t.datetime "claim_expires_at"
     t.datetime "claimed_at"
@@ -325,6 +351,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_150742) do
     t.index ["likeable_type", "likeable_id"], name: "index_likes_on_likeable"
     t.index ["user_id", "likeable_type", "likeable_id"], name: "index_likes_on_user_id_and_likeable_type_and_likeable_id", unique: true
     t.index ["user_id"], name: "index_likes_on_user_id"
+  end
+
+  create_table "lookout_sessions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "devlog_id"
+    t.integer "duration_seconds", default: 0
+    t.string "mode"
+    t.bigint "project_id", null: false
+    t.string "recording_url"
+    t.datetime "started_at"
+    t.string "status", default: "pending"
+    t.datetime "stopped_at"
+    t.string "token", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["devlog_id"], name: "index_lookout_sessions_on_devlog_id"
+    t.index ["project_id", "status"], name: "index_lookout_sessions_on_project_id_and_status"
+    t.index ["project_id"], name: "index_lookout_sessions_on_project_id"
+    t.index ["token"], name: "index_lookout_sessions_on_token", unique: true
+    t.index ["user_id"], name: "index_lookout_sessions_on_user_id"
   end
 
   create_table "messages", force: :cascade do |t|
@@ -494,6 +540,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_150742) do
     t.text "hackatime_projects_key_snapshot"
     t.datetime "hackatime_pulled_at"
     t.integer "likes_count", default: 0, null: false
+    t.string "phase"
     t.datetime "synced_at"
     t.boolean "tutorial", default: false, null: false
     t.datetime "updated_at", null: false
@@ -661,6 +708,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_150742) do
     t.integer "devlogs_count", default: 0, null: false
     t.integer "duration_seconds", default: 0, null: false
     t.string "fire_letter_id"
+    t.string "hardware_stage"
     t.datetime "marked_fire_at"
     t.bigint "marked_fire_by_id"
     t.integer "memberships_count", default: 0, null: false
@@ -1221,9 +1269,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_150742) do
     t.text "internal_notes"
     t.string "ip_address"
     t.string "last_name"
+    t.string "manual_outpost_ticket_approval"
     t.boolean "manual_ysws_override"
     t.boolean "mission_review_notifications", default: true, null: false
     t.datetime "onboarded_at"
+    t.integer "outpost_discount_stardust", default: 0, null: false
     t.datetime "outpost_email_sent_at"
     t.string "ref"
     t.string "regions", default: [], array: true
@@ -1312,6 +1362,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_150742) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "certification_devlog_reviews", "certification_ysws_reviews", column: "ysws_review_id"
   add_foreign_key "certification_devlog_reviews", "post_devlogs"
+  add_foreign_key "certification_funding_requests", "projects"
+  add_foreign_key "certification_funding_requests", "users"
+  add_foreign_key "certification_funding_requests", "users", column: "reviewer_id"
   add_foreign_key "certification_ship_reviews", "projects"
   add_foreign_key "certification_ship_reviews", "users", column: "reviewer_id"
   add_foreign_key "certification_ysws_reviews", "certification_ship_reviews", column: "ship_cert_id"
@@ -1330,6 +1383,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_150742) do
   add_foreign_key "fulfillment_payout_runs", "users", column: "approved_by_user_id"
   add_foreign_key "ledger_entries", "users"
   add_foreign_key "likes", "users"
+  add_foreign_key "lookout_sessions", "post_devlogs", column: "devlog_id"
+  add_foreign_key "lookout_sessions", "projects"
+  add_foreign_key "lookout_sessions", "users"
   add_foreign_key "messages", "users"
   add_foreign_key "messages", "users", column: "sent_by_id"
   add_foreign_key "mission_guide_variants", "missions"
@@ -1372,8 +1428,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_150742) do
   add_foreign_key "raffle_draws", "raffle_participants", column: "winner_participant_id"
   add_foreign_key "raffle_draws", "raffle_weeks", column: "week_id"
   add_foreign_key "raffle_participants", "raffle_weeks", column: "signup_week_id"
+  add_foreign_key "raffle_participants", "users"
   add_foreign_key "raffle_referrals", "raffle_participants", column: "participant_id"
   add_foreign_key "raffle_referrals", "raffle_weeks", column: "credited_week_id"
+  add_foreign_key "raffle_referrals", "users", column: "referred_user_id"
   add_foreign_key "raffle_weekly_claims", "raffle_participants", column: "participant_id"
   add_foreign_key "raffle_weekly_claims", "raffle_weeks", column: "week_id"
   add_foreign_key "raffle_weeks", "raffle_participants", column: "winner_participant_id"

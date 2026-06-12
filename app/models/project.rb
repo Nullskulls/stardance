@@ -9,6 +9,7 @@
 #  description          :text
 #  devlogs_count        :integer          default(0), not null
 #  duration_seconds     :integer          default(0), not null
+#  hardware_stage       :string
 #  marked_fire_at       :datetime
 #  memberships_count    :integer          default(0), not null
 #  nominated_fire_at    :datetime
@@ -63,6 +64,11 @@ class Project < ApplicationRecord
     "Minecraft Mods", "Hardware", "Android App", "iOS App", "Other"
   ].freeze
 
+  # Hardware projects carry a build/design stage; software projects leave
+  # hardware_stage nil. Drives the Lookout screen-recording flow on the project
+  # page (hardware builders can't run a Hackatime editor plugin).
+  HARDWARE_STAGES = %w[design build].freeze
+
   scope :excluding_member, ->(user) {
     user ? where.not(id: user.projects) : all
   }
@@ -88,6 +94,7 @@ class Project < ApplicationRecord
   has_many :memberships, class_name: "Project::Membership", dependent: :destroy
   has_many :users, through: :memberships
   has_many :hackatime_projects, class_name: "User::HackatimeProject", dependent: :nullify
+  has_many :lookout_sessions, dependent: :destroy
   has_many :posts, dependent: :destroy
   has_many :devlog_posts, -> { where(postable_type: "Post::Devlog").order(created_at: :desc) }, class_name: "Post"
   has_many :devlogs, through: :devlog_posts, source: :postable, source_type: "Post::Devlog"
@@ -97,6 +104,7 @@ class Project < ApplicationRecord
   has_many :votes, dependent: :destroy
   has_many :reports, class_name: "Project::Report", dependent: :destroy
   has_many :ship_reviews, class_name: "Certification::Ship", dependent: :restrict_with_exception
+  has_many :certification_funding_requests, class_name: "Certification::FundingRequest", dependent: :destroy
   has_many :skips, class_name: "Project::Skip", dependent: :destroy
   has_many :project_follows, dependent: :destroy
   has_many :followers, through: :project_follows, source: :user
@@ -242,7 +250,19 @@ class Project < ApplicationRecord
             content_type: { in: ACCEPTED_CONTENT_TYPES, spoofing_protection: true },
             size: { less_than: MAX_BANNER_SIZE, message: "is too large (max 10 MB)" },
             processable_file: true
+  # A blank hardware_stage means "software project". The edit form's type
+  # toggle submits an empty string when Software is selected; coerce it to nil
+  # so the column actually clears and passes the inclusion validation (which
+  # allows nil, but not "").
+  normalizes :hardware_stage, with: ->(value) { value.presence }
+  validates :hardware_stage, inclusion: { in: HARDWARE_STAGES }, allow_nil: true
   validate :validate_project_categories
+  validate :hardware_stage_locked_after_funding_request
+
+  def hardware_stage_locked_after_funding_request
+    return unless hardware_stage_changed? && has_any_funding_request?
+    errors.add(:hardware_stage, "cannot be changed after a funding request has been submitted")
+  end
 
   def validate_project_categories
     return if project_categories.blank?
@@ -290,6 +310,48 @@ class Project < ApplicationRecord
 
   def shipped?
     shipped_at.present? || !draft?
+  end
+
+  def self.hardware_flow_enabled?
+    Flipper.enabled?(:hardware_flow)
+  end
+
+  # Hardware projects are the ones with a stage set; software projects leave it
+  # nil. Gates the Lookout recorder UI on the project page.
+  def hardware?
+    self.class.hardware_flow_enabled? && hardware_stage.present?
+  end
+
+  def design_stage?
+    self.class.hardware_flow_enabled? && hardware_stage == "design"
+  end
+
+  def build_stage?
+    self.class.hardware_flow_enabled? && hardware_stage == "build"
+  end
+
+  # True while a funding request for this project is awaiting reviewer decision.
+  def has_pending_funding_request?
+    certification_funding_requests.pending.exists?
+  end
+
+  # True once any funding request has been submitted (pending, approved, or returned).
+  def has_any_funding_request?
+    return @_has_any_funding_request if defined?(@_has_any_funding_request)
+    @_has_any_funding_request = certification_funding_requests.exists?
+  end
+
+  # The latest funding request (for displaying approved amount, status, etc.).
+  def latest_funding_request
+    return @_latest_funding_request if defined?(@_latest_funding_request)
+    @_latest_funding_request = certification_funding_requests.order(created_at: :desc).first
+  end
+
+  # Name of the Hackatime project that Lookout timelapse heartbeats are filed
+  # under (and auto-linked to this project) — the project title, so recorded
+  # time lands under the same Hackatime project as any code-based time.
+  def hackatime_recorder_name
+    title
   end
 
   def display_description
@@ -443,6 +505,13 @@ class Project < ApplicationRecord
         passed: has_devlog_since_last_ship?
       },
       {
+        key: :build_devlog,
+        label: "Post at least one build devlog before shipping",
+        fail_label: "Post at least one build devlog before you can ship!",
+        tooltip: "Now that your project is funded it's in the build stage. Log some build time and post a build devlog to show progress before you ship. Design-stage devlogs don't count.",
+        passed: !received_grant? || has_build_devlog_since_last_ship?
+      },
+      {
         key: :payout,
         label: "Your previous ship must have received a payout before you can ship again",
         fail_label: "Wait for your previous ship to get a payout before shipping again",
@@ -584,6 +653,21 @@ class Project < ApplicationRecord
   def has_devlog_since_last_ship?
     scope = devlog_posts
     scope = scope.where("posts.created_at > ?", last_ship_event.created_at) if last_ship_event
+    scope.exists?
+  end
+
+  # True once this project has had a funding request approved (the "I need
+  # Funding" path). Such projects must show real build progress before shipping.
+  def received_grant?
+    certification_funding_requests.approved.exists?
+  end
+
+  # Funded projects must post at least one BUILD-phase devlog since their last
+  # ship before they can ship — design-phase devlogs (logged before the grant)
+  # don't count.
+  def has_build_devlog_since_last_ship?
+    scope = devlogs.build_phase.where(deleted_at: nil)
+    scope = scope.where("post_devlogs.created_at > ?", last_ship_event.created_at) if last_ship_event
     scope.exists?
   end
 
