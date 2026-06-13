@@ -60,7 +60,7 @@
         <span class="feed-post-card__context">on</span>
         <%= link_to project.title, project_path(project), class: "feed-post-card__project", data: { turbo_frame: "_top" } %>
         <time class="feed-post-card__time" datetime="<%= post.created_at.iso8601 %>" title="<%= l(post.created_at, format: :long) %>">
-          · <%= time_ago_in_words(post.created_at) %>
+          · <%= time_ago_in_words(post.created_at) %> ago
         </time>
       </p>
 
@@ -100,7 +100,7 @@
   <% if project.demo_url.present? || project.repo_url.present? %>
     <div class="feed-post-card__body project-show__latest-ship-cta">
       <% if project.demo_url.present? %>
-        <%= link_to "Try project →",
+        <%= link_to project.hardware? ? "Video of Project →" : "Try project →",
                     project.demo_url,
                     target: "_blank",
                     rel: "noopener",
