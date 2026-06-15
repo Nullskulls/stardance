@@ -22,7 +22,7 @@
 
     <% if vote.errors.any? %>
       <div class="vote-scorecard__errors" role="alert">
-        <p class="vote-scorecard__errors-title">Check your vote</p>
+        <p class="vote-scorecard__errors-title">Check your rating</p>
         <ul class="vote-scorecard__errors-list">
           <% vote.errors.full_messages.each do |message| %>
             <li><%= message %></li>
@@ -53,8 +53,15 @@
                          class: "vote-scorecard__textarea" %>
     </div>
 
+    <p class="vote-scorecard__warning">
+      Ratings are reviewed. Thoughtful ratings earn a
+      <strong>1.2× payout blessing</strong>.
+      Spam or low-effort ratings will get your
+      <strong>payout halved</strong>.
+    </p>
+
     <%= render ActionButtonComponent.new(
-          text: "Submit vote",
+          text: "Submit rating",
           disabled: true,
           class: "vote-scorecard__submit",
           data: { vote_scorecard_target: "submit" }

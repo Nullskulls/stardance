@@ -9,6 +9,10 @@ class VotesController < ApplicationController
       load_assignment
       track_assignment_view if @assignment
     end
+
+    @ratings_total = Post::ShipEvent::VOTE_COST_PER_SHIP
+    remaining = current_user ? [ -current_user.vote_balance, 0 ].max : 0
+    @ratings_given = @ratings_total - remaining
   end
 
   def create
@@ -30,7 +34,7 @@ class VotesController < ApplicationController
                        properties: submit_timing_properties(@assignment)
                          .merge(score_properties(@vote))
                          .merge(feedback_stats(@vote.reason)))
-      redirect_to new_rate_path, notice: "Vote submitted."
+      redirect_to new_rate_path, notice: "Rating submitted."
     else
       @ship_event = @assignment.ship_event
       @project = @ship_event.project
