@@ -256,21 +256,11 @@ class Project < ApplicationRecord
   # allows nil, but not "").
   normalizes :hardware_stage, with: ->(value) { value.presence }
   validates :hardware_stage, inclusion: { in: HARDWARE_STAGES }, allow_nil: true
-  validate :validate_project_categories
   validate :hardware_stage_locked_after_funding_request
 
   def hardware_stage_locked_after_funding_request
     return unless hardware_stage_changed? && has_any_funding_request?
     errors.add(:hardware_stage, "cannot be changed after a funding request has been submitted")
-  end
-
-  def validate_project_categories
-    return if project_categories.blank?
-
-    invalid_types = project_categories - AVAILABLE_CATEGORIES
-    if invalid_types.any?
-      errors.add(:project_categories, "contains invalid types: #{invalid_types.join(', ')}")
-    end
   end
 
   def validate_repo_cloneable
