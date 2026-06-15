@@ -1,7 +1,7 @@
 <% content_for :title, "Rate this project" %>
 
 <% if current_user && !current_user.shipped_projects.exists? && !current_user.admin? %>
-  <div class="vote-readonly-bar">You're browsing in read-only mode — any action on this page will likely result in 403!</div>
+  <div class="vote-readonly-bar">Preview only: ship a project to unlock voting.</div>
 <% end %>
 
 <% if @vote_policy.open? && @assignment.present? %>
