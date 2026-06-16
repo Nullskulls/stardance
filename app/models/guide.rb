@@ -51,7 +51,7 @@ Guide = Data.define(:slug, :title, :description, :category, :icon, :reading_minu
       description: "Set up a public GitHub repository for your project's code and link it back to Stardance.",
       category: :craft,
       icon: "code",
-      reading_minutes: 4,
+      reading_minutes: 10,
       related: %i[good_git_commits great_readme]
     ),
     new(
