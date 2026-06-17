@@ -749,7 +749,7 @@
         </header>
 
         <% if Flipper.enabled?(:hardware_flow, current_user) && @project.hardware? %>
-          <%= link_to guide_path("starting-hardware"),
+          <%= link_to guide_path("hardware"),
                       class: "action-btn action-btn--large action-btn--primary project-show__onboarding-cta",
                       target: "_blank", rel: "noopener",
                       data: { turbo: false } do %>

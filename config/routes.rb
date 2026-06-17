@@ -905,8 +905,11 @@ Rails.application.routes.draw do
 
   get "edu", to: "landing#edu", as: :edu
 
-  # Guides
-  resources :guides, only: [ :index, :show ]
+  # Resources (formerly "guides"). Served at /resources; the guides_path /
+  # guide_path helpers are retained. Old /guides links redirect here.
+  resources :guides, only: [ :index, :show ], path: "resources"
+  get "/guides", to: redirect("/resources")
+  get "/guides/:id", to: redirect("/resources/%{id}")
 
   # Missions (public listing + show page).
   # Project-side / reviewer-queue / admin-managed missions surfaces ship in later PRs.
