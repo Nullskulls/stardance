@@ -23,6 +23,7 @@
 class Post::Devlog < ApplicationRecord
   include Postable
   include SoftDeletable
+  include Mentionable
   include SemanticSearchIndexable
   has_paper_trail ignore: [ :likes_count, :comments_count, :hackatime_pulled_at, :synced_at ]
   semantic_search_indexable type: "devlog"
@@ -140,6 +141,7 @@ class Post::Devlog < ApplicationRecord
     return unless saved_change_to_duration_seconds?
 
     post&.project&.recalculate_duration_seconds!
+    Post::ShipEvent.recalculate_hours_for_devlog_post(post)
   end
 
   def update_devlogs_count_on_soft_delete
@@ -153,5 +155,6 @@ class Post::Devlog < ApplicationRecord
 
     # Keep cached duration_seconds accurate when devlogs are soft-deleted/restored.
     Project.unscoped.find_by(id: project_id)&.recalculate_duration_seconds!
+    Post::ShipEvent.recalculate_hours_for_devlog_post(post)
   end
 end

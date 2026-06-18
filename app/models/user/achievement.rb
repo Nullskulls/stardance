@@ -71,7 +71,7 @@ class User
     end
 
     def notify_earned
-      Notifications::AchievementEarned.notify(recipient: user, record: self)
+      ::Notifications::AchievementEarned.notify(recipient: user, record: self)
     end
   end
 end

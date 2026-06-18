@@ -66,30 +66,33 @@ class Projects::DevlogsController < ApplicationController
   def update
     authorize @devlog
     previous_body = @devlog.body
+    permitted_params = update_devlog_params
+    new_attachments = permitted_params[:attachments]&.reject(&:blank?) || []
+    body_params = permitted_params.except(:attachments)
+    attachment_ids_to_remove = Array(params[:remove_attachment_ids]).reject(&:blank?)
+    attachments_to_remove = @devlog.attachments.where(id: attachment_ids_to_remove)
+    remaining_count = @devlog.attachments.count - attachments_to_remove.count
 
     # Remove selected attachments first
-    if params[:remove_attachment_ids].present?
-      attachments_to_remove = @devlog.attachments.where(id: params[:remove_attachment_ids])
-      remaining_count = @devlog.attachments.count - attachments_to_remove.count
-      new_attachments_count = update_devlog_params[:attachments]&.reject(&:blank?).count || 0
-
-      if remaining_count + new_attachments_count < 1
-        flash.now[:alert] = "Your devlog must have at least one attachment."
-        return render :edit, status: :unprocessable_entity
-      end
-
-      attachments_to_remove.each(&:purge_later)
+    if remaining_count + new_attachments.count < 1
+      flash.now[:alert] = "Your devlog must have at least one attachment."
+      return render :edit, status: :unprocessable_entity
     end
 
-    # Extract new attachments to append separately (don't replace existing)
-    new_attachments = update_devlog_params[:attachments]
-    body_params = update_devlog_params.except(:attachments)
+    if remaining_count + new_attachments.count > Post::Devlog::MAX_ATTACHMENTS
+      flash.now[:alert] = "Your devlog can't have more than #{Post::Devlog::MAX_ATTACHMENTS} attachments."
+      return render :edit, status: :unprocessable_entity
+    end
+
+    if attachment_ids_to_remove.any?
+      attachments_to_remove.each(&:purge_later)
+    end
 
     @devlog.uploading_attachments = new_attachments.present?
 
     if @devlog.update(body_params)
       # Append new attachments instead of replacing
-      if new_attachments.present?
+      if new_attachments.any?
         @devlog.attachments.attach(new_attachments)
       end
 

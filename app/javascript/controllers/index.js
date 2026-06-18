@@ -16,6 +16,9 @@ application.register("bio-editor", BioEditorController);
 import BulkSelectController from "./bulk_select_controller";
 application.register("bulk-select", BulkSelectController);
 
+import CardLinkController from "./card_link_controller";
+application.register("card-link", CardLinkController);
+
 import Certification__FeedbackTemplatesController from "./certification/feedback_templates_controller";
 application.register(
   "certification--feedback-templates",
@@ -35,6 +38,12 @@ import Certification__VerdictPreviewController from "./certification/verdict_pre
 application.register(
   "certification--verdict-preview",
   Certification__VerdictPreviewController,
+);
+
+import Certification__Ships__MonitorChartController from "./certification/ships/monitor_chart_controller";
+application.register(
+  "certification--ships--monitor-chart",
+  Certification__Ships__MonitorChartController,
 );
 
 import Certification__Ysws__CompleteReviewController from "./certification/ysws/complete_review_controller";
@@ -145,6 +154,9 @@ application.register("feed-engagement", FeedEngagementController);
 import FeedKeyboardController from "./feed_keyboard_controller";
 application.register("feed-keyboard", FeedKeyboardController);
 
+import FeedTabsController from "./feed_tabs_controller";
+application.register("feed-tabs", FeedTabsController);
+
 import FileUploadController from "./file_upload_controller";
 application.register("file-upload", FileUploadController);
 
@@ -180,6 +192,9 @@ application.register("lookout-recorder", LookoutRecorderController);
 
 import MarkdownPreviewController from "./markdown_preview_controller";
 application.register("markdown-preview", MarkdownPreviewController);
+
+import MentionAutocompleteController from "./mention_autocomplete_controller";
+application.register("mention-autocomplete", MentionAutocompleteController);
 
 import MissionGuideLanguageController from "./mission_guide_language_controller";
 application.register("mission-guide-language", MissionGuideLanguageController);
@@ -309,6 +324,12 @@ application.register("username-availability", UsernameAvailabilityController);
 
 import VimeoPlayerController from "./vimeo_player_controller";
 application.register("vimeo-player", VimeoPlayerController);
+
+import VoteScorecardController from "./vote_scorecard_controller";
+application.register("vote-scorecard", VoteScorecardController);
+
+import VoteTelemetryController from "./vote_telemetry_controller";
+application.register("vote-telemetry", VoteTelemetryController);
 
 import WelcomeTourController from "./welcome_tour_controller";
 application.register("welcome-tour", WelcomeTourController);

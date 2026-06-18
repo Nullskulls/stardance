@@ -6,6 +6,7 @@ module Notifications
       "Notifications::NewFollower"                              => "person",
       "Notifications::ProjectFollowed"                          => "person",
       "Notifications::ProjectCommentReceived"                   => "comment",
+      "Notifications::MentionReceived"                          => "comment",
       "Notifications::DevlogLiked"                              => "like",
       "Notifications::DevlogReposted"                           => "repost",
       "Notifications::DevlogQuoteReposted"                      => "repost",

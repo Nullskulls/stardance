@@ -139,3 +139,14 @@
 <% else %>
   <p>No referrals yet.</p>
 <% end %>
+
+<h3>Link a user as referred by this participant</h3>
+<p style="color: #9ca3af; font-size: 0.875rem;">
+  Enter a user ID to create a referral record linking them to <strong><%= @participant.display_name %></strong>.
+  If the user has linked their Hack Club account, the referral is verified and credited immediately.
+</p>
+<%= form_with url: link_referral_admin_raffles_participant_path(@participant), method: :post, class: "admin-actions-wrap" do |f| %>
+  <%= f.number_field :user_id, required: true, placeholder: "User ID", style: "width: 120px;" %>
+  <%= f.submit "Link as referred", class: "btn-primary slim",
+      data: { turbo_confirm: "Link this user as referred by #{@participant.display_name}?" } %>
+<% end %>

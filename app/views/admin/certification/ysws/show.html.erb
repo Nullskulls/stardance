@@ -8,19 +8,9 @@
     <div class="header-content">
       <div class="header-left">
         <h1>YSWS Review</h1>
-        <div style="display: flex; align-items: center; gap: var(--space-m);">
+        <div class="header-title-row">
           <h2 class="project-name"><%= @review.project.title %></h2>
-          <% if @review.airtable_synced_at.present? %>
-            <% if @review.approved_minutes.to_i > 0 %>
-              <span class="status-approved">approved</span>
-            <% else %>
-              <span class="status-rejected">rejected</span>
-            <% end %>
-          <% elsif @review.reviewed_at.present? %>
-            <span class="status-awaiting-sync">awaiting sync</span>
-          <% else %>
-            <span class="status-pending">pending</span>
-          <% end %>
+          <%= review_status_badge(@review) %>
         </div>
         <% unless @review.ship_cert_id %>
           <p class="ship-event-note">This is a standalone ship event (reship)</p>

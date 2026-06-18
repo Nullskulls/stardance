@@ -43,6 +43,7 @@ class Post < ApplicationRecord
     validates :postable_id, presence: true, if: :postable_type?
     validates :project, presence: true, unless: :repost?
 
+    after_create { postable.capture_hours_at_ship if postable_type == "Post::ShipEvent" }
     after_commit :increment_devlogs_count, on: :create
     after_commit :decrement_devlogs_count, on: :destroy
     after_commit :update_project_duration_seconds, on: [ :create, :destroy ]
@@ -117,15 +118,6 @@ class Post < ApplicationRecord
         false
       end
     end
-
-    # For multiple types, use .with to create a CTE with UNION ALL:
-    #   Post.with(
-    #     available_posts: [
-    #       Post.of_devlogs(join: true).where(post_devlogs: { tutorial: false }),
-    #       Post.of_ship_events(join: true),
-    #       Post.of_fire_events(join: true)
-    #     ]
-    #   ).from("available_posts AS posts")
 
     private
 

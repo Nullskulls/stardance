@@ -8,13 +8,7 @@ const STORAGE_KEY = "certification-feedback-templates";
 // the personal optgroup, where they can be saved and deleted without
 // leaving the form.
 export default class extends Controller {
-  static targets = [
-    "picker",
-    "feedback",
-    "returnedRadio",
-    "personalGroup",
-    "deleteButton",
-  ];
+  static targets = ["picker", "feedback", "personalGroup", "deleteButton"];
 
   connect() {
     this.renderPersonal();
@@ -38,7 +32,6 @@ export default class extends Controller {
 
     this.feedbackTarget.value = body;
     this.lastInsertedBody = body;
-    if (this.hasReturnedRadioTarget) this.returnedRadioTarget.checked = true;
     this.selectFirstBullet(body);
   }
 

@@ -170,8 +170,10 @@ module ApplicationHelper
   end
 
   def active_users_stats
-    counts = ActiveUserTracker.counts
-    "#{counts[:signed_in]} signed in, #{counts[:anonymous]} visitors"
+    Rails.cache.fetch("active_users_stats", expires_in: 30.seconds) do
+      counts = ActiveUserTracker.counts
+      "#{counts[:signed_in]} signed in, #{counts[:anonymous]} visitors"
+    end
   end
 
   private

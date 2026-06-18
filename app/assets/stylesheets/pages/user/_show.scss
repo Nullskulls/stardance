@@ -682,6 +682,18 @@ turbo-frame#profile_tabs {
       }
     }
   }
+
+  &--slack {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+}
+
+.profile__action-btn-icon {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.1em;
 }
 
 .profile__follow-form {

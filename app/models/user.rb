@@ -81,11 +81,13 @@ class User < ApplicationRecord
   has_many :memberships, class_name: "Project::Membership", dependent: :destroy
   has_many :projects, through: :memberships
   has_many :shipped_projects, -> { with_ship_events }, through: :memberships, source: :project
+  has_many :approved_ship_events, -> { where(certification_status: "approved") }, through: :projects, source: :ship_events
   has_many :hackatime_projects, class_name: "User::HackatimeProject", dependent: :destroy
   has_many :shop_orders, dependent: :destroy
   has_many :shop_card_grants, dependent: :destroy
   has_many :votes, dependent: :destroy
   has_many :vote_assignments, class_name: "Vote::Assignment", dependent: :destroy
+  has_many :vote_events, class_name: "Vote::Event", dependent: :destroy
   has_many :reports, class_name: "Project::Report", foreign_key: :reporter_id, dependent: :destroy
   has_many :project_skips, class_name: "Project::Skip", dependent: :destroy
   has_many :likes, dependent: :destroy

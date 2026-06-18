@@ -78,6 +78,33 @@ class FeedPresentationComponentsTest < ViewComponent::TestCase
     assert_no_selector ".like-button__btn--liked"
   end
 
+  test "post card tracks passive feed engagement by default" do
+    render_inline Posts::CardComponent.new(post: @post, current_user: @user)
+
+    assert_selector ".feed-post-card[data-controller~='feed-engagement']"
+  end
+
+  test "post card links devlog cards to comments" do
+    render_inline Posts::CardComponent.new(post: @post, current_user: @user)
+
+    href = project_devlog_path(@project, @devlog)
+    card_selector = ".feed-post-card.feed-post-card--linked"
+    action_selector = "[data-action~='click->card-link#navigate']"
+    action_selector += "[data-action~='auxclick->card-link#navigate']"
+
+    assert_selector "#{card_selector}[data-controller~='card-link'][data-card-link-url-value='#{href}']"
+    assert_selector ".feed-post-card#{action_selector}"
+    assert_selector "a.feed-post-card__overlay-link[href='#{href}']", visible: :all
+  end
+
+  test "post card can render without passive feed engagement tracking" do
+    render_inline Posts::CardComponent.new(post: @post, current_user: @user, track_engagement: false)
+
+    assert_selector ".feed-post-card"
+    assert_no_selector ".feed-post-card[data-controller~='feed-engagement']"
+    assert_no_text "Don't show me posts like this"
+  end
+
   test "post card hides the view count without week_2_release" do
     render_inline Posts::CardComponent.new(post: @post, current_user: @user)
 

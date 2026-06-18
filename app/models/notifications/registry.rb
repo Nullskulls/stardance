@@ -9,6 +9,7 @@ module Notifications
       Notifications::ProjectFollowed
       Notifications::FollowedDevlogCreated
       Notifications::ProjectCommentReceived
+      Notifications::MentionReceived
       Notifications::DevlogLiked
       Notifications::DevlogReposted
       Notifications::DevlogQuoteReposted

@@ -46,7 +46,7 @@
         <%= hidden_field_tag :inline_project_show, "1" %>
 
         <header class="project-show__hero">
-          <div class="project-show__banner" data-controller="file-upload">
+          <div class="project-show__banner <%= 'ai-detected' if current_user&.admin? && @project.banner.attached? && @project.banner.blob.metadata["ai_generated"] %>" data-controller="file-upload">
             <%= image_tag banner_url, alt: "", class: "project-show__banner-image", data: { "file-upload-target": "preview" } %>
             <%= link_to back_path,
                         class: "project-show__back",
@@ -280,7 +280,7 @@
     <% else %>
       <article class="project-show">
         <header class="project-show__hero">
-          <div class="project-show__banner">
+          <div class="project-show__banner <%= 'ai-detected' if current_user&.admin? && @project.banner.attached? && @project.banner.blob.metadata["ai_generated"] %>">
             <%= image_tag banner_url, alt: "", class: "project-show__banner-image" %>
             <%= link_to back_path,
                         class: "project-show__back",
@@ -812,7 +812,8 @@
                       placeholder: "What did you make? What was challenging? What are you proud of? What should people know so they can test your project?",
                       aria: { label: "Ship update" },
                       data: { composer_target: "textarea",
-                              action: "input->composer#autogrow input->composer#refreshSubmit" } %>
+                              controller: "mention-autocomplete",
+                              action: "input->composer#autogrow input->composer#refreshSubmit keydown->mention-autocomplete#onKeydown input->mention-autocomplete#onInput blur->mention-autocomplete#onBlur" } %>
 
                 <div class="feed-composer__attach-wrap feed-composer__attach-wrap--expanded" data-composer-target="attachWrap">
                   <label class="feed-composer__attach">

@@ -477,6 +477,13 @@ Rails.application.routes.draw do
   resources :votes, only: [ :new, :create ]
   namespace :votes do
     resource :skip, only: :create
+    resources :assignments, only: [] do
+      member do
+        get :demo
+        get :repo
+      end
+    end
+    resources :events, only: :create
   end
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
@@ -523,6 +530,9 @@ Rails.application.routes.draw do
 
   # Leaderboard
   get "leaderboard", to: "leaderboard#index"
+
+  # Contributors — merged-PR leaderboard for the Stardance repo itself.
+  get "contributors", to: "contributors#index"
 
   # Events — listing of missions and (eventually) other themed events.
   resources :events, only: [ :index ]
@@ -635,6 +645,7 @@ Rails.application.routes.draw do
       end
       resources :participants, only: [ :index, :show ] do
         member do
+          post :link_referral
           post :reject_referrals
           post :ban_participant
           post :ban_user
@@ -695,6 +706,7 @@ Rails.application.routes.draw do
       end
     end
     resources :messages, only: [ :index, :create ]
+    resources :email_templates, only: [ :index, :create, :destroy ]
     resources :support_vibes, only: [ :index, :create ]
     resources :sw_vibes, only: [ :index ]
     resources :suspicious_votes, only: [ :index ]
@@ -746,6 +758,8 @@ Rails.application.routes.draw do
       resources :ships, path: "ship", only: [ :index, :show, :update ] do
         collection do
           get :next
+          get :logs
+          get :monitor, to: "ships/monitor#show"
         end
         scope module: :ships do
           resource :claim, only: [ :create, :destroy ]
@@ -883,6 +897,8 @@ Rails.application.routes.draw do
 
   resource :username_availability, only: [ :show ], controller: "users/username_availabilities"
 
+  post "markdown_preview", to: "markdown_previews#create"
+
   # Autocomplete search endpoints (used by the bio editor and elsewhere).
   get "search/users",    to: "search#users",    as: :search_users
   get "search/projects", to: "search#projects", as: :search_projects
@@ -890,8 +906,13 @@ Rails.application.routes.draw do
 
   get "edu", to: "landing#edu", as: :edu
 
-  # Guides
-  resources :guides, only: [ :index, :show ]
+  get "emails/:name", to: "email_templates#show", as: :public_email_template
+  get "emails/:name/content", to: "email_templates#content", as: :public_email_template_content
+  # Resources (formerly "guides"). Served at /resources; the guides_path /
+  # guide_path helpers are retained. Old /guides links redirect here.
+  resources :guides, only: [ :index, :show ], path: "resources"
+  get "/guides", to: redirect("/resources")
+  get "/guides/:id", to: redirect("/resources/%{id}")
 
   # Missions (public listing + show page).
   # Project-side / reviewer-queue / admin-managed missions surfaces ship in later PRs.

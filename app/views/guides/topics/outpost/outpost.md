@@ -1,22 +1,22 @@
-# Outpost
-
 Outpost is a 6-day hardware hackathon + expo we're hosting with [Open Sauce](https://opensauce.com) from July 14-20th!
+
+![image](https://cdn.hackclub.com/019ed71f-48d8-7255-ae12-1eeea412f559/paste-1781725611726.png)
 
 ## Qualifying:
 
 To qualify, you will need:
 
-- [Super hardware builder status](/guides/super-hardware-builder)
+- [Super hardware builder status](/guides/super-hardware-builder), which you can get by
 - 300 Stardust so that you can buy an Outpost ticket on the [shop](/shop/category/outpost)
     - You can earn discounts on this price by designing hardware projects! Check out [tiers](/guides/outpost-tiers)
 
-Have any questions? Check out the [FAQ](/guides/outpost-faq)
+---
 
-## Details:
+## Event Details:
 
 First, after arriving in San Francisco with the projects you built, you'll team up with 2-3 other Hack Clubbers for a 4-day hardware hackathon to build out the projects on your booth!
 
-A booth is an 8x8 feet area that you'll share with your teammates to actually demo what you put! Here's some examples:
+A booth is an **8ft x 8ft** area that you'll share with your teammates to actually demo what you put! Here's some examples:
 
 ![image](https://cdn.hackclub.com/019e45c8-371b-701c-af2f-c88daf56ea25/paste-1779287202837.png)
 
@@ -28,7 +28,7 @@ After that, you'll transport your hackathon projects + qualifier projects to Ope
 
 - Lodging during the hackathon on-site from July 14-17th, and dorm rooms from the night of July 17th to morning of July 20th
 - Breakfast, Lunch, and Dinner for the full event (excluding July 20th)
-- $75 USD base flight stipend, where you can earn more through making more projects!
+- $75 USD base flight stipend for all qualified attendees, where you can earn more through making more projects!
 - Funding for public transit between venues (up to $40 USD)
 - Awesome swag! (including jackets & t-shirts!)
 

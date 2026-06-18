@@ -2,9 +2,9 @@
 
 Join [#outpost](https://hackclub.enterprise.slack.com/archives/C0B04RP43TQ) if you have anything not answered!
 
-### I don't need funding & just want to build my project directly / I have parts from a previous program
+### Can I use a JOURNAL.md file?
 
-Log your project through [Lapse](https://lapse.hackclub.com). If you're having trouble with lapse, you can journal your project using a JOURNAL.md file. Support for adding it to the platform will be available later!
+Yes! You will stilln need to use hackatime to log 15 minutes journaling so that you can submit a devlog, but you may use journals. Journaled projects may be returned for insufficient quality journaling.
 
 ### There's a lot of channels! Which one do I use?
 

@@ -115,9 +115,11 @@
     <% if @shop_open %>
       <section class="shop-hub__main">
         <ul class="shop-hub__category-grid" aria-label="Shop categories">
+          <% used_thumb_ids = Set.new %>
           <% @categories.each do |category| %>
-            <% category_items = Shop::Categorization.filter(@shop_items, category.slug) %>
-            <% category_thumbs = category_items.select { |i| i.image.attached? }.first(3) %>
+            <% category_items = category.filter(@shop_items) %>
+            <% category_thumbs = category_items.select { |i| i.image.attached? && !used_thumb_ids.include?(i.id) }.first(3) %>
+            <% used_thumb_ids.merge(category_thumbs.map(&:id)) %>
             <li class="shop-hub__category-tile">
               <%= link_to shop_category_path(category.slug), class: "shop-hub__category-link", data: { turbo: true } do %>
                 <div class="shop-hub__category-art" aria-hidden="true">

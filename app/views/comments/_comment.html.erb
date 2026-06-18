@@ -19,5 +19,5 @@
       <% end %>
     <% end %>
   </div>
-  <div class="devlog-comment__body"><%= sanitize md(comment.body, allow_images: false), tags: %w[p br strong em b i u s del a], attributes: %w[href target rel] %></div>
+  <div class="devlog-comment__body"><%= sanitize md(comment.body, allow_images: false), tags: %w[p br strong em b i u s del a img], attributes: %w[href target rel src alt title class loading decoding referrerpolicy] %></div>
 </div>

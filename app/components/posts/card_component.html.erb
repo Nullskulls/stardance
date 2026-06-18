@@ -1,4 +1,4 @@
-<article id="<%= dom_id(post) %>" class="<%= card_classes %>" <%= tag.attributes(data: engagement_data) %>>
+<article id="<%= dom_id(post) %>" class="<%= card_classes %>" <%= tag.attributes(data: card_data) %>>
   <% if card_link_url.present? %>
     <%= link_to card_link_url,
           class: "feed-post-card__overlay-link",
@@ -78,7 +78,9 @@
             show_likes: false,
             show_comments: false,
             show_reposts: false,
-            show_actions: false
+            show_actions: false,
+            track_engagement: track_engagement,
+            show_views: show_views
           ) %>
     </div>
   <% end %>
@@ -136,12 +138,12 @@
                       <div class="comment-modal__thread-right">
                         <%= f.text_area :body,
                               class: "comment-modal__textarea",
-                              placeholder: "Post your reply",
+                              placeholder: "Post your reply (type @ to mention someone)",
                               rows: 3,
                               maxlength: Comment::BODY_MAX_LENGTH,
                               data: { comment_modal_target: "textarea",
-                                      controller: "submit-on-meta-enter",
-                                      action: "keydown->submit-on-meta-enter#submit" } %>
+                                      controller: "submit-on-meta-enter mention-autocomplete",
+                                      action: "keydown->submit-on-meta-enter#submit keydown->mention-autocomplete#onKeydown input->mention-autocomplete#onInput blur->mention-autocomplete#onBlur" } %>
                       </div>
                     </div>
                     <div class="comment-modal__footer">
@@ -272,7 +274,7 @@
             Copy link to clipboard
           </button>
 
-          <% if current_user.present? %>
+          <% if current_user.present? && track_engagement %>
             <button type="button" class="feed-post-card__menu-item" data-action="post-menu#notInterested">
               Don&apos;t show me posts like this
             </button>

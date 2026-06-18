@@ -34,6 +34,8 @@ class PostCreationToSlackJob < ApplicationJob
       Notifications::FollowedDevlogCreated.notify(recipient: follower, actor: author, record: devlog)
     end
 
+    notify_mentioned_users_for_devlog(devlog, author)
+
     return if Rails.env.development?
 
     SendSlackDmJob.perform_later(
@@ -81,6 +83,8 @@ class PostCreationToSlackJob < ApplicationJob
       Notifications::ProjectCommentReceived.notify(recipient: member, actor: author, record: comment)
     end
 
+    notify_mentioned_users(comment, author, commentable_users)
+
     return if Rails.env.development?
 
     SendSlackDmJob.perform_later(
@@ -118,6 +122,26 @@ class PostCreationToSlackJob < ApplicationJob
       ]
     else
       nil
+    end
+  end
+
+  def notify_mentioned_users_for_devlog(devlog, author)
+    devlog.mentioned_users.each do |user|
+      next if user.id == author.id
+
+      Notifications::MentionReceived.notify(recipient: user, actor: author, record: devlog)
+    end
+  end
+
+  def notify_mentioned_users(comment, author, already_notified_users)
+    mentioned = comment.mentioned_users
+    already_notified_ids = already_notified_users.map(&:id).to_set
+
+    mentioned.each do |user|
+      next if user.id == author.id
+      next if already_notified_ids.include?(user.id)
+
+      Notifications::MentionReceived.notify(recipient: user, actor: author, record: comment)
     end
   end
 

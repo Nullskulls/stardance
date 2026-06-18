@@ -105,15 +105,20 @@ class HackatimeService
     def push_heartbeats(api_key:, heartbeats:)
       return false if api_key.blank? || heartbeats.blank?
 
-      response = heartbeat_connection.post("users/current/heartbeats.bulk") do |req|
-        req.headers["Authorization"] = "Bearer #{api_key}"
-        req.body = heartbeats.to_json
+      all_success = true
+      heartbeats.each_slice(100) do |slice|
+        response = heartbeat_connection.post("users/current/heartbeats.bulk") do |req|
+          req.headers["Authorization"] = "Bearer #{api_key}"
+          req.body = slice.to_json
+        end
+
+        unless response.success?
+          Rails.logger.error "HackatimeService push_heartbeats error: #{response.status} - #{response.body}"
+          all_success = false
+        end
       end
 
-      return true if response.success?
-
-      Rails.logger.error "HackatimeService push_heartbeats error: #{response.status} - #{response.body}"
-      false
+      all_success
     rescue => e
       Rails.logger.error "HackatimeService push_heartbeats exception: #{e.message}"
       false

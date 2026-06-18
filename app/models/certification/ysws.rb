@@ -56,6 +56,24 @@ module Certification
     validates :original_minutes, numericality: { greater_than_or_equal_to: 0 }, allow_nil: false
     validates :approved_minutes, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
 
+    MIN_APPROVED_MINUTES = 6
+
+    def approved_minutes_total
+      devlog_reviews.sum { |dr| dr.approved_minutes.to_i }
+    end
+
+    def review_rejected?
+      user.banned? || approved_minutes_total < MIN_APPROVED_MINUTES
+    end
+
+    def review_status
+      return :in_unified_db if in_unified_db.present?
+      return :returned if returned_at.present?
+      return :pending unless reviewed_at.present?
+
+      review_rejected? ? :rejected : :approved
+    end
+
     def check_and_update_unified_db_status!
       api_key  = Rails.application.credentials.dig(:ysws_review, :airtable_api_key) ||
                  Rails.application.credentials&.airtable&.api_key ||

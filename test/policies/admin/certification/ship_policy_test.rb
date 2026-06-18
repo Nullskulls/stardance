@@ -19,6 +19,20 @@ class Admin::Certification::ShipPolicyTest < ActiveSupport::TestCase
     assert Admin::Certification::ShipPolicy.new(@reviewer, ship).show?
   end
 
+  test "logs? is true for a reviewer" do
+    assert Admin::Certification::ShipPolicy.new(@reviewer, Certification::Ship).logs?
+  end
+
+  test "logs? is false for a non-reviewer" do
+    non_reviewer = create_user(slack_id: "U_SHIP_POLICY_NON_REVIEWER", display_name: "ship_policy_non_reviewer")
+
+    refute Admin::Certification::ShipPolicy.new(non_reviewer, Certification::Ship).logs?
+  end
+
+  test "logs? is false without a user" do
+    refute Admin::Certification::ShipPolicy.new(nil, Certification::Ship).logs?
+  end
+
   private
 
   def ship_for_project(member:)

@@ -2,7 +2,7 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
   before_action :release_other_claims, only: [ :next ]
   before_action :set_ship, only: [ :show, :update ]
   before_action :set_submitter_context, only: [ :show, :update ]
-  before_action :set_body_class, only: [ :index, :show, :update ]
+  before_action :set_body_class, only: [ :index, :show, :update, :logs ]
 
   def index
     authorize ::Certification::Ship
@@ -40,6 +40,29 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
     }
   end
 
+  def logs
+    authorize ::Certification::Ship, :logs?
+
+    @status = params[:status].presence_in(%w[approved returned all]) || "all"
+    @sort = params[:sort] == "oldest" ? "oldest" : "newest"
+    @search = params[:search].to_s.strip
+    @from = parse_date(params[:from])
+    @to = parse_date(params[:to])
+
+    scope = policy_scope(::Certification::Ship)
+              .where.not(status: :pending)
+              .includes(:reviewer, project: { memberships: :user })
+
+    scope = scope.where(status: @status) unless @status == "all"
+    scope = scope.where("certification_ship_reviews.decided_at >= ?", @from.beginning_of_day) if @from
+    scope = scope.where("certification_ship_reviews.decided_at <= ?", @to.end_of_day) if @to
+    scope = apply_search(scope) if @search.present?
+
+    @pagy, @ships = pagy(:offset,
+                         scope.order(decided_at: @sort == "newest" ? :desc : :asc),
+                         limit: 25)
+  end
+
   def show
     authorize @ship
     @reviewed_today = ::Certification::Ship.reviewed_today(current_user)
@@ -50,7 +73,7 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
     if @ship.update(ship_params)
       verb = @ship.approved? ? "Approved" : "Returned"
       count = ::Certification::Ship.reviewed_today(current_user)
-      redirect_to next_admin_certification_ships_path,
+      redirect_to admin_certification_ships_path,
                   notice: "#{verb} “#{@ship.project.title}.” That's #{count} reviewed today. Keep going!"
     else
       render :show, status: :unprocessable_entity

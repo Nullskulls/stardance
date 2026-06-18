@@ -146,15 +146,48 @@
             <% end %>
           </div>
         <% end %>
-        <% if can_review %>
-          <%= render "form", ship: @ship %>
+
+        <% if @ship.pending? %>
+          <% if can_review %>
+            <%= render "form", ship: @ship %>
+          <% else %>
+            <div class="ship-review__claim">
+              <p>You don't currently hold the claim on this review.</p>
+              <%= button_to "Claim this review", admin_certification_ship_claim_path(@ship), method: :post,
+                    class: "action-btn action-btn--large action-btn--primary" %>
+              <%= link_to "Back to queue", admin_certification_ships_path,
+                    class: "action-btn action-btn--small action-btn--secondary" %>
+            </div>
+          <% end %>
         <% else %>
-          <div class="ship-review__claim">
-            <p>You don't currently hold the claim on this review.</p>
-            <%= button_to "Claim this review", admin_certification_ship_claim_path(@ship), method: :post,
-                  class: "action-btn action-btn--large action-btn--primary" %>
-            <%= link_to "Back to queue", admin_certification_ships_path,
-                  class: "action-btn action-btn--small action-btn--secondary" %>
+          <div class="ship-review__verdict-card">
+            <h2 class="ship-review__panel-title">Verdict</h2>
+            <div class="ship-review__verdict-outcome">
+              <span class="status-pill status-pill--<%= @ship.status %>">
+                <%= @ship.status.capitalize %>
+              </span>
+            </div>
+            <% if @ship.feedback.present? %>
+              <div class="ship-review__verdict-feedback">
+                <h3>Feedback</h3>
+                <p><%= @ship.feedback %></p>
+              </div>
+            <% end %>
+            <% if @ship.verdict_video.attached? %>
+              <div class="ship-review__verdict-video">
+                <h3>Walkthrough Video</h3>
+                <video controls playsinline class="ship-review__video-player">
+                  <source src="<%= url_for(@ship.verdict_video) %>" type="<%= @ship.verdict_video.content_type %>">
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+            <% end %>
+            <div class="ship-review__verdict-actions">
+              <%= link_to "Back to logs", logs_admin_certification_ships_path,
+                    class: "action-btn action-btn--small action-btn--secondary" %>
+              <%= link_to "Back to queue", admin_certification_ships_path,
+                    class: "action-btn action-btn--small action-btn--secondary" %>
+            </div>
           </div>
         <% end %>
       </aside>

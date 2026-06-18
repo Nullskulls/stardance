@@ -1,8 +1,8 @@
-Guide = Data.define(:slug, :title, :description, :category, :icon, :reading_minutes, :related, :markdown) do
+Guide = Data.define(:slug, :title, :description, :category, :icon, :reading_minutes, :related, :markdown, :hidden) do
   include ActiveModel::Conversion
   extend ActiveModel::Naming
 
-  self::CATEGORY_ORDER = %i[shipping craft program outpost].freeze
+  self::CATEGORY_ORDER = %i[outpost shipping craft program].freeze
 
   self::CATEGORY_LABELS = {
     shipping: "Shipping",
@@ -19,6 +19,7 @@ Guide = Data.define(:slug, :title, :description, :category, :icon, :reading_minu
     params[:icon] ||= "info"
     params[:reading_minutes] ||= 5
     params[:markdown] ||= nil
+    params[:hidden] ||= false
     super(**params)
   end
 
@@ -56,7 +57,7 @@ Guide = Data.define(:slug, :title, :description, :category, :icon, :reading_minu
       description: "Set up a public GitHub repository for your project's code and link it back to Stardance.",
       category: :craft,
       icon: "code",
-      reading_minutes: 4,
+      reading_minutes: 10,
       related: %i[good_git_commits great_readme]
     ),
     new(
@@ -89,7 +90,7 @@ Guide = Data.define(:slug, :title, :description, :category, :icon, :reading_minu
     new(
       slug: :outpost,
       title: "Outpost",
-      description: "Stardance's hardware track — a 6-day hardware hackathon and expo with Open Sauce in San Francisco.",
+      description: "Everything you need to know about Outpost, a 6-day hardware hackathon + expo we are running with Open Sauce in SF!",
       category: :outpost,
       icon: "rocket",
       reading_minutes: 5,
@@ -97,9 +98,19 @@ Guide = Data.define(:slug, :title, :description, :category, :icon, :reading_minu
       markdown: "outpost/outpost.md"
     ),
     new(
+      slug: :hardware,
+      title: "Hardware in Stardance 101",
+      description: "Step-by-step on how to make hardware projects in Stardance!",
+      category: :outpost,
+      icon: "rocket",
+      reading_minutes: 2,
+      related: %i[outpost starting-hardware outpost-faq],
+      markdown: "outpost/hardware.md"
+    ),
+    new(
       slug: :"starting-hardware",
       title: "Starting your hardware project",
-      description: "How to get started with your hardware project — coming up with an idea and advice for working on it.",
+      description: "A quick crash course on how to start a hardware project from scratch, great for beginners!",
       category: :outpost,
       icon: "compass_fill",
       reading_minutes: 5,
@@ -114,11 +125,12 @@ Guide = Data.define(:slug, :title, :description, :category, :icon, :reading_minu
       icon: "ship",
       reading_minutes: 5,
       related: %i[starting-hardware outpost outpost-tiers],
-      markdown: "outpost/shipping-hardware.md"
+      markdown: "outpost/shipping-hardware.md",
+      hidden: true
     ),
     new(
       slug: :"outpost-tiers",
-      title: "Project tier examples",
+      title: "Outpost Project Tiers!",
       description: "What the different Outpost project tiers look like, with budgets, points, and examples for each.",
       category: :outpost,
       icon: "code",
@@ -129,7 +141,7 @@ Guide = Data.define(:slug, :title, :description, :category, :icon, :reading_minu
     new(
       slug: :"outpost-faq",
       title: "Outpost FAQ",
-      description: "Frequently asked questions about Outpost — channels, logistics, and more.",
+      description: "Your one stop shop for all things Outpost; channels, logistics, and more!",
       category: :outpost,
       icon: "info",
       reading_minutes: 4,
@@ -139,7 +151,7 @@ Guide = Data.define(:slug, :title, :description, :category, :icon, :reading_minu
     new(
       slug: :"super-hardware-builder",
       title: "Becoming a Super Hardware Builder",
-      description: "How to earn Super Hardware Builder status — the requirement to qualify for Outpost.",
+      description: "How to earn Super Hardware Builder status, which gets you perks (including Outpost qualification!)",
       category: :outpost,
       icon: "rocket",
       reading_minutes: 4,
@@ -150,10 +162,11 @@ Guide = Data.define(:slug, :title, :description, :category, :icon, :reading_minu
       slug: :tiers,
       title: "Hardware funding tiers",
       description: "How Outpost funds hardware builds: the B/A/S/X tiers, what each covers, and how unspent budget turns into Stardust toward the Outpost Ticket.",
-      category: :program,
+      category: :outpost,
       icon: "info",
       reading_minutes: 3,
-      related: %i[how_to_ship]
+      related: %i[outpost outpost-tiers how_to_ship],
+      hidden: true
     )
   ].freeze
 
@@ -172,7 +185,10 @@ Guide = Data.define(:slug, :title, :description, :category, :icon, :reading_minu
       guide = self::SLUGGED[s&.to_sym]
       guide if guide && all.include?(guide)
     end
-    def by_category = all.group_by(&:category)
+    # Guides shown in the resources index. Hidden guides stay reachable by
+    # direct URL (e.g. linked from the funding modal) but aren't listed.
+    def listed = all.reject(&:hidden)
+    def by_category = listed.group_by(&:category)
     def category_label(c) = self::CATEGORY_LABELS[c.to_sym]
     def category_order = self::CATEGORY_ORDER
   end
@@ -182,9 +198,11 @@ Guide = Data.define(:slug, :title, :description, :category, :icon, :reading_minu
 
   def category_label = self.class::CATEGORY_LABELS[category]
 
-  def related_guides = related.map { |s| Guide.find_by_slug(s) }.compact
+  def related_guides = related.map { |s| Guide.find_by_slug(s) }.compact.reject(&:hidden)
 
-  def partial_path = "guides/topics/#{slug}"
+  # Outpost partials live alongside the other hardware content under
+  # topics/outpost/; everything else sits directly in topics/.
+  def partial_path = "guides/topics/#{"outpost/" if category == :outpost}#{slug}"
 
   # A guide renders from a markdown file when `markdown:` points at one;
   # otherwise it falls back to its `_<slug>.html.erb` partial (see show.html.erb).

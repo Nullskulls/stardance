@@ -2,7 +2,7 @@ module Admin
   module Raffles
     class ParticipantsController < Admin::ApplicationController
       before_action :set_participant, only: [
-        :show, :reject_referrals, :ban_participant, :ban_user, :ban_referred_users,
+        :show, :link_referral, :reject_referrals, :ban_participant, :ban_user, :ban_referred_users,
         :reject_selected, :ban_selected,
         :reject_referral, :ban_referred_user, :clear_fraud, :unclear_fraud
       ]
@@ -28,6 +28,53 @@ module Admin
         @referrals = @participant.referrals
                                  .includes(:referred_user, :credited_week)
                                  .order(created_at: :desc)
+      end
+
+      def link_referral
+        authorize :admin, :access_raffles?
+
+        user = ::User.find_by(id: params[:user_id])
+        unless user
+          return redirect_back fallback_location: admin_raffles_participant_path(@participant),
+                               allow_other_host: false,
+                               alert: "User not found."
+        end
+
+        existing = ::Raffle::Referral.find_by(referred_user_id: user.id)
+        if existing
+          return redirect_back fallback_location: admin_raffles_participant_path(@participant),
+                               allow_other_host: false,
+                               alert: "#{user.display_name} already has a referral (status: #{existing.status}, referrer: #{existing.participant.display_name})."
+        end
+
+        if @participant.user_id == user.id
+          return redirect_back fallback_location: admin_raffles_participant_path(@participant),
+                               allow_other_host: false,
+                               alert: "Can't link a participant as referred by themselves."
+        end
+
+        referral = nil
+        ::PaperTrail.request(whodunnit: current_user.id) do
+          referral = ::Raffle::Referral.create!(
+            participant: @participant,
+            referred_user: user,
+            channel: :web,
+            raw_ref: "admin-linked",
+            status: :pending
+          )
+
+          if user.hca_linked?
+            week = ::Raffle::Week.current
+            if week
+              referral.paper_trail_event = "admin_credit"
+              referral.update!(status: :verified, credited_week: week, verified_at: Time.current)
+              @participant.user&.sync_referral_achievements!
+            end
+          end
+        end
+
+        redirect_to admin_raffles_participant_path(@participant),
+                    notice: "#{user.display_name} linked as referred (status: #{referral.reload.status})."
       end
 
       # ── Bulk actions ──────────────────────────────────────────────────
