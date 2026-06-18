@@ -366,7 +366,7 @@ body.admin-page {
   gap: 0.5rem;
   margin-bottom: var(--space-m);
 
-  >.card {
+  > .card {
     flex: 1;
   }
 }
@@ -433,9 +433,11 @@ body.admin-page {
   }
 
   &.badge-mass_dm_sent {
-    background: linear-gradient(135deg,
-        rgba(245, 158, 11, 0.3),
-        rgba(239, 68, 68, 0.3));
+    background: linear-gradient(
+      135deg,
+      rgba(245, 158, 11, 0.3),
+      rgba(239, 68, 68, 0.3)
+    );
     color: #fbbf24;
     font-weight: 700;
   }
