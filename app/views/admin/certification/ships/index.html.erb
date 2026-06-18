@@ -238,7 +238,7 @@
                 </td>
                 <td class="ship-queue__cell-status">
                   <% if ship.recert_reason.present? || ship.returned_by.present? %>
-                    <span class="status-pill status-pill--returned">Bad Review</span>
+                    <span class="status-pill status-pill--returned">YSWS Return</span>
                   <% else %>
                     <span class="status-pill status-pill--<%= ship.status %>"><%= ship.status.capitalize %></span>
                   <% end %>
@@ -265,7 +265,7 @@
             <div class="ship-queue__card-top">
               <span class="ship-queue__project-title"><%= ship.project.title %></span>
               <% if ship.recert_reason.present? || ship.returned_by.present? %>
-                <span class="status-pill status-pill--returned">Bad Review</span>
+                <span class="status-pill status-pill--returned">YSWS Return</span>
               <% else %>
                 <span class="status-pill status-pill--<%= ship.status %>"><%= ship.status.capitalize %></span>
               <% end %>
