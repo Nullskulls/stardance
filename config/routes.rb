@@ -706,6 +706,7 @@ Rails.application.routes.draw do
       end
     end
     resources :messages, only: [ :index, :create ]
+    resources :email_templates, only: [ :index, :create, :destroy ]
     resources :support_vibes, only: [ :index, :create ]
     resources :sw_vibes, only: [ :index ]
     resources :suspicious_votes, only: [ :index ]
@@ -905,6 +906,8 @@ Rails.application.routes.draw do
 
   get "edu", to: "landing#edu", as: :edu
 
+  get "emails/:name", to: "email_templates#show", as: :public_email_template
+  get "emails/:name/content", to: "email_templates#content", as: :public_email_template_content
   # Resources (formerly "guides"). Served at /resources; the guides_path /
   # guide_path helpers are retained. Old /guides links redirect here.
   resources :guides, only: [ :index, :show ], path: "resources"
