@@ -136,8 +136,6 @@
     }
   }
 
-
-
   &__links,
   &__meta {
     display: grid;
@@ -352,9 +350,7 @@
     gap: var(--space-xs);
     margin-top: var(--space-s);
   }
-
 }
-
 
 @keyframes ship-review-pop {
   0% {
@@ -639,8 +635,6 @@
     border-color: var(--color-brand-highlight);
     background: rgba(255, 255, 255, 0.07);
   }
-
-
 
   &--error {
     border-color: var(--color-brand-salmon);
