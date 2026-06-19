@@ -35,7 +35,6 @@ const FORMATTERS = {
     const v = ctx.parsed.y;
     return `  Net: ${v >= 0 ? "+" : ""}${v}`;
   },
-  pct: (ctx) => `  ${ctx.parsed.y !== null ? ctx.parsed.y + "%" : "no data"}`,
 };
 
 export default class extends Controller {
@@ -410,7 +409,7 @@ export default class extends Controller {
           `${returned.toLocaleString()} YSWS returned`,
         ),
         sep(),
-        mkSpan("ship-monitor__reviewer-total-rate", `${rate}% YSWS return rate`),
+        mkSpan("ship-monitor__reviewer-total-rate", rate !== "—" ? `${rate}% YSWS return rate` : "—"),
       );
       el.appendChild(row);
     });
