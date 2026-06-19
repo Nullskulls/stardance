@@ -71,7 +71,7 @@
           <%= render "chart_card", title: "Waterline", target: "net", full: false, tip: "Decisions minus submissions per day. Above zero = queue shrinking. Below zero = queue growing." %>
           <%= render "chart_card", title: "Throughput", target: "throughput", full: false, tip: "Total decisions made vs new ships submitted each day." %>
           <%= render "chart_card", title: "Verdicts", target: "verdict", full: false, tip: "Approvals and YSWS returns split by day." %>
-          <%= render "chart_card", title: "YSWS return rate", target: "rate", full: false, tip: "YSWS returns as a percentage of total decisions per day. YSWS returns ÷ (approvals + YSWS returns) × 100." %>
+          <%= render "chart_card", title: "YSWS returns", target: "rate", full: false, tip: "Number of ships sent back to YSWS per day." %>
           <%= render "chart_card", title: "Active reviewers", target: "participation", full: false, tip: "Distinct reviewers who made at least one decision that day." %>
 
         </div>

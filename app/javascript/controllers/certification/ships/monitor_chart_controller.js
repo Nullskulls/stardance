@@ -224,19 +224,13 @@ export default class extends Controller {
         this.rateTarget,
         [
           this.#ds(
-            "YSWS return rate",
-            data.map((d) => {
-              const total = d.approved + d.returned;
-              return total > 0
-                ? parseFloat(((d.returned / total) * 100).toFixed(1))
-                : null;
-            }),
+            "YSWS returns",
+            data.map((d) => d.returned),
             "#FFE564",
             0.08,
-            { spanGaps: true },
           ),
         ],
-        this.#opts({ formatter: FORMATTERS.pct, suffix: "%", yMax: 100 }),
+        this.#opts(),
       ),
 
       this.#makeLine(this.participationTarget, [
