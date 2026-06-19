@@ -47,7 +47,7 @@
           <%= render "stat_row", label: "Total judged", value: number_with_delimiter(@stats[:decided]) %>
           <%= render "stat_row", label: "Approved", value: number_with_delimiter(@stats[:approved]),
                      hint: @stats[:approval_rate] ? "#{@stats[:approval_rate]}% rate" : "—" %>
-          <%= render "stat_row", label: "Rejected", value: number_with_delimiter(@stats[:returned]),
+          <%= render "stat_row", label: "YSWS returned", value: number_with_delimiter(@stats[:returned]),
                      hint: @stats[:approval_rate] ? "#{(100 - @stats[:approval_rate]).round(1)}% rate" : nil %>
           <% adh = @stats[:avg_decision_hours] %>
           <%= render "stat_row", label: "Avg time to decision",
@@ -70,8 +70,8 @@
           <%= render "chart_card", title: "Median wait", target: "medianWait", full: false, tip: "Median hours from submission to verdict for ships decided that day. Half took longer, half shorter." %>
           <%= render "chart_card", title: "Waterline", target: "net", full: false, tip: "Decisions minus submissions per day. Above zero = queue shrinking. Below zero = queue growing." %>
           <%= render "chart_card", title: "Throughput", target: "throughput", full: false, tip: "Total decisions made vs new ships submitted each day." %>
-          <%= render "chart_card", title: "Verdicts", target: "verdict", full: false, tip: "Approvals and returns split by day." %>
-          <%= render "chart_card", title: "Rejection rate", target: "rate", full: false, tip: "Returns as a percentage of total decisions per day. Returns ÷ (approvals + returns) × 100." %>
+          <%= render "chart_card", title: "Verdicts", target: "verdict", full: false, tip: "Approvals and YSWS returns split by day." %>
+          <%= render "chart_card", title: "YSWS return rate", target: "rate", full: false, tip: "YSWS returns as a percentage of total decisions per day. YSWS returns ÷ (approvals + YSWS returns) × 100." %>
           <%= render "chart_card", title: "Active reviewers", target: "participation", full: false, tip: "Distinct reviewers who made at least one decision that day." %>
 
         </div>
@@ -87,7 +87,7 @@
           <div class="ship-monitor__charts">
 
             <%= render "chart_card", title: "Decisions", target: "reviewerDecisions", full: false, tip: "Total decisions (approvals + returns) per reviewer per day." %>
-            <%= render "chart_card", title: "Returns", target: "reviewerReturned", full: false, tip: "Ships returned for changes per reviewer per day." %>
+            <%= render "chart_card", title: "YSWS returns", target: "reviewerReturned", full: false, tip: "Ships sent back to YSWS per reviewer per day." %>
 
           </div>
         <% end %>

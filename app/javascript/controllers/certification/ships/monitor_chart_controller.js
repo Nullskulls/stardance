@@ -214,7 +214,7 @@ export default class extends Controller {
           "#81FFFF",
         ),
         this.#ds(
-          "Returned",
+          "YSWS returned",
           data.map((d) => d.returned),
           "#FFD598",
         ),
@@ -224,7 +224,7 @@ export default class extends Controller {
         this.rateTarget,
         [
           this.#ds(
-            "Rejection rate",
+            "YSWS return rate",
             data.map((d) => {
               const total = d.approved + d.returned;
               return total > 0
@@ -413,10 +413,10 @@ export default class extends Controller {
         sep(),
         mkSpan(
           "ship-monitor__reviewer-total-stat",
-          `${returned.toLocaleString()} returned`,
+          `${returned.toLocaleString()} YSWS returned`,
         ),
         sep(),
-        mkSpan("ship-monitor__reviewer-total-rate", `${rate}% rejection`),
+        mkSpan("ship-monitor__reviewer-total-rate", `${rate}% YSWS return rate`),
       );
       el.appendChild(row);
     });
