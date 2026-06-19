@@ -409,7 +409,10 @@ export default class extends Controller {
           `${returned.toLocaleString()} YSWS returned`,
         ),
         sep(),
-        mkSpan("ship-monitor__reviewer-total-rate", rate !== "—" ? `${rate}% YSWS return rate` : "—"),
+        mkSpan(
+          "ship-monitor__reviewer-total-rate",
+          rate !== "—" ? `${rate}% YSWS return rate` : "—",
+        ),
       );
       el.appendChild(row);
     });
