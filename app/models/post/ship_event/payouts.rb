@@ -1,7 +1,8 @@
 module Post::ShipEvent::Payouts
   extend ActiveSupport::Concern
 
-  PAYOUT_CURVE_VERSION = "flavortown_percentile_v1"
+  PAYOUT_CURVE_VERSION = "stardance_percentile_1_20_v1"
+  PAYOUT_REVIEW_WINDOW = 24.hours
   BROADCAST_CHANNEL_ID = "C0AFB0JU00P"
 
   included do
@@ -21,12 +22,19 @@ module Post::ShipEvent::Payouts
         )
     }
     scope :ready_for_payout, -> {
-      approved.unpaid.voting_payout_path.where("post_ship_events.votes_count >= ?", Post::ShipEvent::VOTES_REQUIRED_FOR_PAYOUT)
+      approved.unpaid.voting_payout_path
+        .where("(#{Vote.countable_count_sql}) >= ?", Post::ShipEvent::VOTES_REQUIRED_FOR_PAYOUT)
     }
   end
 
   class_methods do
+    def payout_feature_enabled?(user = nil)
+      Flipper.enabled?(:ship_event_payouts, user)
+    end
+
     def refresh_payouts!
+      return false unless payout_feature_enabled?
+
       sample = payout_score_sample
 
       ready_for_payout.includes(:mission_submission, :certification_ysws_review, post: [ :project, :user ]).find_each do |ship_event|
@@ -110,40 +118,55 @@ module Post::ShipEvent::Payouts
   end
 
   def issue_payout!
+    issue_payout
+  end
+
+  def issue_payout(force: false)
+    return false unless self.class.payout_feature_enabled?(payout_recipient)
+
     if payout_ready_except_vote_balance? && payout_recipient.vote_balance.negative?
       notify_vote_deficit
       return false
     end
 
-    return false unless payout_eligible?
+    return false unless payout_lockable?
+
+    issued = false
 
     with_lock do
-      return false unless payout_eligible?
+      return false unless payout_lockable?
 
-      refresh_payout_score! if overall_percentile.nil?
+      lock_payout_basis unless payout_basis_locked_at?
+      return false unless force || payout_eligible?
 
       amount = payout_amount
       return false unless amount&.positive?
 
       self.payout = amount
-      self.multiplier = payout_multiplier
-      self.hours_at_payout = hours
-      self.payout_basis_overall_score = overall_score
-      self.payout_basis_percentile = overall_percentile
-      self.payout_basis_locked_at = Time.current
-      self.payout_curve_version = PAYOUT_CURVE_VERSION
-      self.payout_blessing = payout_blessing
 
       save!
       create_payout_ledger_entry!
+      issued = true
     end
 
-    notify_payout_issued
-    broadcast_payout
-    true
+    if issued
+      notify_payout_issued
+      broadcast_payout
+    end
+
+    issued
   end
 
   def payout_eligible?
+    payout_lockable? &&
+      payout_review_due? &&
+      !payout_review_flagged? &&
+      !payout_recipient.vote_balance.negative?
+  end
+
+  def payout_lockable?
+    return false unless self.class.payout_feature_enabled?(payout_recipient)
+
     payout_ready_except_vote_balance? &&
       !payout_recipient.vote_balance.negative? &&
       hours.positive?
@@ -161,6 +184,39 @@ module Post::ShipEvent::Payouts
     end
   end
 
+  def payout_review_open?
+    return false unless self.class.payout_feature_enabled?(payout_recipient)
+
+    payout_basis_locked_at.present? &&
+      payout.blank? &&
+      Time.current < payout_review_deadline &&
+      !payout_review_flagged?
+  end
+
+  def payout_review_due?
+    payout_basis_locked_at.present? && Time.current >= payout_review_deadline
+  end
+
+  def payout_review_deadline
+    payout_basis_locked_at + PAYOUT_REVIEW_WINDOW if payout_basis_locked_at
+  end
+
+  def estimated_payout
+    payout_amount
+  end
+
+  def clear_payout_review
+    update!(
+      multiplier: nil,
+      hours_at_payout: nil,
+      payout_basis_overall_score: nil,
+      payout_basis_percentile: nil,
+      payout_basis_locked_at: nil,
+      payout_curve_version: nil,
+      payout_blessing: nil
+    )
+  end
+
   private
     def payout_ready_except_vote_balance?
       certification_status == "approved" &&
@@ -168,6 +224,20 @@ module Post::ShipEvent::Payouts
         voting_payout_path? &&
         votes.payout_countable.count >= Post::ShipEvent::VOTES_REQUIRED_FOR_PAYOUT &&
         payout_recipient.present?
+    end
+
+    def lock_payout_basis
+      refresh_payout_score! if overall_percentile.nil?
+
+      self.multiplier = payout_multiplier
+      self.hours_at_payout = hours
+      self.payout_basis_overall_score = overall_score
+      self.payout_basis_percentile = overall_percentile
+      self.payout_basis_locked_at = Time.current
+      self.payout_curve_version = PAYOUT_CURVE_VERSION
+      self.payout_blessing = payout_blessing_for_snapshot
+
+      save!
     end
 
     def voting_payout_path?
@@ -181,15 +251,16 @@ module Post::ShipEvent::Payouts
     end
 
     def payout_amount
-      return nil if payout_multiplier.nil?
+      return nil if multiplier.nil? || hours_at_payout.nil?
 
-      apply_payout_blessing((hours * payout_multiplier).round)
+      apply_payout_blessing((hours_at_payout * multiplier).round)
     end
 
     def payout_multiplier
-      return nil if overall_percentile.nil?
+      percentile = payout_basis_percentile || overall_percentile
+      return nil if percentile.nil?
 
-      (dollars_per_hour_for_percentile(overall_percentile) * game_constants.tickets_per_dollar.to_f).round(6)
+      (dollars_per_hour_for_percentile(percentile) * game_constants.tickets_per_dollar.to_f).round(6)
     end
 
     def dollars_per_hour_for_percentile(percentile)
@@ -198,7 +269,7 @@ module Post::ShipEvent::Payouts
       low + (high - low) * ((percentile.to_f / 100.0).clamp(0.0, 1.0) ** 1.745427173)
     end
 
-    def payout_blessing
+    def payout_blessing_for_snapshot
       payout_recipient.vote_verdict&.verdict || "neutral"
     end
 
@@ -217,6 +288,10 @@ module Post::ShipEvent::Payouts
         reason: "Ship event payout: #{project&.title || 'Unknown project'}",
         created_by: "ship_event_payout"
       )
+    end
+
+    def payout_review_flagged?
+      votes.joins(:events).merge(Vote::Event.pending_vote_flags).exists?
     end
 
     def notify_payout_issued

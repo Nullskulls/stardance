@@ -28,6 +28,7 @@
 #  fk_rails_...  (user_id => users.id)
 #
 class Vote < ApplicationRecord
+  FLAG_COST = 5
   MIN_SCORE = 1
   MAX_SCORE = 9
 
@@ -47,6 +48,20 @@ class Vote < ApplicationRecord
 
   def self.score_columns = SCORE_COLUMNS_BY_CATEGORY.values
 
+  def self.countable_count_sql
+    <<~SQL.squish
+      SELECT COUNT(*)
+      FROM votes
+      WHERE votes.ship_event_id = post_ship_events.id
+        AND NOT EXISTS (
+          SELECT 1
+          FROM vote_events
+          WHERE vote_events.vote_id = votes.id
+            AND vote_events.event_type = 'vote_flag_accepted'
+        )
+    SQL
+  end
+
   belongs_to :user, counter_cache: true
   belongs_to :project
   belongs_to :ship_event, class_name: "Post::ShipEvent", counter_cache: true
@@ -60,7 +75,7 @@ class Vote < ApplicationRecord
   after_commit :refresh_ship_event_payout_later, on: [ :create, :destroy ]
   after_create_commit :send_gorse_vote_later
 
-  scope :payout_countable, -> { all }
+  scope :payout_countable, -> { where.not(id: Vote::Event.accepted_vote_flags.select(:vote_id)) }
 
   validates :reason, presence: true
   validate :reason_minimum_words
@@ -69,6 +84,80 @@ class Vote < ApplicationRecord
     numericality: { only_integer: true, in: MIN_SCORE..MAX_SCORE, message: "must be between #{MIN_SCORE} and #{MAX_SCORE}" })
   validate :user_cannot_vote_on_own_projects
   validate :ship_event_matches_project
+
+  def flaggable_by?(user)
+    user.present? &&
+      ship_event&.payout_review_open? &&
+      project&.memberships&.where(role: :owner, user: user)&.exists? &&
+      !pending_flag? &&
+      !discarded?
+  end
+
+  def flag_for_review_by(user)
+    if flaggable_by?(user)
+      events.create!(
+        event_type: "vote_flagged",
+        user: user,
+        project: project,
+        ship_event: ship_event,
+        properties: { status: "pending" }
+      )
+    else
+      false
+    end
+  end
+
+  def accept_flag(reviewer:)
+    if pending_flag = self.pending_flag
+      transaction do
+        events.create!(
+          event_type: "vote_flag_accepted",
+          user: reviewer,
+          project: project,
+          ship_event: ship_event,
+          properties: { flagged_event_id: pending_flag.id }
+        )
+        ship_event.clear_payout_review
+      end
+    else
+      false
+    end
+  end
+
+  def reject_flag(reviewer:)
+    if pending_flag = self.pending_flag
+      transaction do
+        events.create!(
+          event_type: "vote_flag_rejected",
+          user: reviewer,
+          project: project,
+          ship_event: ship_event,
+          properties: { flagged_event_id: pending_flag.id }
+        )
+        pending_flag.user.ledger_entries.create!(
+          ledgerable: self,
+          amount: -FLAG_COST,
+          reason: "Incorrect vote flag: #{project&.title || 'Unknown project'}",
+          created_by: "vote_flag_review"
+        )
+        ship_event.issue_payout(force: true)
+      end
+    else
+      false
+    end
+  end
+
+  def pending_flag
+    events
+      .where(event_type: "vote_flagged")
+      .where.not(vote_id: Vote::Event.resolved_vote_flags.select(:vote_id))
+      .order(created_at: :asc)
+      .last
+  end
+
+  def pending_flag? = pending_flag.present?
+
+  def discarded? = events.exists?(event_type: "vote_flag_accepted")
 
   private
 
