@@ -294,7 +294,8 @@ module Certification
       grant = HCBService.create_card_grant(
         email: owner.grant_email,
         amount_cents: final_amount_cents,
-        purpose: "Hardware Grant: #{project.title}",
+        # HCB caps the grant purpose at 30 characters.
+        purpose: "Hardware Grant: #{project.title}".truncate(30),
         organization: "stardance-hardware"
       )
       update_column(:hcb_grant_hashid, grant["id"])
