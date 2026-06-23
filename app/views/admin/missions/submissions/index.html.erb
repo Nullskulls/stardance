@@ -26,11 +26,6 @@
               <% if @mission.difficulty.present? %>
                 <span class="mission-queue__chip"><%= @mission.difficulty.titleize %></span>
               <% end %>
-              <% if @mission.fixed_stardust_payout&.positive? %>
-                <span class="mission-queue__chip mission-queue__chip--stardust">
-                  <%= stardust_icon %> <%= @mission.fixed_stardust_payout %> stardust
-                </span>
-              <% end %>
             </div>
           <% end %>
         </div>

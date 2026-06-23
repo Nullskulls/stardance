@@ -616,8 +616,8 @@
   &__momentum {
     padding: var(--space-s) var(--space-l);
     border-radius: 8px;
-    background: linear-gradient(90deg, hsl(142, 72%, 29%), var(--positive));
-    color: var(--color-space-bg);
+    background: linear-gradient(90deg, var(--color-green-500), var(--color-green-400));
+    color: var(--color-brand-off-white);
     font-weight: 600;
     font-size: 0.95rem;
     text-align: center;
@@ -664,6 +664,21 @@
     color: var(--color-brand-yellow);
     font-weight: 600;
     margin-left: auto;
+  }
+
+  &__project-iframe {
+    width: 100%;
+    min-height: 80vh;
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    background: var(--color-space-bg);
+  }
+
+  &__panel-link {
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: var(--muted);
+    margin-left: var(--space-s);
   }
 
   &__header {

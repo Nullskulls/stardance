@@ -21,10 +21,26 @@
           placeholder: "Required for rejections. Optional for approvals." %>
   </label>
 
-  <% if mission.fixed_stardust_payout&.positive? %>
-    <p class="mission-review__payout-note">
-      Approving will grant <%= mission.fixed_stardust_payout %> stardust to the builder.
-    </p>
+  <% grants = [] %>
+  <% if submission.payout_path == "static_prize" %>
+    <% grants << "#{mission.fixed_stardust_payout} stardust" if mission.fixed_stardust_payout&.positive? %>
+    <% mission.prizes.includes(:shop_item).each do |prize| %>
+      <% grants << "the \"#{prize.shop_item.name}\" shop item" if prize.shop_item %>
+    <% end %>
+  <% end %>
+  <% grants << "the \"#{mission.achievement_slug.titleize}\" achievement" if mission.achievement_slug.present? %>
+  <% unlocks = mission.shop_unlocks.includes(:shop_item).map { |u| u.shop_item&.name }.compact %>
+  <% if grants.any? || unlocks.any? %>
+    <% if grants.any? %>
+      <p class="mission-review__payout-note">
+        Approving will grant <%= grants.to_sentence %> to the builder.
+      </p>
+    <% end %>
+    <% if unlocks.any? %>
+      <p class="mission-review__payout-note">
+        Approving will also unlock <%= unlocks.map { |n| "\"#{n}\"" }.to_sentence %> in the shop.
+      </p>
+    <% end %>
   <% end %>
 
   <div class="mission-review__form-actions">

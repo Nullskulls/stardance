@@ -26,12 +26,7 @@
       <% if @mission.icon.attached? %>
         <%= image_tag @mission.icon, alt: "", class: "mission-review__mission-icon" %>
       <% end %>
-      <span class="mission-review__mission-name"><%= @mission.name %></span>
-      <% if @mission.fixed_stardust_payout&.positive? %>
-        <span class="mission-review__mission-stardust">
-          <%= stardust_icon %> <%= @mission.fixed_stardust_payout %>
-        </span>
-      <% end %>
+      <span class="mission-review__mission-name">Currently reviewing for: <%= @mission.name %></span>
     </div>
 
     <header class="mission-review__header">
@@ -56,64 +51,19 @@
         <% end %>
 
         <% if project %>
-          <div class="mission-review__panel">
-            <h2 class="mission-review__panel-title">Project</h2>
-            <% if project.description.present? %>
-              <p class="mission-review__description"><%= project.description %></p>
-            <% end %>
-            <dl class="mission-review__links">
-              <% if project.repo_url.present? %>
-                <dt>Repo</dt>
-                <dd><%= link_to project.repo_url, project.repo_url, target: "_blank", rel: "noopener" %></dd>
-              <% end %>
-              <% if project.demo_url.present? %>
-                <dt>Demo</dt>
-                <dd><%= link_to project.demo_url, project.demo_url, target: "_blank", rel: "noopener" %></dd>
-              <% end %>
-              <% if project.readme_url.present? %>
-                <dt>README</dt>
-                <dd><%= link_to project.readme_url, project.readme_url, target: "_blank", rel: "noopener" %></dd>
-              <% end %>
-              <dt>Project page</dt>
-              <dd><%= link_to project.title, project_path(project), target: "_blank", rel: "noopener" %></dd>
-            </dl>
+          <div class="mission-review__panel mission-review__panel--project">
+            <h2 class="mission-review__panel-title">
+              Project
+              <%= link_to "(open in new tab)", project_path(project), target: "_blank", rel: "noopener", class: "mission-review__panel-link" %>
+            </h2>
+            <iframe src="<%= project_path(project, embed: 1) %>" class="mission-review__project-iframe" loading="lazy"></iframe>
           </div>
         <% end %>
 
-        <% if ship %>
+        <% if ship&.review_instructions.present? %>
           <div class="mission-review__panel">
-            <h2 class="mission-review__panel-title">Ship message</h2>
-            <p><%= simple_format(ship.body.to_s) %></p>
-            <% if ship.review_instructions.present? %>
-              <h3>Review instructions</h3>
-              <p><%= simple_format(ship.review_instructions.to_s) %></p>
-            <% end %>
-          </div>
-        <% end %>
-
-        <% if @devlogs.any? %>
-          <div class="mission-review__panel">
-            <h2 class="mission-review__panel-title">Devlogs (<%= @devlogs.size %>)</h2>
-            <div class="mission-review__devlogs">
-              <% @devlogs.each do |devlog_post| %>
-                <div class="mission-review__devlog">
-                  <div class="mission-review__devlog-header">
-                    <span class="mission-review__devlog-author"><%= devlog_post.user&.display_name %></span>
-                    <span class="mission-review__devlog-time"><%= time_ago_in_words(devlog_post.created_at) %> ago</span>
-                  </div>
-                  <p class="mission-review__devlog-body"><%= simple_format(devlog_post.postable.body.to_s) %></p>
-                  <% if devlog_post.postable.respond_to?(:attachments) && devlog_post.postable.attachments.attached? %>
-                    <div class="mission-review__devlog-media">
-                      <% devlog_post.postable.attachments.each do |attachment| %>
-                        <% if attachment.image? %>
-                          <%= image_tag attachment, class: "mission-review__devlog-img" %>
-                        <% end %>
-                      <% end %>
-                    </div>
-                  <% end %>
-                </div>
-              <% end %>
-            </div>
+            <h2 class="mission-review__panel-title">Review instructions</h2>
+            <p><%= simple_format(ship.review_instructions.to_s) %></p>
           </div>
         <% end %>
 
