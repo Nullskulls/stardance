@@ -474,7 +474,12 @@ Rails.application.routes.draw do
 
   # Voting
   get "rate/new", to: "votes#new", as: :new_rate
-  resources :votes, only: [ :new, :create ]
+  resources :ship_events, only: [] do
+    resource :vote_reasons, only: :show, controller: "ship_events/vote_reasons"
+  end
+  resources :votes, only: [ :new, :create ] do
+    resource :flag, only: :create, controller: "votes/flags"
+  end
   namespace :votes do
     resource :skip, only: :create
     resources :assignments, only: [] do
@@ -521,6 +526,8 @@ Rails.application.routes.draw do
   get "home", to: "home#index"
   resources :feed_events, only: [ :create ]
   resource :daily_roll, only: [ :create ]
+  patch "streaks/timezone", to: "streaks#update_timezone"
+  get "streaks/month", to: "streaks#month", as: :streak_month
   get "rng", to: "daily_rolls#leaderboard", as: :rng
   get "rng/history", to: "daily_rolls#history", as: :rng_history
   delete "daily_roll/clear", to: "daily_rolls#clear", as: :clear_daily_roll if Rails.env.development? || Rails.env.test?
@@ -628,6 +635,12 @@ Rails.application.routes.draw do
         post :update_ship_status
         post :force_state
         get  :votes
+      end
+    end
+    resources :vote_flags, only: [ :index ] do
+      scope module: :vote_flags do
+        resource :approval, only: :create
+        resource :rejection, only: :create
       end
     end
     get "super_stars", to: "super_stars#show", as: :super_stars
@@ -771,6 +784,7 @@ Rails.application.routes.draw do
           get :logs
           get :monitor, to: "ships/monitor#show"
         end
+        patch :set_project_type, on: :member
         scope module: :ships do
           resource :claim, only: [ :create, :destroy ]
         end
@@ -883,7 +897,7 @@ Rails.application.routes.draw do
 
   resources :devlogs, only: [] do
     resource :like, only: [ :create, :destroy ]
-    resources :comments, only: [ :create, :destroy ]
+    resources :comments, only: [ :index, :create, :destroy ]
   end
 
   # Public user profiles

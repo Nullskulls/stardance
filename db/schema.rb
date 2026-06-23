@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_15_133745) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_22_180819) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -175,6 +175,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_133745) do
     t.datetime "decided_at"
     t.integer "discount_stardust_awarded"
     t.text "feedback"
+    t.string "hcb_grant_hashid"
     t.text "internal_reason"
     t.integer "lock_version", default: 0, null: false
     t.bigint "project_id", null: false
@@ -204,7 +205,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_133745) do
     t.text "recert_reason"
     t.bigint "returned_by_id"
     t.bigint "reviewer_id"
-    t.integer "stardust_earned"
+    t.float "stardust_earned"
     t.integer "status", default: 0, null: false
     t.datetime "updated_at", null: false
     t.index ["decided_at"], name: "index_certification_ship_reviews_on_decided_at"
@@ -263,6 +264,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_133745) do
     t.index ["rolled_on", "value"], name: "index_daily_rolls_on_rolled_on_and_value"
     t.index ["user_id", "rolled_on"], name: "index_daily_rolls_on_user_id_and_rolled_on", unique: true
     t.index ["user_id"], name: "index_daily_rolls_on_user_id"
+  end
+
+  create_table "devlog_lookout_sessions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "devlog_id", null: false
+    t.bigint "lookout_session_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["devlog_id", "lookout_session_id"], name: "idx_devlog_lookout_sessions_unique", unique: true
+    t.index ["devlog_id"], name: "index_devlog_lookout_sessions_on_devlog_id"
+    t.index ["lookout_session_id"], name: "index_devlog_lookout_sessions_on_lookout_session_id"
   end
 
   create_table "devlog_versions", force: :cascade do |t|
@@ -374,7 +385,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_133745) do
 
   create_table "lookout_sessions", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.bigint "devlog_id"
     t.integer "duration_seconds", default: 0
     t.string "mode"
     t.bigint "project_id", null: false
@@ -385,7 +395,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_133745) do
     t.string "token", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
-    t.index ["devlog_id"], name: "index_lookout_sessions_on_devlog_id"
     t.index ["project_id", "status"], name: "index_lookout_sessions_on_project_id_and_status"
     t.index ["project_id"], name: "index_lookout_sessions_on_project_id"
     t.index ["token"], name: "index_lookout_sessions_on_token", unique: true
@@ -1209,6 +1218,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_133745) do
     t.index ["payout_given_by_id"], name: "index_show_and_tell_payout_records_on_payout_given_by_id"
   end
 
+  create_table "streak_activities", force: :cascade do |t|
+    t.date "activity_date", null: false
+    t.integer "coded_seconds", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["user_id", "activity_date"], name: "index_streak_activities_on_user_id_and_activity_date", unique: true
+    t.index ["user_id"], name: "index_streak_activities_on_user_id"
+  end
+
   create_table "support_vibes", force: :cascade do |t|
     t.jsonb "concern_message_links"
     t.jsonb "concern_messages"
@@ -1323,12 +1342,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_133745) do
     t.string "guest_email"
     t.boolean "has_gotten_free_stickers", default: false
     t.boolean "has_pending_achievements", default: false, null: false
+    t.boolean "has_presentable_hardware_project", default: false, null: false
     t.string "hcb_email"
     t.string "interests", default: [], array: true
     t.text "internal_notes"
     t.string "ip_address"
     t.string "last_name"
-    t.string "manual_outpost_ticket_approval"
     t.boolean "manual_ysws_override"
     t.boolean "mission_review_notifications", default: true, null: false
     t.datetime "onboarded_at"
@@ -1343,6 +1362,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_133745) do
     t.string "slack_id"
     t.datetime "synced_at"
     t.string "things_dismissed", default: [], null: false, array: true
+    t.string "timezone"
     t.datetime "updated_at", null: false
     t.string "user_agent"
     t.string "user_ref"
@@ -1431,6 +1451,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_133745) do
 
   create_table "votes", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.boolean "discarded", default: false, null: false
     t.integer "originality_score"
     t.bigint "project_id", null: false
     t.text "reason"
@@ -1440,6 +1461,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_133745) do
     t.datetime "updated_at", null: false
     t.integer "usability_score"
     t.bigint "user_id", null: false
+    t.index ["discarded", "ship_event_id"], name: "index_votes_on_discarded_and_ship_event_id"
     t.index ["project_id"], name: "index_votes_on_project_id"
     t.index ["ship_event_id"], name: "index_votes_on_ship_event_id"
     t.index ["user_id", "ship_event_id"], name: "index_votes_on_user_id_and_ship_event_id", unique: true
@@ -1463,6 +1485,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_133745) do
   add_foreign_key "certification_ysws_reviews", "users", column: "spotchecked_by_id"
   add_foreign_key "comments", "users"
   add_foreign_key "daily_rolls", "users"
+  add_foreign_key "devlog_lookout_sessions", "lookout_sessions"
+  add_foreign_key "devlog_lookout_sessions", "post_devlogs", column: "devlog_id"
   add_foreign_key "devlog_versions", "post_devlogs", column: "devlog_id"
   add_foreign_key "devlog_versions", "users"
   add_foreign_key "follows", "users", column: "followed_id"
@@ -1472,7 +1496,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_133745) do
   add_foreign_key "fulfillment_payout_runs", "users", column: "approved_by_user_id"
   add_foreign_key "ledger_entries", "users"
   add_foreign_key "likes", "users"
-  add_foreign_key "lookout_sessions", "post_devlogs", column: "devlog_id"
   add_foreign_key "lookout_sessions", "projects"
   add_foreign_key "lookout_sessions", "users"
   add_foreign_key "messages", "users"
@@ -1561,6 +1584,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_133745) do
   add_foreign_key "show_and_tell_attendances", "users"
   add_foreign_key "show_and_tell_attendances", "users", column: "payout_given_by_id"
   add_foreign_key "show_and_tell_payout_records", "users", column: "payout_given_by_id"
+  add_foreign_key "streak_activities", "users"
   add_foreign_key "user_achievements", "users"
   add_foreign_key "user_hackatime_projects", "projects"
   add_foreign_key "user_hackatime_projects", "users"

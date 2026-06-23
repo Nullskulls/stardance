@@ -37,6 +37,7 @@
 class Post::ShipEvent < ApplicationRecord
   include Postable
   include Ledgerable
+  include Post::ShipEvent::Payouts
   include SemanticSearchIndexable
   semantic_search_indexable type: "ship"
 
@@ -73,7 +74,7 @@ class Post::ShipEvent < ApplicationRecord
 
   scope :voteable, -> {
     where(certification_status: "approved", payout: nil)
-      .where("post_ship_events.votes_count < ?", VOTES_TO_LEAVE_POOL)
+      .where(Vote.countable_count_lt(VOTES_TO_LEAVE_POOL))
       .where("post_ship_events.hours_at_ship > 0")
       .where.not(id: Mission::Submission.with_deleted.where(payout_path: "static_prize").select(:ship_event_id))
   }
@@ -115,6 +116,7 @@ class Post::ShipEvent < ApplicationRecord
     project.posts.of_devlogs(join: true)
            .where("posts.created_at >= ? AND posts.created_at <= ?", ship_window_start_time, post.created_at)
            .where(post_devlogs: { deleted_at: nil })
+           .then { |scope| project.hardware? ? scope.where(post_devlogs: { phase: "build" }) : scope }
            .sum("post_devlogs.duration_seconds")
            .to_f / 3600
   end

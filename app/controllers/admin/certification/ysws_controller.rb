@@ -22,7 +22,20 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
     # Check if review is already in unified DB
     @review.check_and_update_unified_db_status!
 
-    devlog_minutes = @review.devlog_reviews.map(&:original_minutes).compact
+    # Earlier reviews of the same project. Their devlogs are shown frozen
+    # (read-only) for context, oldest first, with only the current review's
+    # devlogs editable.
+    @prior_reviews = ::Certification::Ysws
+      .where(project_id: @review.project_id)
+      .where("id < ?", @review.id)
+      .includes(devlog_reviews: { post_devlog: :attachments_attachments })
+      .order(:id)
+
+    # Prior (frozen) + current devlogs, in display order, counted together in
+    # the header, time stats, and chart.
+    @all_devlog_reviews = @prior_reviews.flat_map(&:devlog_reviews) + @review.devlog_reviews.to_a
+
+    devlog_minutes = @all_devlog_reviews.map(&:original_minutes).compact
 
     @stats = {
       total_minutes: devlog_minutes.sum,

@@ -945,9 +945,6 @@ body:has(.certification-ysws) {
 
   // Video Card
   .video-card {
-    position: relative;
-    z-index: 1;
-
     h3 {
       color: var(--color-brand-lilac);
       font-size: var(--font-size-l);
@@ -957,9 +954,6 @@ body:has(.certification-ysws) {
     }
 
     &__player {
-      position: relative;
-      z-index: 2;
-      pointer-events: auto;
       background: #000;
     }
 
@@ -1110,6 +1104,41 @@ body:has(.certification-ysws) {
       gap: var(--space-xl);
     }
 
+    // Each review's devlogs are grouped; earlier reviews render frozen and are
+    // separated from the current (editable) review by a dashed divider.
+    .devlog-review-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xl);
+
+      &:not(:last-child) {
+        margin-bottom: var(--space-xl);
+        padding-bottom: var(--space-xl);
+        border-bottom: 1px dashed var(--color-space-border);
+      }
+    }
+
+    .devlog-review-group__header {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: var(--space-s);
+      font-family: var(--font-family-sans);
+    }
+
+    .devlog-review-group__meta {
+      color: var(--color-space-text-muted);
+      font-size: var(--font-size-xs);
+    }
+
+    .devlog-review-group__current-label {
+      color: var(--color-brand-mint);
+      font-size: var(--font-size-s);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
     .devlog-item {
       display: flex;
       gap: var(--space-l);
@@ -1120,6 +1149,21 @@ body:has(.certification-ysws) {
         border-bottom: none;
         padding-bottom: 0;
       }
+    }
+
+    // Devlogs from earlier reviews: dimmed and non-interactive.
+    .devlog-item--frozen {
+      opacity: 0.7;
+
+      .devlog-review-panel {
+        pointer-events: none;
+      }
+    }
+
+    .devlog-status.status-frozen {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--color-space-text-muted);
+      border: 1px solid var(--color-space-border);
     }
 
     .devlog-main {
@@ -2230,9 +2274,6 @@ body:has(.certification-ysws) {
       object-fit: contain;
       border-radius: var(--border-radius);
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-      position: relative;
-      z-index: 1;
-      pointer-events: auto;
 
       &.hidden {
         display: none;

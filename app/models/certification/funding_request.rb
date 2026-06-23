@@ -10,6 +10,7 @@
 #  decided_at                :datetime
 #  discount_stardust_awarded :integer
 #  feedback                  :text
+#  hcb_grant_hashid          :string
 #  internal_reason           :text
 #  lock_version              :integer          default(0), not null
 #  requested_amount_cents    :integer          not null
@@ -201,6 +202,7 @@ module Certification
     before_save :assign_stardust_earned,
       if: -> { will_save_change_to_status? && status_change&.last != "pending" && reviewer_id.present? }
     after_save :apply_verdict_to_project!, if: :saved_change_to_status?
+    after_save_commit :issue_hcb_grant!, if: -> { saved_change_to_status? && approved? }
     after_save_commit :notify_owner!, if: -> { saved_change_to_status? && !pending? }
 
     private
@@ -260,6 +262,7 @@ module Certification
       project.with_lock do
         case status.to_sym
         when :approved
+          project.advancing_via_funding_approval = true
           project.update!(hardware_stage: "build")
           accrue_discount_for_owner!
         when :returned
@@ -282,6 +285,23 @@ module Certification
         owner.update!(outpost_discount_stardust: owner.outpost_discount_stardust + awarded)
       end
       update_column(:discount_stardust_awarded, awarded)
+    end
+
+    def issue_hcb_grant!
+      return if hcb_grant_hashid.present?
+
+      owner = project.memberships.owner.first&.user || user
+      grant = HCBService.create_card_grant(
+        email: owner.grant_email,
+        amount_cents: final_amount_cents,
+        # HCB caps the grant purpose at 30 characters.
+        purpose: "Hardware Grant: #{project.title}".truncate(30),
+        organization: "stardance-hardware"
+      )
+      update_column(:hcb_grant_hashid, grant["id"])
+    rescue => e
+      Rails.logger.error "Failed to issue HCB grant for FundingRequest ##{id}: #{e.message}"
+      raise
     end
 
     def notify_owner!

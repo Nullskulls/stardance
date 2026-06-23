@@ -2,7 +2,7 @@ class Shop::ItemsController < Shop::BaseController
   skip_before_action :refresh_identity_on_portal_return, only: [ :index, :category ]
 
   discover_rail_widgets :shop_orders, :shop_updates, :shop_wishlist,
-    context: -> { { sidebar_orders: @sidebar_orders || [], user_balance: @user_balance || 0 } }
+    context: -> { { sidebar_orders: @sidebar_orders || [], user_balance: @user_balance || 0, user_region: @user_region || "US" } }
 
   def index
     if params[:q].present?

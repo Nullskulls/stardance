@@ -59,6 +59,7 @@ class ProjectsController < ApplicationController
         @all_hackatime_projects = current_user.hackatime_projects
         result = current_user.try_sync_hackatime_data!
         @hackatime_times = result&.dig(:projects) || {}
+        @hackatime_token_stale = current_user.hackatime_token_stale?
 
         linked_ids = @linked_hackatime_projects.map(&:id).to_set
         taken_project_ids = @all_hackatime_projects.map(&:project_id).compact.uniq - [ @project.id ]
@@ -172,7 +173,8 @@ class ProjectsController < ApplicationController
     if current_user.present?
       is_owner = @project.memberships.where(role: :owner, user_id: current_user.id).exists?
 
-      if is_owner &&
+      if Post::ShipEvent.payout_feature_enabled?(current_user) &&
+          is_owner &&
           latest_ship_event.present? &&
           latest_ship_event.certification_status == "approved" &&
           latest_ship_event.payout.blank? &&
@@ -194,7 +196,10 @@ class ProjectsController < ApplicationController
           remaining: remaining,
           ratings_given: ratings_given,
           ratings_total: ratings_total,
-          static_prize: is_static
+          static_prize: is_static,
+          review_open: latest_ship_event.payout_review_open?,
+          review_deadline: latest_ship_event.payout_review_deadline,
+          review_path: ship_event_vote_reasons_path(latest_ship_event)
         }
       end
     end

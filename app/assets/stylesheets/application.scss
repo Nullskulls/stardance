@@ -18,6 +18,7 @@
 @use "components/input-group";
 @use "components/sidebar";
 @use "components/discover_rail";
+@use "components/streak_widget";
 @use "components/ship_intro_module";
 @use "components/ui-heading";
 @use "components/dropdown";
@@ -57,6 +58,7 @@
 @use "pages/projects/lookout_recorder";
 @use "pages/hardware_funding";
 @use "pages/votes";
+@use "pages/vote_reasons";
 @use "pages/achievements/index" as achievements_index;
 @use "pages/shop/shop";
 @use "pages/shop/hub";

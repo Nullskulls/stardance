@@ -66,6 +66,22 @@
 
         <div class="md-preview markdown-content" data-markdown-preview-target="output" hidden></div>
 
+        <% if quote_preview? %>
+          <%# The post being quoted, shown below the text box and rendered exactly
+              as it appears nested inside a quote repost on the timeline — so the
+              composer reads like the final card (your thought up top, the quoted
+              post beneath) without echoing your text a second time. `inert` keeps
+              it a non-interactive preview: no clicks (so links can't navigate you
+              away mid-compose), no tab focus. %>
+          <div class="feed-composer__quote-preview feed-post-card__repost-preview" inert>
+            <%= render "shared/repost_preview_card",
+                  post: quote_preview_post,
+                  current_user: current_user,
+                  track_engagement: false,
+                  show_views: false %>
+          </div>
+        <% end %>
+
         <% if show_attachments? %>
           <div class="feed-composer__attach-wrap" data-composer-target="attachWrap">
             <label class="feed-composer__attach">

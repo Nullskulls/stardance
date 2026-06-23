@@ -63,6 +63,7 @@ class Project < ApplicationRecord
     "Desktop App (Windows)", "Desktop App (Linux)", "Desktop App (macOS)",
     "Minecraft Mods", "Hardware", "Android App", "iOS App", "Other"
   ].freeze
+  USER_SELECTABLE_TYPES = (AVAILABLE_CATEGORIES - [ "Hardware" ]).freeze
 
   # Hardware projects carry a build/design stage; software projects leave
   # hardware_stage nil. Drives the Lookout screen-recording flow on the project
@@ -257,10 +258,19 @@ class Project < ApplicationRecord
   # allows nil, but not "").
   normalizes :hardware_stage, with: ->(value) { value.presence }
   validates :hardware_stage, inclusion: { in: HARDWARE_STAGES }, allow_nil: true
+  validates :project_type, inclusion: { in: AVAILABLE_CATEGORIES }, allow_nil: true
   validate :hardware_stage_locked_after_funding_request
+
+  # Set by Certification::FundingRequest#apply_verdict_to_project! to let the
+  # approval flow advance the stage; the lock below stays closed for everyone else.
+  attr_accessor :advancing_via_funding_approval
 
   def hardware_stage_locked_after_funding_request
     return unless hardware_stage_changed? && has_any_funding_request?
+    # The certification flow advances design → build when a funding request is
+    # approved. Allow only that in-process action, while still locking any
+    # owner-initiated stage change.
+    return if advancing_via_funding_approval
     errors.add(:hardware_stage, "cannot be changed after a funding request has been submitted")
   end
 
