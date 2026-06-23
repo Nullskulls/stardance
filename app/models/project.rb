@@ -261,8 +261,16 @@ class Project < ApplicationRecord
   validates :project_type, inclusion: { in: AVAILABLE_CATEGORIES }, allow_nil: true
   validate :hardware_stage_locked_after_funding_request
 
+  # Set by Certification::FundingRequest#apply_verdict_to_project! to let the
+  # approval flow advance the stage; the lock below stays closed for everyone else.
+  attr_accessor :advancing_via_funding_approval
+
   def hardware_stage_locked_after_funding_request
     return unless hardware_stage_changed? && has_any_funding_request?
+    # The certification flow advances design → build when a funding request is
+    # approved. Allow only that in-process action, while still locking any
+    # owner-initiated stage change.
+    return if advancing_via_funding_approval
     errors.add(:hardware_stage, "cannot be changed after a funding request has been submitted")
   end
 

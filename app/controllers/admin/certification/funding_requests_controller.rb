@@ -46,6 +46,7 @@ class Admin::Certification::FundingRequestsController < Admin::Certification::Ap
       redirect_to next_admin_certification_funding_requests_path,
                   notice: "#{verb} funding for “#{@funding_request.project.title}.” That's #{count} reviewed today. Keep going!"
     else
+      @reviewed_today = ::Certification::FundingRequest.reviewed_today(current_user)
       render :show, status: :unprocessable_entity
     end
   end

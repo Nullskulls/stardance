@@ -262,6 +262,7 @@ module Certification
       project.with_lock do
         case status.to_sym
         when :approved
+          project.advancing_via_funding_approval = true
           project.update!(hardware_stage: "build")
           accrue_discount_for_owner!
         when :returned
@@ -293,7 +294,8 @@ module Certification
       grant = HCBService.create_card_grant(
         email: owner.grant_email,
         amount_cents: final_amount_cents,
-        purpose: "Hardware Grant: #{project.title}",
+        # HCB caps the grant purpose at 30 characters.
+        purpose: "Hardware Grant: #{project.title}".truncate(30),
         organization: "stardance-hardware"
       )
       update_column(:hcb_grant_hashid, grant["id"])
