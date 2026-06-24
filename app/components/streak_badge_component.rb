@@ -29,7 +29,7 @@ class StreakBadgeComponent < ViewComponent::Base
   end
 
   def css_classes
-    classes = ["streak-badge"]
+    classes = [ "streak-badge" ]
     classes << "streak-badge--large" if @size == :large
     classes.join(" ")
   end
