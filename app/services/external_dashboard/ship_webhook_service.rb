@@ -82,6 +82,7 @@ module ExternalDashboard
         projectType: project&.hardware? ? "Hardware" : "Software",
         shipType: ship_type,
         description: project&.description.presence,
+        aiDeclaration: project&.ai_declaration.presence,
         submittedBy: submitted_by.presence,
         links: links.presence,
         metadata: { devTime: dev_time_seconds }
