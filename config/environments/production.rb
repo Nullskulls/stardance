@@ -3,6 +3,8 @@ require "active_support/core_ext/integer/time"
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
+  app_host = ENV.fetch("APP_HOST", "stardance.hackclub.com")
+
   # Code is not reloaded between requests.
   config.enable_reloading = false
 
@@ -19,7 +21,7 @@ Rails.application.configure do
   config.public_file_server.headers = { "cache-control" => "public, max-age=#{1.year.to_i}" }
 
   # Enable serving of images, stylesheets, and JavaScripts from an asset server.
-  config.asset_host = "https://stardance.hackclub.com"
+  config.asset_host = "https://#{app_host}"
 
   # Proxy mode for CDN
   config.active_storage.resolve_model_to_route = :rails_storage_proxy
@@ -70,8 +72,8 @@ Rails.application.configure do
   # config.action_mailer.raise_delivery_errors = false
 
   # Set host to be used by links generated in mailer templates and URL helpers (e.g. sitemap job).
-  config.action_controller.default_url_options = { host: "stardance.hackclub.com", protocol: "https" }
-  config.action_mailer.default_url_options = { host: "stardance.hackclub.com", protocol: "https" }
+  config.action_controller.default_url_options = { host: app_host, protocol: "https" }
+  config.action_mailer.default_url_options = { host: app_host, protocol: "https" }
 
   # Configure Loops SMTP for transactional emails
   config.action_mailer.delivery_method = :smtp

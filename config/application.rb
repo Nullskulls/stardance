@@ -73,7 +73,7 @@ module Battlemage
                          expire_after: 2.months,
                          secure: Rails.env.production?,
                          httponly: true,
-                         domain: Rails.env.production? ? ".stardance.hackclub.com" : :all
+                         domain: Rails.env.production? ? ".#{ENV.fetch("APP_HOST", "stardance.hackclub.com")}" : :all
 
     config.exceptions_app = self.routes
 
