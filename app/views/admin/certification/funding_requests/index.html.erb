@@ -205,6 +205,9 @@
                   <div class="ship-queue__project-head">
                     <%= link_to fr.project.title, admin_certification_funding_request_path(fr), class: "ship-queue__project-title" %>
                     <span class="ship-queue__project-id">#<%= fr.id %></span>
+                    <% if @hackpad_project_ids.include?(fr.project_id) %>
+                      <span class="ship-queue__tag ship-queue__tag--hackpad">Hackpad</span>
+                    <% end %>
                   </div>
                   <div class="ship-queue__project-meta">
                     <span>by <%= owner&.display_name || "—" %></span>
@@ -235,7 +238,12 @@
           <% owner = fr.project.memberships.find(&:owner?)&.user %>
           <%= link_to admin_certification_funding_request_path(fr), class: "ship-queue__card" do %>
             <div class="ship-queue__card-top">
-              <span class="ship-queue__project-title"><%= fr.project.title %></span>
+              <span class="ship-queue__project-title">
+                <%= fr.project.title %>
+                <% if @hackpad_project_ids.include?(fr.project_id) %>
+                  <span class="ship-queue__tag ship-queue__tag--hackpad">Hackpad</span>
+                <% end %>
+              </span>
               <span class="status-pill status-pill--<%= fr.status %>"><%= fr.status.capitalize %></span>
             </div>
             <div class="ship-queue__project-meta">

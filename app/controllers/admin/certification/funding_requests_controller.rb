@@ -26,6 +26,13 @@ class Admin::Certification::FundingRequestsController < Admin::Certification::Ap
                                     scope.order(created_at: @sort == "newest" ? :desc : :asc),
                                     limit: 25)
 
+    # Which of the displayed rows are Hackpad projects (one query, so the view
+    # can flag them without an N+1 of Project#current_mission per row).
+    @hackpad_project_ids = hackpad_project_ids
+                             .where(project_id: @funding_requests.map(&:project_id))
+                             .pluck(:project_id)
+                             .to_set
+
     @stats = ::Certification::FundingRequest.dashboard_stats
     @lb_period = params[:lb].presence_in(%w[daily weekly alltime]) || "daily"
     @leaderboards = {
