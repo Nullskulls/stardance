@@ -108,6 +108,17 @@ Guide = Data.define(:slug, :title, :description, :category, :icon, :reading_minu
       markdown: "outpost/outpost.md"
     ),
     new(
+      slug: :now_what,
+      title: "I've set up my account. Now what?",
+      description: "Just signed up? Here's the whole Stardance loop — from your first project to spending Stardust — in one place.",
+      category: :stardance_101,
+      icon: "compass_fill",
+      reading_minutes: 3,
+      related: %i[software hardware what_is_shipping],
+      markdown: "now_what.md",
+      hidden: true
+    ),
+    new(
       slug: :hardware,
       title: "Hardware in Stardance 101",
       description: "Step-by-step on how to make hardware projects in Stardance!",
