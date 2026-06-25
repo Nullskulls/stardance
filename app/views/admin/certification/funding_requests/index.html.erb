@@ -148,6 +148,13 @@
               data: { action: "change->certification--queue#submit" } %>
       </div>
       <div class="ship-queue__filter">
+        <label for="filter-project-kind">Project</label>
+        <%= select_tag :project_kind,
+              options_for_select([["All projects", "all"], ["Hackpad", "hackpad"]], @project_kind),
+              id: "filter-project-kind", class: "ship-queue__select",
+              data: { action: "change->certification--queue#submit" } %>
+      </div>
+      <div class="ship-queue__filter">
         <label for="filter-sort">Sort</label>
         <%= select_tag :sort,
               options_for_select([["Oldest first", "oldest"], ["Newest first", "newest"]], @sort),
