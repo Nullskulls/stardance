@@ -11,19 +11,27 @@ class Api::V1::CertificationDecisionsController < Api::V1::BaseController
 
     def valid_api_key?
       secret = webhook_secret
-      return false if secret.blank?
+      return reject_auth("secret not configured") if secret.blank?
 
-      header = request.headers[SIGNATURE_HEADER].to_s
-      return false unless header.start_with?(SIGNATURE_PREFIX)
+      header = request.headers[SIGNATURE_HEADER].to_s.strip
+      return reject_auth("missing signature header") if header.blank?
+      return reject_auth("malformed signature header") unless header.start_with?(SIGNATURE_PREFIX)
 
-      provided = header.delete_prefix(SIGNATURE_PREFIX)
+      provided = header.delete_prefix(SIGNATURE_PREFIX).downcase
       expected = OpenSSL::HMAC.hexdigest("SHA256", secret, request.raw_post)
 
-      ActiveSupport::SecurityUtils.secure_compare(expected, provided)
+      return true if ActiveSupport::SecurityUtils.secure_compare(expected, provided)
+      reject_auth("signature mismatch")
     end
 
     def webhook_secret
-      Rails.application.credentials.dig(:external_dashboard, :decision_webhook_secret).presence ||
-        ENV["EXTERNAL_REVIEW_SECRET"].presence
+      raw = Rails.application.credentials.dig(:external_dashboard, :decision_webhook_secret).presence ||
+            ENV["EXTERNAL_REVIEW_SECRET"].presence
+      raw.is_a?(String) ? raw : nil
+    end
+
+    def reject_auth(reason)
+      Rails.logger.warn "[CertificationDecisions] rejected: #{reason}"
+      false
     end
 end
