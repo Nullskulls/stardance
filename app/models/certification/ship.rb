@@ -66,6 +66,8 @@ module Certification
       returned: 2
     }, default: :pending
 
+    EXTERNAL_DECISION_MAP = { "APPROVED" => :approved, "REJECTED" => :returned }.freeze
+
     ACCEPTED_VIDEO_TYPES = %w[video/mp4 video/webm video/quicktime].freeze
 
     # Canned request-changes responses offered on the review form. The opener
