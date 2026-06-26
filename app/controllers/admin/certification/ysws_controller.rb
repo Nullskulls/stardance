@@ -248,7 +248,7 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
     @review = ::Certification::Ysws.find(params[:id])
     authorize @review, :update?
 
-    recert_reason = params[:recert_reason].to_s.strip
+    recert_reason = params[:recert_reason].to_s.strip.truncate(::Post::ShipEvent::RETURN_REASON_MAX_LENGTH, omission: "")
     if recert_reason.blank?
       return render json: { success: false, error: "A reason is required." }, status: :unprocessable_entity
     end
@@ -260,12 +260,25 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
     end
 
     ActiveRecord::Base.transaction do
-      ::Certification::Ship.create!(
+      approved_cert = ::Certification::Ship
+        .where(project_id: @review.project_id, status: :approved)
+        .order(created_at: :desc)
+        .lock
+        .first
+
+      new_cert = ::Certification::Ship.create!(
         project_id: @review.project_id,
         recert_reason: recert_reason, # codeql[rb/cleartext-storage-sensitive-data]
         returned_by_id: current_user.id
       )
       @review.update!(returned_at: Time.current)
+
+      if approved_cert&.external_certification_id.present?
+        uuid = approved_cert.external_certification_id
+        approved_cert.update!(external_certification_id: nil)
+        new_cert.update!(external_certification_id: uuid)
+        ::ExternalDashboard::CertReturnJob.perform_later(new_cert.id, recert_reason)
+      end
     end
 
     render json: {
