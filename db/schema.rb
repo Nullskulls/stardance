@@ -643,11 +643,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_26_060000) do
   create_table "post_ship_events", force: :cascade do |t|
     t.string "body"
     t.string "certification_status", default: "pending"
+    t.integer "comments_count", default: 0, null: false
     t.datetime "created_at", null: false
     t.text "feedback_reason"
     t.string "feedback_video_url"
     t.float "hours_at_payout"
     t.float "hours_at_ship"
+    t.integer "likes_count", default: 0, null: false
     t.float "multiplier"
     t.decimal "originality_median", precision: 5, scale: 2
     t.decimal "originality_percentile", precision: 5, scale: 2
@@ -1304,6 +1306,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_26_060000) do
     t.boolean "send_notifications_for_new_followers", default: true, null: false
     t.boolean "send_votes_to_slack", default: false, null: false
     t.boolean "stardust_balance_notifications", default: false, null: false
+    t.boolean "streak_slack_status_enabled", default: false, null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index ["leaderboard_optin"], name: "index_user_preferences_on_leaderboard_optin"
