@@ -124,11 +124,11 @@ class Post::ShipEvent < ApplicationRecord
     cert_id = cert_id.to_s
     return :skipped if cert_id.blank?
     return :skipped unless cert_id.match?(EXTERNAL_CERTIFICATION_ID_PATTERN)
-    return :skipped if external_certification_id == cert_id
+    return :skipped if external_certification_id.present?
 
-    update_column(:external_certification_id, cert_id)
+    update!(external_certification_id: cert_id)
     :persisted
-  rescue ActiveRecord::RecordNotUnique
+  rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique
     :skipped
   end
 

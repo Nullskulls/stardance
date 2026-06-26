@@ -49,24 +49,29 @@ module ExternalDashboard
       target_status = Certification::Ship::EXTERNAL_DECISION_MAP.fetch(decision_status)
       result = nil
 
-      project.with_lock do
-        ship_event.reload
+      PaperTrail.request(whodunnit: "external_dashboard") do
+        project.with_lock do
+          ship_event.reload
 
-        review = project.ship_reviews.find_by(status: :pending)
-        if review
-          apply_decision!(review, ship_event, target_status)
-          result = ok(decision_payload(ship_event, review: review.reload, idempotent: false))
-          next
+          review = project.ship_reviews.find_by(status: :pending)
+          if review
+            apply_decision!(review, ship_event.reload, target_status)
+            result = ok(decision_payload(ship_event.reload, review: review.reload, idempotent: false))
+            next
+          end
+
+          if Post::ShipEvent::FINAL_CERTIFICATION_STATUSES.include?(ship_event.certification_status)
+            if ship_event.certification_status == target_status.to_s
+              persist_external_certification_id(ship_event)
+            else
+              log_divergence(ship_event, target_status)
+            end
+            result = ok(decision_payload(ship_event, review: nil, idempotent: true))
+            next
+          end
+
+          result = error(:unprocessable_entity, "no pending ship review for project #{project.id}")
         end
-
-        if Post::ShipEvent::FINAL_CERTIFICATION_STATUSES.include?(ship_event.certification_status)
-          log_divergence(ship_event, target_status) unless ship_event.certification_status == target_status.to_s
-          persist_external_certification_id(ship_event)
-          result = ok(decision_payload(ship_event, review: nil, idempotent: true))
-          next
-        end
-
-        result = error(:unprocessable_entity, "no pending ship review for project #{project.id}")
       end
 
       result

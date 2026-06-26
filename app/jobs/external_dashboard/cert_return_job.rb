@@ -12,7 +12,7 @@ module ExternalDashboard
       when :client_error
         log_remote_failure("client error", ship_event_id, result)
       when :server_error
-        log_remote_failure("server error", ship_event_id, result)
+        raise_server_error(ship_event_id, result)
       end
     end
   end

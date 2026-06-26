@@ -3,8 +3,15 @@ class Api::V1::CertificationDecisionsController < Api::V1::BaseController
   SIGNATURE_PREFIX = "sha256=".freeze
 
   def create
-    result = ExternalDashboard::DecisionProcessor.call(request.request_parameters)
+    unless request.media_type == "application/json"
+      return render json: { error: "expected application/json" }, status: :bad_request
+    end
+
+    payload = JSON.parse(request.raw_post)
+    result = ExternalDashboard::DecisionProcessor.call(payload)
     render json: result.body, status: result.status
+  rescue JSON::ParserError
+    render json: { error: "malformed json" }, status: :bad_request
   end
 
   private
