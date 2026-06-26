@@ -51,20 +51,22 @@ module ExternalDashboard
 
       project.with_lock do
         ship_event.reload
+
+        review = project.ship_reviews.find_by(status: :pending)
+        if review
+          apply_decision!(review, ship_event, target_status)
+          result = ok(decision_payload(ship_event, review: review.reload, idempotent: false))
+          next
+        end
+
         if Post::ShipEvent::FINAL_CERTIFICATION_STATUSES.include?(ship_event.certification_status)
           log_divergence(ship_event, target_status) unless ship_event.certification_status == target_status.to_s
+          persist_external_certification_id(ship_event)
           result = ok(decision_payload(ship_event, review: nil, idempotent: true))
           next
         end
 
-        review = project.ship_reviews.find_by(status: :pending)
-        if review.nil?
-          result = error(:unprocessable_entity, "no pending ship review for project #{project.id}")
-          next
-        end
-
-        apply_decision!(review, ship_event, target_status)
-        result = ok(decision_payload(ship_event, review: review.reload, idempotent: false))
+        result = error(:unprocessable_entity, "no pending ship review for project #{project.id}")
       end
 
       result
@@ -103,6 +105,11 @@ module ExternalDashboard
         feedback_reason: reviewer_comment,
         feedback_video_url: proof_video_url
       )
+      persist_external_certification_id(ship_event)
+    end
+
+    def persist_external_certification_id(ship_event)
+      ship_event.assign_external_certification_id!(certification[:id])
     end
 
     def decision_payload(ship_event, review:, idempotent:)

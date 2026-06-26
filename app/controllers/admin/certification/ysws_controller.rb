@@ -248,7 +248,7 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
     @review = ::Certification::Ysws.find(params[:id])
     authorize @review, :update?
 
-    recert_reason = params[:recert_reason].to_s.strip
+    recert_reason = params[:recert_reason].to_s.strip.truncate(::Post::ShipEvent::RETURN_REASON_MAX_LENGTH, omission: "")
     if recert_reason.blank?
       return render json: { success: false, error: "A reason is required." }, status: :unprocessable_entity
     end
@@ -266,6 +266,7 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
         returned_by_id: current_user.id
       )
       @review.update!(returned_at: Time.current)
+      ::ExternalDashboard::CertReturnJob.perform_later(@review.post_ship_event_id, recert_reason)
     end
 
     render json: {

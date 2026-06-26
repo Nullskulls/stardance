@@ -19,8 +19,10 @@ module ExternalDashboard
 
       case result.status
       when :ok
+        persist_cert_id(ship_event, result.cert_id)
         Rails.logger.info "[ExternalDashboard::ShipWebhookJob] ship_event=#{ship_event_id} ingested cert_id=#{result.cert_id}"
       when :duplicate
+        persist_cert_id(ship_event, result.cert_id)
         Rails.logger.info "[ExternalDashboard::ShipWebhookJob] ship_event=#{ship_event_id} already ingested cert_id=#{result.cert_id}"
       when :not_configured, :skipped
         Rails.logger.info "[ExternalDashboard::ShipWebhookJob] ship_event=#{ship_event_id} skipped (#{result.error})"
@@ -32,6 +34,10 @@ module ExternalDashboard
     end
 
     private
+
+    def persist_cert_id(ship_event, cert_id)
+      ship_event.assign_external_certification_id!(cert_id)
+    end
 
     def log_remote_failure(ship_event_id, result, label)
       Rails.logger.warn "[ExternalDashboard::ShipWebhookJob] ship_event=#{ship_event_id} #{label} http=#{result.http_status} error=#{result.error}"
