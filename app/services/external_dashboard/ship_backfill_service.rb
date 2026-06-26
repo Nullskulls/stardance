@@ -1,7 +1,6 @@
 module ExternalDashboard
   class ShipBackfillService
     BATCH_SIZE = 100
-    BACKFILL_QUEUE = :external_backfill
     DEFAULT_RATE_PER_SECOND = 2
 
     Result = Struct.new(:status, :enqueued, :error, keyword_init: true) do
@@ -15,11 +14,11 @@ module ExternalDashboard
       enqueued = 0
       scope.find_each(batch_size: BATCH_SIZE) do |cert|
         delay = (enqueued.to_f / rate_per_second).seconds
-        ExternalDashboard::ShipWebhookJob.set(queue: BACKFILL_QUEUE, wait: delay).perform_later(cert.id)
+        ExternalDashboard::ShipWebhookJob.set(wait: delay).perform_later(cert.id)
         enqueued += 1
       end
 
-      Rails.logger.info "[ExternalDashboard::ShipBackfillService] enqueued=#{enqueued} queue=#{BACKFILL_QUEUE} rate=#{rate_per_second}/s"
+      Rails.logger.info "[ExternalDashboard::ShipBackfillService] enqueued=#{enqueued} rate=#{rate_per_second}/s"
       Result.new(status: :ok, enqueued: enqueued)
     end
   end

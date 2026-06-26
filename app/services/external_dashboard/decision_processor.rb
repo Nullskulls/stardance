@@ -43,7 +43,7 @@ module ExternalDashboard
       target_status = Certification::Ship::EXTERNAL_DECISION_MAP.fetch(decision_status)
       result = nil
 
-      PaperTrail.request(whodunnit: "external_dashboard") do
+      PaperTrail.request(whodunnit: whodunnit) do
         cert.with_lock do
           cert.reload
 
@@ -95,6 +95,16 @@ module ExternalDashboard
       match && match[1].to_i
     end
 
+    def reviewer
+      return @reviewer if defined?(@reviewer)
+      slack_id = certification[:reviewerSlackId].to_s.presence
+      @reviewer = slack_id && User.find_by(slack_id: slack_id)
+    end
+
+    def whodunnit
+      reviewer&.id&.to_s || "external_dashboard"
+    end
+
     def reviewer_comment
       certification[:reviewerComment].to_s.presence&.truncate(Post::ShipEvent::FEEDBACK_REASON_MAX_LENGTH, omission: "")
     end
@@ -104,12 +114,13 @@ module ExternalDashboard
     end
 
     def apply_decision!(cert, target_status)
-      cert.update!(status: target_status, feedback: reviewer_comment)
       ship_event = cert.project&.last_ship_event
       ship_event&.update!(
+        certification_status: target_status.to_s,
         feedback_reason: reviewer_comment,
         feedback_video_url: proof_video_url
       )
+      cert.update!(status: target_status, feedback: reviewer_comment, reviewer_id: reviewer&.id)
       cert.assign_external_certification_id!(certification[:id])
     end
 
