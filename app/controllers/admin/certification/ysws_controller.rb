@@ -262,13 +262,19 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
     approved_cert = ::Certification::Ship.where(project_id: @review.project_id, status: :approved).order(created_at: :desc).first
 
     ActiveRecord::Base.transaction do
-      ::Certification::Ship.create!(
+      new_cert = ::Certification::Ship.create!(
         project_id: @review.project_id,
         recert_reason: recert_reason, # codeql[rb/cleartext-storage-sensitive-data]
         returned_by_id: current_user.id
       )
       @review.update!(returned_at: Time.current)
-      ::ExternalDashboard::CertReturnJob.perform_later(approved_cert.id, recert_reason) if approved_cert
+
+      if approved_cert&.external_certification_id.present?
+        uuid = approved_cert.external_certification_id
+        approved_cert.update!(external_certification_id: nil)
+        new_cert.update!(external_certification_id: uuid)
+        ::ExternalDashboard::CertReturnJob.perform_later(new_cert.id, recert_reason)
+      end
     end
 
     render json: {

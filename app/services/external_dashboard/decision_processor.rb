@@ -24,11 +24,8 @@ module ExternalDashboard
       return error(:bad_request, "missing certification object") unless certification.is_a?(Hash)
       return error(:unprocessable_entity, "unsupported status: #{decision_status.inspect}") unless Certification::Ship::EXTERNAL_DECISION_MAP.key?(decision_status)
 
-      cert_id = parse_cert_id
-      return error(:bad_request, "invalid externalId (expected #{EXTERNAL_ID_PREFIX}<id>)") if cert_id.nil?
-
-      cert = Certification::Ship.find_by(id: cert_id)
-      return error(:not_found, "cert #{cert_id} not found") if cert.nil?
+      cert = find_cert
+      return error(:not_found, "cert not found (externalId=#{certification[:externalId].inspect} id=#{certification[:id].inspect})") if cert.nil?
 
       if proof_video_url
         return error(:bad_request, "proofVideoUrl must be an http(s) URL") unless proof_video_url.match?(%r{\Ahttps?://\S+\z})
@@ -78,6 +75,17 @@ module ExternalDashboard
 
     def decision_status
       certification[:status].to_s
+    end
+
+    def find_cert
+      uuid = certification[:id].to_s
+      if uuid.match?(Certification::Ship::EXTERNAL_CERTIFICATION_ID_PATTERN)
+        by_uuid = Certification::Ship.find_by(external_certification_id: uuid)
+        return by_uuid if by_uuid
+      end
+
+      cert_id = parse_cert_id
+      cert_id && Certification::Ship.find_by(id: cert_id)
     end
 
     def parse_cert_id
