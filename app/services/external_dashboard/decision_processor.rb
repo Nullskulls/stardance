@@ -2,7 +2,7 @@ module ExternalDashboard
   class DecisionProcessor
     DECISION_EVENT = "certification.decision".freeze
     TEST_EVENT = "test".freeze
-    EXTERNAL_ID_PREFIX = ExternalDashboard::ShipWebhookService::EXTERNAL_ID_PREFIX
+    EXTERNAL_ID_PREFIX = ExternalDashboard::Client::EXTERNAL_ID_PREFIX
     EXTERNAL_ID_MAX_LENGTH = 32
     EXTERNAL_ID_PATTERN = /\A#{Regexp.escape(EXTERNAL_ID_PREFIX)}(\d+)\z/
 

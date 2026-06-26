@@ -1,10 +1,6 @@
 module ExternalDashboard
   class ShipWebhookService
-    DEFAULT_BASE_URL = "https://dash.shipwrights.dev".freeze
     INGEST_PATH = "/api/v1/certifications/ingest".freeze
-    TIMEOUT_SECONDS = 10
-    EXTERNAL_ID_PREFIX = "SD-".freeze
-    ERROR_MESSAGE_MAX = 500
 
     Result = Struct.new(:status, :cert_id, :http_status, :error, keyword_init: true) do
       def ok?       = status == :ok
@@ -15,47 +11,16 @@ module ExternalDashboard
       new(ship_event).call
     end
 
-    def self.configured?
-      api_key.present? && workplace_id.present?
-    end
-
-    def self.base_url
-      Rails.application.credentials.dig(:external_dashboard, :base_url) ||
-        ENV["EXTERNAL_DASHBOARD_BASE_URL"].presence ||
-        DEFAULT_BASE_URL
-    end
-
-    def self.api_key
-      Rails.application.credentials.dig(:external_dashboard, :api_key) ||
-        ENV["EXTERNAL_DASHBOARD_API_KEY"]
-    end
-
-    def self.workplace_id
-      Rails.application.credentials.dig(:external_dashboard, :workplace_id) ||
-        ENV["EXTERNAL_DASHBOARD_WORKPLACE_ID"]
-    end
-
-    def self.connection
-      Faraday.new(url: base_url) do |conn|
-        conn.options.timeout = TIMEOUT_SECONDS
-        conn.options.open_timeout = TIMEOUT_SECONDS
-        conn.headers["Content-Type"] = "application/json"
-        conn.headers["x-api-key"] = api_key.to_s
-        conn.headers["x-workplace-id"] = workplace_id.to_s
-        conn.adapter Faraday.default_adapter
-      end
-    end
-
     def initialize(ship_event)
       @ship_event = ship_event
     end
 
     def call
-      return Result.new(status: :not_configured, error: "api key or workplace id missing") unless self.class.configured?
+      return Result.new(status: :not_configured, error: "api key or workplace id missing") unless Client.configured?
       return Result.new(status: :skipped, error: "ship_event has no project") if project.nil?
       return Result.new(status: :skipped, error: "owner has no slack_id") if owner_slack_id.blank?
 
-      response = self.class.connection.post(INGEST_PATH, payload.to_json)
+      response = Client.connection.post(INGEST_PATH, payload.to_json)
       parse_response(response)
     end
 
@@ -77,7 +42,7 @@ module ExternalDashboard
 
     def payload
       {
-        id: "#{EXTERNAL_ID_PREFIX}#{ship_event.id}",
+        id: "#{Client::EXTERNAL_ID_PREFIX}#{ship_event.id}",
         projectName: project&.title,
         projectType: project&.hardware? ? "Hardware" : "Software",
         shipType: ship_type,
@@ -123,7 +88,7 @@ module ExternalDashboard
     def parse_response(response)
       body = parse_body(response.body)
       cert_id = body["certId"]
-      error = body["error"].to_s.truncate(ERROR_MESSAGE_MAX).presence
+      error = body["error"].to_s.truncate(Client::ERROR_MESSAGE_MAX).presence
 
       case response.status
       when 200..299
