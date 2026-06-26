@@ -1,7 +1,6 @@
 module ExternalDashboard
   class CertIdBackfillService
     APPROVED_PATH = "/api/v1/certifications/approved".freeze
-    EXTERNAL_ID_PREFIX = ExternalDashboard::ShipWebhookService::EXTERNAL_ID_PREFIX
     TIMEOUT_SECONDS = 30
 
     Result = Struct.new(:status, :total, :persisted, :skipped, :error, keyword_init: true) do
@@ -17,9 +16,9 @@ module ExternalDashboard
     end
 
     def call
-      return Result.new(status: :not_configured, total: 0, persisted: 0, skipped: 0, error: "api key or workplace id missing") unless ExternalDashboard::ShipWebhookService.configured?
+      return Result.new(status: :not_configured, total: 0, persisted: 0, skipped: 0, error: "api key or workplace id missing") unless Client.configured?
 
-      response = connection.get(APPROVED_PATH, refetch_param)
+      response = Client.connection(timeout: TIMEOUT_SECONDS).get(APPROVED_PATH, refetch_param)
       return remote_error(response) unless response.status.between?(200, 299)
 
       certs = parse_certs(response.body)
@@ -38,16 +37,6 @@ module ExternalDashboard
 
     private
 
-    def connection
-      Faraday.new(url: ExternalDashboard::ShipWebhookService.base_url) do |conn|
-        conn.options.timeout = TIMEOUT_SECONDS
-        conn.options.open_timeout = TIMEOUT_SECONDS
-        conn.headers["x-api-key"] = ExternalDashboard::ShipWebhookService.api_key.to_s
-        conn.headers["x-workplace-id"] = ExternalDashboard::ShipWebhookService.workplace_id.to_s
-        conn.adapter Faraday.default_adapter
-      end
-    end
-
     def refetch_param
       @refetch ? { refetch: true } : {}
     end
@@ -61,9 +50,9 @@ module ExternalDashboard
 
     def persist(cert)
       external_id = cert["externalId"].to_s
-      return :skipped unless external_id.start_with?(EXTERNAL_ID_PREFIX)
+      return :skipped unless external_id.start_with?(Client::EXTERNAL_ID_PREFIX)
 
-      ship_event_id = external_id.delete_prefix(EXTERNAL_ID_PREFIX).to_i
+      ship_event_id = external_id.delete_prefix(Client::EXTERNAL_ID_PREFIX).to_i
       return :skipped if ship_event_id.zero?
 
       ship_event = Post::ShipEvent.find_by(id: ship_event_id)
