@@ -35,6 +35,7 @@ class Projects::ShipsController < ApplicationController
       # Reships: If links alive - approves project, create a 'reship' YSWS review, if links dead - Creates ship cert for manual review
       if !reship
         @project.ship_reviews.create!(status: :pending)
+        ExternalDashboard::ShipWebhookJob.perform_later(ship_event.id)
       elsif probe_result.ok?
         @project.approve! if @project.may_approve?
         @post.postable.update!(certification_status: "approved")

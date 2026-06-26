@@ -57,13 +57,12 @@ module ExternalDashboard
     def ship_type
       return "initial" unless project
 
-      previously_approved = project.posts
+      has_prior_ship_event = project.posts
         .joins("INNER JOIN post_ship_events ON posts.postable_id = post_ship_events.id AND posts.postable_type = 'Post::ShipEvent'")
-        .where(post_ship_events: { certification_status: "approved" })
         .where.not(post_ship_events: { id: ship_event.id })
         .exists?
 
-      previously_approved ? "recertification" : "initial"
+      has_prior_ship_event ? "recertification" : "initial"
     end
 
     def submitted_by
