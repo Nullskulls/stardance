@@ -95,9 +95,13 @@ module ExternalDashboard
       match && match[1].to_i
     end
 
-    def whodunnit
+    def reviewer
+      return @reviewer if defined?(@reviewer)
       slack_id = certification[:reviewerSlackId].to_s.presence
-      reviewer = slack_id && User.find_by(slack_id: slack_id)
+      @reviewer = slack_id && User.find_by(slack_id: slack_id)
+    end
+
+    def whodunnit
       reviewer&.id&.to_s || "external_dashboard"
     end
 
@@ -116,7 +120,7 @@ module ExternalDashboard
         feedback_reason: reviewer_comment,
         feedback_video_url: proof_video_url
       )
-      cert.update!(status: target_status, feedback: reviewer_comment)
+      cert.update!(status: target_status, feedback: reviewer_comment, reviewer_id: reviewer&.id)
       cert.assign_external_certification_id!(certification[:id])
     end
 

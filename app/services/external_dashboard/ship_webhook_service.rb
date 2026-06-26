@@ -53,7 +53,7 @@ module ExternalDashboard
         shipType: ship_type,
         description: project&.description.presence,
         aiDeclaration: project&.ai_declaration.presence,
-        updatedProject: project&.update_description.present?,
+        updatedProjectDetails: project&.update_description.presence,
         submittedBy: submitted_by.presence,
         links: links.presence,
         metadata: { devTime: dev_time_seconds }
