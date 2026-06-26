@@ -52,13 +52,13 @@ module ExternalDashboard
       external_id = cert["externalId"].to_s
       return :skipped unless external_id.start_with?(Client::EXTERNAL_ID_PREFIX)
 
-      ship_event_id = external_id.delete_prefix(Client::EXTERNAL_ID_PREFIX).to_i
-      return :skipped if ship_event_id.zero?
+      local_cert_id = external_id.delete_prefix(Client::EXTERNAL_ID_PREFIX).to_i
+      return :skipped if local_cert_id.zero?
 
-      ship_event = Post::ShipEvent.find_by(id: ship_event_id)
-      return :skipped if ship_event.nil?
+      local_cert = Certification::Ship.find_by(id: local_cert_id)
+      return :skipped if local_cert.nil?
 
-      ship_event.assign_external_certification_id!(cert["id"])
+      local_cert.assign_external_certification_id!(cert["id"])
     end
 
     def remote_error(response)

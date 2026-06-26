@@ -125,6 +125,12 @@ class Mission < ApplicationRecord
   def has_prizes? = prizes.any?
   def has_prerequisites? = prerequisites.any?
 
+  # Whether projects shipped to this mission go into community rating. A fixed
+  # stardust payout forces the static-prize path, which is hard-excluded from
+  # the voteable pool (see Post::ShipEvent.voteable); every other mission lets
+  # its submissions be rated.
+  def submissions_enter_rating? = !fixed_stardust_payout&.positive?
+
   def prerequisites_met_by?(user)
     return true unless has_prerequisites?
     return false if user.nil?

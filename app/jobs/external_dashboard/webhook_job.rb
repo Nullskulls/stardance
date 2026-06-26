@@ -1,16 +1,18 @@
 module ExternalDashboard
   class WebhookJob < ::ApplicationJob
+    class RetriableServerError < StandardError; end
+
     queue_as :default
 
     self.enqueue_after_transaction_commit = true
 
     discard_on ActiveRecord::RecordNotFound
 
-    retry_on Faraday::Error, wait: 30.seconds, attempts: 2 do |job, error|
+    retry_on Faraday::Error, RetriableServerError, wait: 30.seconds, attempts: 2 do |job, error|
       ship_event_id = job.arguments.first
-      Rails.logger.warn "[#{job.class.name}] ship_event=#{ship_event_id} giving up after Faraday error: #{error.class}: #{error.message}"
+      Rails.logger.warn "[#{job.class.name}] ship_event=#{ship_event_id} giving up after #{error.class}: #{error.message}"
       Sentry.capture_message(
-        "ExternalDashboard webhook gave up after network errors",
+        "ExternalDashboard webhook gave up after retries",
         level: :warning,
         extra: {
           job_class: job.class.name,
@@ -35,6 +37,10 @@ module ExternalDashboard
             error: result.error
           }
         )
+      end
+
+      def raise_server_error(ship_event_id, result)
+        raise RetriableServerError, "ship_event=#{ship_event_id} http=#{result.http_status} error=#{result.error}"
       end
   end
 end

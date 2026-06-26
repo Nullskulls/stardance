@@ -31,11 +31,6 @@
 #  votes_count                :integer          default(0), not null
 #  created_at                 :datetime         not null
 #  updated_at                 :datetime         not null
-#  external_certification_id  :string
-#
-# Indexes
-#
-#  index_post_ship_events_on_external_certification_id  (external_certification_id) UNIQUE
 #
 class Post::ShipEvent < ApplicationRecord
   include Postable
@@ -53,7 +48,6 @@ class Post::ShipEvent < ApplicationRecord
   FEEDBACK_VIDEO_URL_MAX_LENGTH = 2_048
   RETURN_REASON_MAX_LENGTH = 1_000
   FINAL_CERTIFICATION_STATUSES = %w[approved returned rejected].freeze
-  EXTERNAL_CERTIFICATION_ID_PATTERN = /\A[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\z/
   MAX_ATTACHMENTS = 2
   ACCEPTED_CONTENT_TYPES = %w[image/jpeg image/png image/webp image/heic image/heif image/gif].freeze
 
@@ -90,7 +84,6 @@ class Post::ShipEvent < ApplicationRecord
 
   after_commit :decrement_user_vote_balance, on: :create
   after_commit :schedule_type_check, on: :create
-  after_commit :enqueue_external_dashboard_webhook, on: :create
 
   validates :body, presence: { message: "Update message can't be blank" }
   validates :body, length: { maximum: BODY_MAX_LENGTH }, on: :create
@@ -118,18 +111,6 @@ class Post::ShipEvent < ApplicationRecord
 
   def recalculate_hours_at_ship
     update!(hours_at_ship: hours_logged_in_ship_window)
-  end
-
-  def assign_external_certification_id!(cert_id)
-    cert_id = cert_id.to_s
-    return :skipped if cert_id.blank?
-    return :skipped unless cert_id.match?(EXTERNAL_CERTIFICATION_ID_PATTERN)
-    return :skipped if external_certification_id == cert_id
-
-    update_column(:external_certification_id, cert_id)
-    :persisted
-  rescue ActiveRecord::RecordNotUnique
-    :skipped
   end
 
   private
@@ -166,10 +147,6 @@ class Post::ShipEvent < ApplicationRecord
   def schedule_type_check
     project = post&.project
     Project::TypeCheckJob.perform_later(project) if project && project.project_type.nil?
-  end
-
-  def enqueue_external_dashboard_webhook
-    ExternalDashboard::ShipWebhookJob.perform_later(id)
   end
 
   # Drives the Mission::Submission state machine off ship cert transitions.

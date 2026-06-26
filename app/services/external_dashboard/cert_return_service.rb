@@ -4,18 +4,18 @@ module ExternalDashboard
       def ok? = status == :ok
     end
 
-    def self.call(ship_event:, reason:)
-      new(ship_event: ship_event, reason: reason).call
+    def self.call(cert:, reason:)
+      new(cert: cert, reason: reason).call
     end
 
-    def initialize(ship_event:, reason:)
-      @ship_event = ship_event
+    def initialize(cert:, reason:)
+      @cert = cert
       @reason = reason.to_s.strip.truncate(Post::ShipEvent::RETURN_REASON_MAX_LENGTH, omission: "")
     end
 
     def call
       return Result.new(status: :not_configured, error: "api key or workplace id missing") unless Client.configured?
-      return Result.new(status: :skipped, error: "ship_event has no external_certification_id") if cert_id.blank?
+      return Result.new(status: :skipped, error: "cert has no external_certification_id") if external_id.blank?
       return Result.new(status: :skipped, error: "reason is blank") if @reason.blank?
 
       response = Client.connection.post(path, { reason: @reason }.to_json)
@@ -24,12 +24,12 @@ module ExternalDashboard
 
     private
 
-    def cert_id
-      @ship_event.external_certification_id.to_s
+    def external_id
+      @cert.external_certification_id.to_s
     end
 
     def path
-      "/api/v1/certifications/#{cert_id}/return"
+      "/api/v1/certifications/#{external_id}/return"
     end
 
     def parse_response(response)

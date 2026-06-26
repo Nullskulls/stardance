@@ -24,49 +24,45 @@ module ExternalDashboard
       return error(:bad_request, "missing certification object") unless certification.is_a?(Hash)
       return error(:unprocessable_entity, "unsupported status: #{decision_status.inspect}") unless Certification::Ship::EXTERNAL_DECISION_MAP.key?(decision_status)
 
-      ship_event_id = parse_ship_event_id
-      return error(:bad_request, "invalid externalId (expected #{EXTERNAL_ID_PREFIX}<id>)") if ship_event_id.nil?
+      cert_id = parse_cert_id
+      return error(:bad_request, "invalid externalId (expected #{EXTERNAL_ID_PREFIX}<id>)") if cert_id.nil?
 
-      ship_event = Post::ShipEvent.find_by(id: ship_event_id)
-      return error(:not_found, "ship_event #{ship_event_id} not found") if ship_event.nil?
-
-      project = ship_event.project
-      return error(:unprocessable_entity, "ship_event #{ship_event_id} has no project") if project.nil?
+      cert = Certification::Ship.find_by(id: cert_id)
+      return error(:not_found, "cert #{cert_id} not found") if cert.nil?
 
       if proof_video_url
         return error(:bad_request, "proofVideoUrl must be an http(s) URL") unless proof_video_url.match?(%r{\Ahttps?://\S+\z})
         return error(:bad_request, "proofVideoUrl exceeds #{Post::ShipEvent::FEEDBACK_VIDEO_URL_MAX_LENGTH} chars") if proof_video_url.length > Post::ShipEvent::FEEDBACK_VIDEO_URL_MAX_LENGTH
       end
 
-      apply_within_lock(project, ship_event)
+      apply(cert)
     end
 
     private
 
     attr_reader :payload
 
-    def apply_within_lock(project, ship_event)
+    def apply(cert)
       target_status = Certification::Ship::EXTERNAL_DECISION_MAP.fetch(decision_status)
       result = nil
 
-      project.with_lock do
-        ship_event.reload
+      PaperTrail.request(whodunnit: "external_dashboard") do
+        cert.with_lock do
+          cert.reload
 
-        review = project.ship_reviews.find_by(status: :pending)
-        if review
-          apply_decision!(review, ship_event, target_status)
-          result = ok(decision_payload(ship_event, review: review.reload, idempotent: false))
-          next
+          if cert.pending?
+            apply_decision!(cert, target_status)
+            result = ok(decision_payload(cert.reload, idempotent: false))
+            next
+          end
+
+          if cert.status.to_sym == target_status
+            cert.assign_external_certification_id!(certification[:id])
+          else
+            log_divergence(cert, target_status)
+          end
+          result = ok(decision_payload(cert, idempotent: true))
         end
-
-        if Post::ShipEvent::FINAL_CERTIFICATION_STATUSES.include?(ship_event.certification_status)
-          log_divergence(ship_event, target_status) unless ship_event.certification_status == target_status.to_s
-          persist_external_certification_id(ship_event)
-          result = ok(decision_payload(ship_event, review: nil, idempotent: true))
-          next
-        end
-
-        result = error(:unprocessable_entity, "no pending ship review for project #{project.id}")
       end
 
       result
@@ -84,7 +80,7 @@ module ExternalDashboard
       certification[:status].to_s
     end
 
-    def parse_ship_event_id
+    def parse_cert_id
       raw = certification[:externalId].to_s
       return nil if raw.length > EXTERNAL_ID_MAX_LENGTH
       match = raw.match(EXTERNAL_ID_PATTERN)
@@ -99,24 +95,20 @@ module ExternalDashboard
       certification[:proofVideoUrl].to_s.presence
     end
 
-    def apply_decision!(review, ship_event, target_status)
-      review.update!(status: target_status, feedback: reviewer_comment)
-      ship_event.update!(
+    def apply_decision!(cert, target_status)
+      cert.update!(status: target_status, feedback: reviewer_comment)
+      ship_event = cert.project&.last_ship_event
+      ship_event&.update!(
         feedback_reason: reviewer_comment,
         feedback_video_url: proof_video_url
       )
-      persist_external_certification_id(ship_event)
+      cert.assign_external_certification_id!(certification[:id])
     end
 
-    def persist_external_certification_id(ship_event)
-      ship_event.assign_external_certification_id!(certification[:id])
-    end
-
-    def decision_payload(ship_event, review:, idempotent:)
+    def decision_payload(cert, idempotent:)
       {
         idempotent: idempotent,
-        ship_event: { id: ship_event.id, certification_status: ship_event.certification_status },
-        ship_review: review && { id: review.id, status: review.status, project_id: review.project_id }
+        ship_review: { id: cert.id, status: cert.status, project_id: cert.project_id, external_certification_id: cert.external_certification_id }
       }
     end
 
@@ -129,10 +121,10 @@ module ExternalDashboard
       Result.new(status: status_sym, body: { error: message })
     end
 
-    def log_divergence(ship_event, target_status)
+    def log_divergence(cert, target_status)
       Rails.logger.warn(
         "[ExternalDashboard::DecisionProcessor] divergent decision " \
-        "ship_event=#{ship_event.id} local=#{ship_event.certification_status} remote=#{target_status} — keeping local"
+        "cert=#{cert.id} local=#{cert.status} remote=#{target_status} — keeping local"
       )
     end
   end

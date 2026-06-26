@@ -1,8 +1,8 @@
 <%# Reusable video-gallery panel for the hardware funding review. Locals:
       title:      panel heading
       empty_text: shown when items is blank
-      items:      array of { video_url:, poster_url:, processing:, name:,
-                  duration: (seconds), recorded_at: (Time or nil) } %>
+      items:      array of { source:, video_url:, poster_url:, processing:,
+                  name:, duration: (seconds), recorded_at: (Time or nil) } %>
 <div class="ship-review__panel recording-gallery">
   <h2 class="ship-review__panel-title"><%= title %></h2>
 
@@ -13,6 +13,9 @@
       <% items.each do |item| %>
         <li class="recording-gallery__item">
           <div class="recording-gallery__media">
+            <% if item[:source].present? %>
+              <span class="recording-gallery__source"><%= item[:source] %></span>
+            <% end %>
             <% if item[:video_url].present? %>
               <video controls playsinline preload="none"
                      class="recording-gallery__video"
