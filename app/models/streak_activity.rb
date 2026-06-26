@@ -72,6 +72,7 @@ class StreakActivity < ApplicationRecord
       end
 
       user.update_column(:streak_synced_at, Time.current)
+      user.recalculate_streak!
     end
 
     def streak_date_for(time, timezone)
