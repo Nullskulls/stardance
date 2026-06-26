@@ -34,7 +34,7 @@ module ExternalDashboard
       return error(:unprocessable_entity, "ship_event #{ship_event_id} has no project") if project.nil?
 
       if proof_video_url
-        return error(:bad_request, "proofVideoUrl must be an http(s) URL") unless proof_video_url.match?(%r{\Ahttps?://})
+        return error(:bad_request, "proofVideoUrl must be an http(s) URL") unless proof_video_url.match?(%r{\Ahttps?://\S+\z})
         return error(:bad_request, "proofVideoUrl exceeds #{Post::ShipEvent::FEEDBACK_VIDEO_URL_MAX_LENGTH} chars") if proof_video_url.length > Post::ShipEvent::FEEDBACK_VIDEO_URL_MAX_LENGTH
       end
 

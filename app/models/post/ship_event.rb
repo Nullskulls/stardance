@@ -97,7 +97,7 @@ class Post::ShipEvent < ApplicationRecord
   validates :review_instructions, length: { maximum: REVIEW_INSTRUCTIONS_MAX_LENGTH }, allow_blank: true
   validates :feedback_reason, length: { maximum: FEEDBACK_REASON_MAX_LENGTH }, allow_blank: true
   validates :feedback_video_url, length: { maximum: FEEDBACK_VIDEO_URL_MAX_LENGTH }, allow_blank: true
-  validates :feedback_video_url, format: { with: %r{\Ahttps?://}, message: "must be an http(s) URL" }, allow_blank: true
+  validates :feedback_video_url, format: { with: %r{\Ahttps?://\S+\z}, message: "must be an http(s) URL" }, allow_blank: true
   validate :project_can_be_shipped, on: :create
   has_paper_trail ignore: [ :votes_count, :synced_at ]
 
