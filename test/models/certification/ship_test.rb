@@ -4,28 +4,30 @@
 #
 # Table name: certification_ship_reviews
 #
-#  id               :bigint           not null, primary key
-#  claim_expires_at :datetime
-#  claimed_at       :datetime
-#  decided_at       :datetime
-#  feedback         :text
-#  internal_reason  :text
-#  lock_version     :integer          default(0), not null
-#  recert_reason    :text
-#  stardust_earned  :float
-#  status           :integer          default("pending"), not null
-#  created_at       :datetime         not null
-#  updated_at       :datetime         not null
-#  project_id       :bigint           not null
-#  returned_by_id   :bigint
-#  reviewer_id      :bigint
+#  id                        :bigint           not null, primary key
+#  claim_expires_at          :datetime
+#  claimed_at                :datetime
+#  decided_at                :datetime
+#  feedback                  :text
+#  internal_reason           :text
+#  lock_version              :integer          default(0), not null
+#  recert_reason             :text
+#  stardust_earned           :float
+#  status                    :integer          default("pending"), not null
+#  created_at                :datetime         not null
+#  updated_at                :datetime         not null
+#  external_certification_id :string
+#  project_id                :bigint           not null
+#  returned_by_id            :bigint
+#  reviewer_id               :bigint
 #
 # Indexes
 #
-#  idx_on_status_claim_expires_at_c7a5e87a52        (status,claim_expires_at)
-#  index_certification_ship_reviews_on_decided_at   (decided_at)
-#  index_certification_ship_reviews_on_reviewer_id  (reviewer_id)
-#  index_ship_reviews_unique_pending_project        (project_id) UNIQUE WHERE (status = 0)
+#  idx_on_status_claim_expires_at_c7a5e87a52                      (status,claim_expires_at)
+#  index_certification_ship_reviews_on_decided_at                 (decided_at)
+#  index_certification_ship_reviews_on_external_certification_id  (external_certification_id) UNIQUE
+#  index_certification_ship_reviews_on_reviewer_id                (reviewer_id)
+#  index_ship_reviews_unique_pending_project                      (project_id) UNIQUE WHERE (status = 0)
 #
 # Foreign Keys
 #

@@ -31,11 +31,6 @@
 #  votes_count                :integer          default(0), not null
 #  created_at                 :datetime         not null
 #  updated_at                 :datetime         not null
-#  external_certification_id  :string
-#
-# Indexes
-#
-#  index_post_ship_events_on_external_certification_id  (external_certification_id) UNIQUE
 #
 require "test_helper"
 
