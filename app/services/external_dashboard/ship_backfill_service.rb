@@ -11,11 +11,11 @@ module ExternalDashboard
     def self.call(scope: nil, rate_per_second: DEFAULT_RATE_PER_SECOND)
       return Result.new(status: :not_configured, enqueued: 0, error: "api key or workplace id missing") unless Client.configured?
 
-      scope ||= Post::ShipEvent.where(external_certification_id: nil)
+      scope ||= Certification::Ship.where(external_certification_id: nil)
       enqueued = 0
-      scope.find_each(batch_size: BATCH_SIZE) do |ship_event|
+      scope.find_each(batch_size: BATCH_SIZE) do |cert|
         delay = (enqueued.to_f / rate_per_second).seconds
-        ExternalDashboard::ShipWebhookJob.set(queue: BACKFILL_QUEUE, wait: delay).perform_later(ship_event.id)
+        ExternalDashboard::ShipWebhookJob.set(queue: BACKFILL_QUEUE, wait: delay).perform_later(cert.id)
         enqueued += 1
       end
 

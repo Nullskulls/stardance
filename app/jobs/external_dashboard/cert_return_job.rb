@@ -1,18 +1,18 @@
 module ExternalDashboard
   class CertReturnJob < WebhookJob
-    def perform(ship_event_id, reason)
-      ship_event = Post::ShipEvent.find(ship_event_id)
-      result = ExternalDashboard::CertReturnService.call(ship_event: ship_event, reason: reason)
+    def perform(cert_id, reason)
+      cert = Certification::Ship.find(cert_id)
+      result = ExternalDashboard::CertReturnService.call(cert: cert, reason: reason)
 
       case result.status
       when :ok
-        Rails.logger.info "[#{self.class.name}] ship_event=#{ship_event_id} returned cert=#{ship_event.external_certification_id}"
+        Rails.logger.info "[#{self.class.name}] cert=#{cert_id} returned external_cert_id=#{cert.external_certification_id}"
       when :not_configured, :skipped
-        Rails.logger.info "[#{self.class.name}] ship_event=#{ship_event_id} skipped (#{result.error})"
+        Rails.logger.info "[#{self.class.name}] cert=#{cert_id} skipped (#{result.error})"
       when :client_error
-        log_remote_failure("client error", ship_event_id, result)
+        log_remote_failure("client error", cert_id, result)
       when :server_error
-        raise_server_error(ship_event_id, result)
+        raise_server_error(cert_id, result)
       end
     end
   end

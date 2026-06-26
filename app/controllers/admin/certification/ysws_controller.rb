@@ -259,6 +259,8 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
       end
     end
 
+    approved_cert = ::Certification::Ship.where(project_id: @review.project_id, status: :approved).order(created_at: :desc).first
+
     ActiveRecord::Base.transaction do
       ::Certification::Ship.create!(
         project_id: @review.project_id,
@@ -266,7 +268,7 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
         returned_by_id: current_user.id
       )
       @review.update!(returned_at: Time.current)
-      ::ExternalDashboard::CertReturnJob.perform_later(@review.post_ship_event_id, recert_reason)
+      ::ExternalDashboard::CertReturnJob.perform_later(approved_cert.id, recert_reason) if approved_cert
     end
 
     render json: {

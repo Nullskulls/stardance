@@ -34,8 +34,8 @@ class Projects::ShipsController < ApplicationController
       # First Ship: Always create ship certification for manual review    ----------- Ask @AVD if you want to change this! - May need to notify teams of any changes!
       # Reships: If links alive - approves project, create a 'reship' YSWS review, if links dead - Creates ship cert for manual review
       if !reship
-        @project.ship_reviews.create!(status: :pending)
-        ExternalDashboard::ShipWebhookJob.perform_later(ship_event.id)
+        cert = @project.ship_reviews.create!(status: :pending)
+        ExternalDashboard::ShipWebhookJob.perform_later(cert.id)
       elsif probe_result.ok?
         @project.approve! if @project.may_approve?
         @post.postable.update!(certification_status: "approved")

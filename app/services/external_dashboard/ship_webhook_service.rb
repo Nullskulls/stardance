@@ -7,17 +7,18 @@ module ExternalDashboard
       def duplicate? = status == :duplicate
     end
 
-    def self.call(ship_event)
-      new(ship_event).call
+    def self.call(cert)
+      new(cert).call
     end
 
-    def initialize(ship_event)
-      @ship_event = ship_event
+    def initialize(cert)
+      @cert = cert
     end
 
     def call
       return Result.new(status: :not_configured, error: "api key or workplace id missing") unless Client.configured?
-      return Result.new(status: :skipped, error: "ship_event has no project") if project.nil?
+      return Result.new(status: :skipped, error: "cert has no project") if project.nil?
+      return Result.new(status: :skipped, error: "cert has no ship_event") if ship_event.nil?
       return Result.new(status: :skipped, error: "owner has no slack_id") if owner_slack_id.blank?
 
       response = Client.connection.post(INGEST_PATH, payload.to_json)
@@ -26,10 +27,14 @@ module ExternalDashboard
 
     private
 
-    attr_reader :ship_event
+    attr_reader :cert
 
     def project
-      @project ||= ship_event.project
+      @project ||= cert.project
+    end
+
+    def ship_event
+      @ship_event ||= project&.last_ship_event
     end
 
     def owner
@@ -42,7 +47,7 @@ module ExternalDashboard
 
     def payload
       {
-        id: "#{Client::EXTERNAL_ID_PREFIX}#{ship_event.id}",
+        id: "#{Client::EXTERNAL_ID_PREFIX}#{cert.id}",
         projectName: project&.title,
         projectType: project&.hardware? ? "Hardware" : "Software",
         shipType: ship_type,
@@ -55,14 +60,7 @@ module ExternalDashboard
     end
 
     def ship_type
-      return "initial" unless project
-
-      has_prior_ship_event = project.posts
-        .joins("INNER JOIN post_ship_events ON posts.postable_id = post_ship_events.id AND posts.postable_type = 'Post::ShipEvent'")
-        .where.not(post_ship_events: { id: ship_event.id })
-        .exists?
-
-      has_prior_ship_event ? "recertification" : "initial"
+      project.ship_reviews.where.not(id: cert.id).exists? ? "recertification" : "initial"
     end
 
     def submitted_by
@@ -81,7 +79,7 @@ module ExternalDashboard
     end
 
     def dev_time_seconds
-      ((ship_event.hours_at_ship || 0) * 3600).to_i
+      ((ship_event&.hours_at_ship || 0) * 3600).to_i
     end
 
     def parse_response(response)
