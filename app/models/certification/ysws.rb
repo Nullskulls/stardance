@@ -170,7 +170,7 @@ module Certification
       unified_record_id = record&.[]("Automation - YSWS Record ID").presence
 
       update_column(:in_unified_db, unified_record_id) if unified_record_id.present? && in_unified_db != unified_record_id
-    rescue Faraday::Error => e
+    rescue Faraday::Error, Norairrecord::Error => e
       Rails.logger.warn "[Certification::Ysws] Could not check unified DB status for ##{id}: #{e.message}"
     end
   end
