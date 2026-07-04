@@ -97,6 +97,7 @@ class Admin::ProjectsController < Admin::ApplicationController
     new_cert = case new_status
     when "approved" then "approved"
     when "rejected" then "rejected"
+    when "needs_changes" then "returned"
     else "pending"
     end
     return if ship_event.certification_status == new_cert

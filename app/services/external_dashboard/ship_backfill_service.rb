@@ -23,10 +23,6 @@ module ExternalDashboard
       Result.new(status: :ok, enqueued: cert_ids.size + return_ids.size)
     end
 
-    # Certs created before post_ship_event_id existed judged the ship event
-    # that was current when they were created. Pin them before pushing so the
-    # payload (hours, proof video) describes that event, not whatever the
-    # project shipped most recently.
     def self.link_ship_events(scope)
       linked = 0
       scope.where(post_ship_event_id: nil).find_each do |cert|

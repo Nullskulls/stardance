@@ -258,9 +258,6 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
     end
 
     ActiveRecord::Base.transaction do
-      # Bind to the cert this YSWS review actually came from — never "latest
-      # approved", which would hand the wrong dashboard UUID to the new
-      # pending cert when an older review is returned after a newer approval.
       approved_certs = ::Certification::Ship
         .where(project_id: @review.project_id, status: :approved)
         .lock

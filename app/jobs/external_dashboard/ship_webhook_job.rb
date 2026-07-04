@@ -26,8 +26,6 @@ module ExternalDashboard
       def fill_feedback_video_url(cert)
         return unless cert.verdict_video.attached?
 
-        # Only the event this cert judged — the last_ship_event fallback would
-        # stamp an old verdict video onto a newer, unrelated ship.
         ship_event = cert.post_ship_event
         return unless ship_event && ship_event.feedback_video_url.blank?
 
@@ -47,8 +45,6 @@ module ExternalDashboard
         project = cert.project
         return unless project
 
-        # A YSWS return re-reviews a specific ship event; only the approved
-        # cert for that same event may hand over its dashboard UUID.
         active_return = project.ship_reviews.pending.where.not(returned_by_id: nil)
                                .find_by(post_ship_event_id: cert.post_ship_event_id)
         return unless active_return
