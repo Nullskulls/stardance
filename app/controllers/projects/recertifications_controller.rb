@@ -14,7 +14,7 @@ class Projects::RecertificationsController < ApplicationController
       @project.resubmit_for_review!
       ship_event = @project.last_ship_event
       cert = @project.ship_reviews.create!(status: :pending, post_ship_event_id: ship_event&.id)
-      ship_event&.update!(certification_status: "pending", feedback_video_url: nil)
+      ship_event&.update!(certification_status: "pending")
 
       ::ExternalDashboard::ShipWebhookJob.perform_later(cert.id)
     end

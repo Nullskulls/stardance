@@ -11,6 +11,7 @@
 #  feedback                  :text
 #  internal_reason           :text
 #  lock_version              :integer          default(0), not null
+#  proof_video_url           :string
 #  recert_reason             :text
 #  stardust_earned           :float
 #  status                    :integer          default("pending"), not null

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_02_222701) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_04_231353) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -204,6 +204,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_02_222701) do
     t.integer "lock_version", default: 0, null: false
     t.bigint "post_ship_event_id"
     t.bigint "project_id", null: false
+    t.string "proof_video_url"
     t.text "recert_reason"
     t.bigint "returned_by_id"
     t.bigint "reviewer_id"

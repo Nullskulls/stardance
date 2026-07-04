@@ -30,8 +30,8 @@ module ExternalDashboard
       return error(:conflict, "decision predates this review cycle (timestamp=#{payload[:timestamp].inspect})") if cert.pending? && stale_decision?(cert)
 
       if proof_video_url
-        return error(:bad_request, "proofVideoUrl must be an http(s) URL") unless proof_video_url.match?(Post::ShipEvent::FEEDBACK_VIDEO_URL_PATTERN)
-        return error(:bad_request, "proofVideoUrl exceeds #{Post::ShipEvent::FEEDBACK_VIDEO_URL_MAX_LENGTH} chars") if proof_video_url.length > Post::ShipEvent::FEEDBACK_VIDEO_URL_MAX_LENGTH
+        return error(:bad_request, "proofVideoUrl must be an http(s) URL") unless proof_video_url.match?(Certification::Ship::PROOF_VIDEO_URL_PATTERN)
+        return error(:bad_request, "proofVideoUrl exceeds #{Certification::Ship::PROOF_VIDEO_URL_MAX_LENGTH} chars") if proof_video_url.length > Certification::Ship::PROOF_VIDEO_URL_MAX_LENGTH
       end
 
       apply(cert)
@@ -120,8 +120,7 @@ module ExternalDashboard
     end
 
     def apply_decision!(cert, target_status)
-      cert.verdict_ship_event&.update!(feedback_video_url: proof_video_url) if proof_video_url
-      cert.update!(status: target_status, feedback: reviewer_comment, reviewer_id: reviewer&.id)
+      cert.update!(status: target_status, feedback: reviewer_comment, reviewer_id: reviewer&.id, proof_video_url: proof_video_url)
       cert.assign_external_certification_id!(certification[:id])
     end
 

@@ -62,7 +62,7 @@ module ExternalDashboard
       {
         status: cert.approved? ? "approved" : "rejected",
         feedback: cert.feedback.presence,
-        proofVideoUrl: ship_event.feedback_video_url.presence,
+        proofVideoUrl: cert.proof_video_url.presence,
         reviewerSlackId: cert.reviewer&.slack_id.presence,
         createdAt: cert.created_at&.iso8601,
         decidedAt: cert.decided_at&.iso8601

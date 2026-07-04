@@ -9,6 +9,7 @@
 #  feedback                  :text
 #  internal_reason           :text
 #  lock_version              :integer          default(0), not null
+#  proof_video_url           :string
 #  recert_reason             :text
 #  stardust_earned           :float
 #  status                    :integer          default("pending"), not null
@@ -78,6 +79,8 @@ module Certification
 
     EXTERNAL_DECISION_MAP = { "APPROVED" => :approved, "REJECTED" => :returned }.freeze
     EXTERNAL_CERTIFICATION_ID_PATTERN = /\A[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\z/
+    PROOF_VIDEO_URL_MAX_LENGTH = 2_048
+    PROOF_VIDEO_URL_PATTERN = %r{\Ahttps?://\S+\z}
 
     def assign_external_certification_id!(cert_id)
       cert_id = cert_id.to_s
@@ -136,6 +139,9 @@ module Certification
     ].freeze
 
     validates :feedback, length: { maximum: 10_000 }, allow_blank: true
+    validates :proof_video_url, length: { maximum: PROOF_VIDEO_URL_MAX_LENGTH },
+                                format: { with: PROOF_VIDEO_URL_PATTERN, message: "must be an http(s) URL" },
+                                allow_blank: true
     validates :verdict_video,
               content_type: { in: ACCEPTED_VIDEO_TYPES, spoofing_protection: true }
 
@@ -481,7 +487,7 @@ module Certification
         video_url: if verdict_video.attached?
                      routes.rails_blob_url(verdict_video, **url_opts)
                    else
-                     verdict_ship_event&.feedback_video_url.presence
+                     proof_video_url.presence
                    end
       }
 

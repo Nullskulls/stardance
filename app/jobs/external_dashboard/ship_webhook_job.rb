@@ -2,7 +2,7 @@ module ExternalDashboard
   class ShipWebhookJob < WebhookJob
     def perform(cert_id)
       cert = Certification::Ship.find(cert_id)
-      fill_feedback_video_url(cert)
+      fill_proof_video_url(cert)
       result = ExternalDashboard::ShipWebhookService.call(cert)
 
       case result.status
@@ -23,19 +23,16 @@ module ExternalDashboard
 
     private
 
-      def fill_feedback_video_url(cert)
-        return unless cert.verdict_video.attached?
-
-        ship_event = cert.post_ship_event
-        return unless ship_event && ship_event.feedback_video_url.blank?
+      def fill_proof_video_url(cert)
+        return unless cert.proof_video_url.blank? && cert.verdict_video.attached?
 
         url_options = Rails.application.config.action_controller.default_url_options || {}
         return if url_options[:host].blank?
 
         url = Rails.application.routes.url_helpers.rails_blob_url(cert.verdict_video, **url_options)
-        ship_event.update!(feedback_video_url: url)
+        cert.update!(proof_video_url: url)
       rescue StandardError => e
-        Rails.logger.warn "[#{self.class.name}] cert=#{cert.id} feedback_video_url fill failed: #{e.class}: #{e.message}"
+        Rails.logger.warn "[#{self.class.name}] cert=#{cert.id} proof_video_url fill failed: #{e.class}: #{e.message}"
       end
 
       def chain_pending_return(cert)

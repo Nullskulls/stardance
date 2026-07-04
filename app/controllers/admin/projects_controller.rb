@@ -150,6 +150,7 @@ class Admin::ProjectsController < Admin::ApplicationController
     end
 
     @project.update_column(state_column, new_state)
+    sync_last_ship_event_certification(new_state)
     close_pending_ship_review(new_state)
 
     ::PaperTrail::Version.create!(
