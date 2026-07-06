@@ -1,3 +1,3 @@
 Slack.configure do |config|
-  config.token = Rails.application.credentials.dig(:slack, :bot_token) || ENV["SLACK_BOT_TOKEN"]
+  config.token = ENV["SLACK_BOT_TOKEN"].presence || Rails.application.credentials.dig(:slack, :bot_token)
 end

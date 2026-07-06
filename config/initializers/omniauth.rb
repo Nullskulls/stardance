@@ -41,8 +41,8 @@ Rails.application.config.middleware.use OmniAuth::Builder do
       }
 
     provider :oauth2,
-      Rails.application.credentials.dig(:hackatime, :client_id),
-      Rails.application.credentials.dig(:hackatime, :client_secret),
+      ENV["HACKATIME_CLIENT_ID"].presence || Rails.application.credentials.dig(:hackatime, :client_id),
+      ENV["HACKATIME_CLIENT_SECRET"].presence || Rails.application.credentials.dig(:hackatime, :client_secret),
       {
         name: :hackatime,
         scope: "profile read",
