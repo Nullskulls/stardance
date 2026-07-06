@@ -13,8 +13,8 @@ end
 Rails.application.config.middleware.use OmniAuth::Builder do
     # Hack Club Account via generic OAuth2
     provider :oauth2,
-      Rails.application.credentials.dig(:idv, :client_id),
-      Rails.application.credentials.dig(:idv, :client_secret),
+      ENV["IDV_CLIENT_ID"].presence || Rails.application.credentials.dig(:idv, :client_id),
+      ENV["IDV_CLIENT_SECRET"].presence || Rails.application.credentials.dig(:idv, :client_secret),
       {
         name: :hack_club,
         # `address` and `phone` are required for the `/api/v1/me` payload to
