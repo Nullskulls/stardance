@@ -5,6 +5,7 @@
 #  id                    :bigint           not null, primary key
 #  airtable_synced_at    :datetime
 #  approved_minutes      :integer
+#  claimed_at            :datetime
 #  demo_checked_at       :datetime
 #  in_unified_db         :string
 #  original_minutes      :integer
@@ -15,6 +16,7 @@
 #  summary_justification :text
 #  created_at            :datetime         not null
 #  updated_at            :datetime         not null
+#  claimed_by_id         :bigint
 #  post_ship_event_id    :bigint           not null
 #  project_id            :bigint           not null
 #  reviewer_id           :bigint
@@ -24,6 +26,7 @@
 #
 # Indexes
 #
+#  index_certification_ysws_reviews_on_claimed_by_id       (claimed_by_id)
 #  index_certification_ysws_reviews_on_post_ship_event_id  (post_ship_event_id)
 #  index_certification_ysws_reviews_on_project_id          (project_id)
 #  index_certification_ysws_reviews_on_reviewer_id         (reviewer_id)
@@ -33,6 +36,7 @@
 #
 # Foreign Keys
 #
+#  fk_rails_...  (claimed_by_id => users.id)
 #  fk_rails_...  (post_ship_event_id => post_ship_events.id)
 #  fk_rails_...  (project_id => projects.id)
 #  fk_rails_...  (reviewer_id => users.id)

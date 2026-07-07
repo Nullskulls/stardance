@@ -744,6 +744,15 @@ Rails.application.routes.draw do
         post :trigger
       end
     end
+    resources :fraud_payouts, only: [ :index, :show ] do
+      member do
+        post :approve
+        post :reject
+      end
+      collection do
+        post :trigger
+      end
+    end
   end
 
   # Mission management under /admin/ — the URL prefix is `admin`, but
