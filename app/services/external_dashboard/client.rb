@@ -33,6 +33,11 @@ module ExternalDashboard
         DEFAULT_BASE_URL
     end
 
+    def certification_url(uuid)
+      return if uuid.blank?
+      "#{base_url}/stardance/certifications/#{uuid}"
+    end
+
     def api_key
       Rails.application.credentials.dig(:external_dashboard, :api_key) ||
         ENV["EXTERNAL_DASHBOARD_API_KEY"]
