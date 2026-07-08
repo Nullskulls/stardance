@@ -35,7 +35,7 @@ module ExternalDashboard
 
     def certification_url(uuid)
       return if uuid.blank?
-      "#{base_url}/stardance/certifications/#{uuid}"
+      "#{base_url}/stardance-dev/certifications/#{uuid}"
     end
 
     def api_key
