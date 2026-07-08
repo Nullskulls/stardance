@@ -34,7 +34,7 @@
             class: "action-btn action-btn--large action-btn--secondary" %>
         <%= link_to "Hardware queue", admin_certification_hardware_reviews_path,
             class: "action-btn action-btn--large action-btn--secondary" %>
-        <% if @external_review_dash %>
+        <% if @internal_sw_dash_reviews_disabled %>
           <%= link_to "Open review dashboard", ExternalDashboard::Client.base_url,
               target: "_blank", rel: "noopener",
               class: "action-btn action-btn--large action-btn--primary" %>
@@ -256,7 +256,7 @@
                     <% end %>
                     <% if own_project %>
                       <span class="ship-queue__type-tag ship-queue__type-tag--own">Your Project</span>
-                    <% elsif ship.pending? && !@external_review_dash %>
+                    <% elsif ship.pending? && !@internal_sw_dash_reviews_disabled %>
                       <%= render "claim_flag", ship: ship %>
                     <% end %>
                   </div>
@@ -332,7 +332,7 @@
               <div class="ship-queue__card-claim">
                 <span class="ship-queue__type-tag ship-queue__type-tag--own">Your Project</span>
               </div>
-            <% elsif ship.pending? && !@external_review_dash %>
+            <% elsif ship.pending? && !@internal_sw_dash_reviews_disabled %>
               <div class="ship-queue__card-claim"><%= render "claim_flag", ship: ship %></div>
             <% end %>
           <% end %>
