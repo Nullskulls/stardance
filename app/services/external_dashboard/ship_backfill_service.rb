@@ -29,6 +29,19 @@ module ExternalDashboard
       BackfillRun.report(run_id)
     end
 
+    # update_all on purpose: bulk console wipe of a side-band identifier,
+    # skipping per-row callbacks/validations/PaperTrail.
+    def self.reset_external_ids!
+      cleared = Certification::Ship.where.not(external_certification_id: nil).update_all(external_certification_id: nil)
+      Rails.logger.info "[ExternalDashboard::ShipBackfillService] cleared external ids from #{cleared} certs"
+      cleared
+    end
+
+    def self.clean_backfill!(rate_per_second: DEFAULT_RATE_PER_SECOND)
+      reset_external_ids!
+      call(rate_per_second: rate_per_second)
+    end
+
     def self.link_ship_events(scope)
       linked = 0
       scope.where(post_ship_event_id: nil).find_each do |cert|
