@@ -33,4 +33,17 @@
       <% end %>
     </div>
   </div>
+
+  <div class="mission-panel">
+    <h2 class="admin-user-show__section-title">Danger zone</h2>
+    <p>
+      Wipes every locally stored dashboard UUID. Only for a full resync after the dashboard side
+      has been wiped too — against a non-wiped dashboard, re-pushes just 409 and heal the same UUIDs back.
+    </p>
+    <%= form_with url: wipe_uuids_admin_certification_backfill_path, method: :post,
+          data: { turbo_confirm: "Wipe ALL dashboard UUIDs from every cert? There is no local undo." } do |f| %>
+      <%= f.text_field :confirmation, placeholder: "type WIPE to confirm", autocomplete: "off" %>
+      <%= f.submit "Wipe all UUIDs", class: "action-btn action-btn--large action-btn--destructive" %>
+    <% end %>
+  </div>
 </div>

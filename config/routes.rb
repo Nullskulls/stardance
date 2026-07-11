@@ -803,7 +803,9 @@ Rails.application.routes.draw do
         end
       end
 
-      resource :backfill, only: [ :show, :create ]
+      resource :backfill, only: [ :show, :create ] do
+        post :wipe_uuids
+      end
 
       resources :funding_requests, path: "funding", only: [ :update ] do
         scope module: :funding_requests do

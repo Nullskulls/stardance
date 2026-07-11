@@ -1,4 +1,6 @@
 class Admin::Certification::BackfillsController < Admin::Certification::ApplicationController
+  WIPE_CONFIRMATION = "WIPE".freeze
+
   def show
     authorize :admin, :manage_external_sync?
 
@@ -21,5 +23,18 @@ class Admin::Certification::BackfillsController < Admin::Certification::Applicat
     else
       redirect_to admin_certification_backfill_path, alert: "Backfill not started: #{result.error}"
     end
+  end
+
+  def wipe_uuids
+    authorize :admin, :manage_external_sync?
+
+    unless params[:confirmation].to_s.strip == WIPE_CONFIRMATION
+      return redirect_to admin_certification_backfill_path,
+                         alert: "Type #{WIPE_CONFIRMATION} in the confirmation field to wipe."
+    end
+
+    cleared = ExternalDashboard::ShipBackfillService.reset_external_ids!
+    Rails.logger.info "[Admin::Certification::Backfills] wiped external ids from #{cleared} certs triggered_by=#{current_user.id}"
+    redirect_to admin_certification_backfill_path, notice: "Wiped dashboard UUIDs from #{cleared} certs."
   end
 end
