@@ -152,35 +152,35 @@
           </div>
         </div>
 
-        <div class="ship-review__panel">
-          <h2 class="ship-review__panel-title">Dashboard sync</h2>
-          <% if @ship.external_certification_id.present? %>
-            <p class="ship-review__description">
-              On dashboard —
-              <%= link_to "open ↗", ExternalDashboard::Client.certification_url(@ship.external_certification_id),
-                    target: "_blank", rel: "noopener noreferrer" %>
-            </p>
-          <% else %>
-            <p class="ship-review__description">Not on dashboard.</p>
-            <% if @ship.external_sync_attempted_at.present? %>
+        <% if current_user.admin? %>
+          <div class="ship-review__panel">
+            <h2 class="ship-review__panel-title">Dashboard sync</h2>
+            <% if @ship.external_certification_id.present? %>
               <p class="ship-review__description">
-                Last attempt <%= time_ago_in_words(@ship.external_sync_attempted_at) %> ago
-                <% if @ship.external_sync_error.present? %>
-                  — <%= @ship.external_sync_error %>
-                <% end %>
+                On dashboard —
+                <%= link_to "open ↗", ExternalDashboard::Client.certification_url(@ship.external_certification_id),
+                      target: "_blank", rel: "noopener noreferrer" %>
               </p>
             <% else %>
-              <p class="ship-review__description">Never attempted.</p>
+              <p class="ship-review__description">Not on dashboard.</p>
+              <% if @ship.external_sync_attempted_at.present? %>
+                <p class="ship-review__description">
+                  Last attempt <%= time_ago_in_words(@ship.external_sync_attempted_at) %> ago
+                  <% if @ship.external_sync_error.present? %>
+                    — <%= @ship.external_sync_error %>
+                  <% end %>
+                </p>
+              <% else %>
+                <p class="ship-review__description">Never attempted.</p>
+              <% end %>
+              <% if (skip_reason = ExternalDashboard::ShipWebhookService.skip_reason(@ship)) %>
+                <p class="ship-review__description">Would skip if pushed now: <%= skip_reason %></p>
+              <% end %>
             <% end %>
-            <% if (skip_reason = ExternalDashboard::ShipWebhookService.skip_reason(@ship)) %>
-              <p class="ship-review__description">Would skip if pushed now: <%= skip_reason %></p>
-            <% end %>
-          <% end %>
-          <% if current_user.admin? %>
             <%= button_to "Push to dashboard", push_ship_cert_admin_project_path(@ship.project, cert_id: @ship.id),
                   method: :post, class: "action-btn action-btn--small action-btn--secondary" %>
-          <% end %>
-        </div>
+          </div>
+        <% end %>
 
         <% if @submitter_history %>
           <div class="ship-review__panel submitter-history">

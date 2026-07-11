@@ -12,6 +12,7 @@ module ExternalDashboard
     }.freeze
     TTL = 7.days
     LAST_RUN_KEY = "external_dashboard:backfill:last_run_id".freeze
+    RUN_ID_PATTERN = /\A\d{14}-\h{4}\z/
 
     def start(enqueued:)
       run_id = "#{Time.current.utc.strftime('%Y%m%d%H%M%S')}-#{SecureRandom.hex(2)}"

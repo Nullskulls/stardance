@@ -10,14 +10,10 @@ module ExternalDashboard
       case result.status
       when :ok, :duplicate
         saved = cert.assign_external_certification_id!(result.cert_id)
-        cert.record_external_sync!
+        record_ingest_outcome(cert, result, saved)
         chain_pending_return(cert, backfill_run_id)
         verb = result.status == :duplicate ? "already ingested" : "ingested"
         Rails.logger.info "[#{self.class.name}] cert=#{cert_id} #{verb} external_cert_id=#{result.cert_id}"
-        if saved == :skipped && cert.external_certification_id.blank?
-          cert.record_external_sync!(error: "ingested but uuid save failed (#{result.cert_id.inspect})")
-          Rails.logger.warn "[#{self.class.name}] cert=#{cert_id} uuid save failed for #{result.cert_id.inspect}"
-        end
       when :not_configured, :skipped
         cert.record_external_sync!(error: result.error)
         level = cert.pending? ? :info : :warn
@@ -26,6 +22,7 @@ module ExternalDashboard
         cert.record_external_sync!(error: "http #{result.http_status}: #{result.error.presence || 'client error'}")
         log_remote_failure("client error", cert_id, result)
       when :server_error
+        cert.record_external_sync!(error: "http #{result.http_status}: retrying (#{result.error.presence || 'server error'})")
         raise_server_error(cert_id, result)
       end
     end
@@ -35,6 +32,24 @@ module ExternalDashboard
     end
 
     private
+
+      # Runs before chain_pending_return on purpose — the chain legitimately
+      # blanks the uuid by transferring it to an active return, which must not
+      # read as a failed save. A uuid already held by a sibling cert is the
+      # same transfer seen from a later backfill, not an error.
+      def record_ingest_outcome(cert, result, saved)
+        return cert.record_external_sync! unless saved == :skipped && cert.external_certification_id.blank?
+
+        holder = result.cert_id.presence &&
+                 Certification::Ship.where.not(id: cert.id).find_by(external_certification_id: result.cert_id.to_s)
+        if holder
+          cert.record_external_sync!(error: "dashboard uuid held by cert ##{holder.id} (transferred to its active return)")
+          Rails.logger.info "[#{self.class.name}] cert=#{cert.id} uuid #{result.cert_id} already held by cert=#{holder.id}"
+        else
+          cert.record_external_sync!(error: "ingested but uuid save failed (#{result.cert_id.inspect})")
+          Rails.logger.warn "[#{self.class.name}] cert=#{cert.id} uuid save failed for #{result.cert_id.inspect}"
+        end
+      end
 
       def fill_proof_video_url(cert)
         return unless cert.proof_video_url.blank? && cert.verdict_video.attached?

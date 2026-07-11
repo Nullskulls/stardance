@@ -22,11 +22,12 @@
           <dt>Duplicates</dt>   <dd><%= @report[:duplicate] %></dd>
           <dt>Skipped</dt>      <dd><%= @report[:skipped] %></dd>
           <dt>Failed</dt>       <dd><%= @report[:failed] %></dd>
-          <dt>Jobs in flight</dt><dd><%= @in_flight %></dd>
+          <dt>Jobs in flight</dt><dd><%= @in_flight || "—" %></dd>
         </dl>
         <p class="admin-user-show__muted">
-          OK is derived (enqueued minus the rest) and is only exact once jobs in flight hits 0. Refresh to update.
-          Per-cert outcomes live on each project's admin page.
+          OK is derived (enqueued minus the rest) and is only exact once jobs in flight hits 0.
+          In flight counts live pushes too and excludes failed jobs parked for retry. Refresh to update.
+          Per-cert outcomes live on each cert's review page.
         </p>
       <% else %>
         <p class="admin-user-show__muted">No run recorded in the last 7 days.</p>

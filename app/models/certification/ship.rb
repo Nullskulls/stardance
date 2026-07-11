@@ -86,15 +86,24 @@ module Certification
 
     def assign_external_certification_id!(cert_id)
       cert_id = cert_id.to_s
-      return :skipped if cert_id.blank?
-      return :skipped unless cert_id.match?(EXTERNAL_CERTIFICATION_ID_PATTERN)
-      return :skipped if external_certification_id.present?
+      retried = false
+      begin
+        return :skipped if cert_id.blank?
+        return :skipped unless cert_id.match?(EXTERNAL_CERTIFICATION_ID_PATTERN)
+        return :skipped if external_certification_id.present?
 
-      update!(external_certification_id: cert_id)
-      :persisted
-    rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique
-      restore_attributes([ :external_certification_id ])
-      :skipped
+        update!(external_certification_id: cert_id)
+        :persisted
+      rescue ActiveRecord::StaleObjectError
+        return :skipped if retried
+
+        retried = true
+        reload
+        retry
+      rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique
+        restore_attributes([ :external_certification_id ])
+        :skipped
+      end
     end
 
     def record_external_sync!(error: nil)
