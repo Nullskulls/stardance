@@ -13,6 +13,7 @@ module ExternalDashboard
     retry_on Faraday::Error, RetriableServerError, wait: :polynomially_longer, attempts: 4 do |job, error|
       cert_id = job.arguments.first
       BackfillRun.record(BackfillRun.run_id_from(job.arguments), :failed)
+      job.record_terminal_failure(cert_id, "#{error.class}: #{error.message}")
       Rails.logger.warn "[#{job.class.name}] cert=#{cert_id} giving up after #{error.class}: #{error.message}"
       Sentry.capture_message(
         "ExternalDashboard webhook gave up after retries",
@@ -24,6 +25,9 @@ module ExternalDashboard
           error_message: error.message.to_s.truncate(ExternalDashboard::Client::ERROR_MESSAGE_MAX)
         }
       )
+    end
+
+    def record_terminal_failure(cert_id, message)
     end
 
     private

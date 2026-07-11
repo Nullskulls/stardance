@@ -91,6 +91,50 @@
   </div>
 
   <div class="mission-panel">
+    <h2 class="admin-user-show__section-title">Dashboard sync</h2>
+    <% if @project.hardware? %>
+      <p class="admin-user-show__muted">Hardware project — never syncs to the Shipwrights dashboard.</p>
+    <% elsif @project.ship_reviews.none? %>
+      <p class="admin-user-show__muted">No ship certs yet.</p>
+    <% else %>
+      <dl class="admin-user-show__dl">
+        <% @project.ship_reviews.order(created_at: :desc).each do |cert| %>
+          <dt>
+            Cert #<%= cert.id %>
+            <span class="status-pill status-pill--<%= cert.status %>"><%= cert.status.capitalize %></span>
+          </dt>
+          <dd>
+            <% if cert.external_certification_id.present? %>
+              On dashboard —
+              <%= link_to "open ↗", ExternalDashboard::Client.certification_url(cert.external_certification_id),
+                    target: "_blank", rel: "noopener noreferrer" %>
+            <% else %>
+              <div>Not on dashboard.</div>
+              <% if cert.external_sync_attempted_at.present? %>
+                <div>
+                  Last attempt <%= time_ago_in_words(cert.external_sync_attempted_at) %> ago
+                  <% if cert.external_sync_error.present? %>
+                    — <%= cert.external_sync_error %>
+                  <% else %>
+                    <span class="admin-user-show__muted">(no error recorded)</span>
+                  <% end %>
+                </div>
+              <% else %>
+                <div class="admin-user-show__muted">Never attempted (predates sync tracking or never enqueued).</div>
+              <% end %>
+              <% if (reason = ExternalDashboard::ShipWebhookService.skip_reason(cert)) %>
+                <div>Would skip if pushed now: <%= reason %></div>
+              <% end %>
+            <% end %>
+            <%= button_to "Push to dashboard", push_ship_cert_admin_project_path(@project, cert_id: cert.id),
+                  method: :post, class: "action-btn action-btn--small action-btn--secondary" %>
+          </dd>
+        <% end %>
+      </dl>
+    <% end %>
+  </div>
+
+  <div class="mission-panel">
     <h2 class="admin-user-show__section-title">Actions</h2>
     <div class="admin-user-show__actions">
       <%= render ActionButtonComponent.new(text: "← Back", href: admin_projects_path, size: :small, variant: :secondary) %>

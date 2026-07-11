@@ -19,6 +19,10 @@ class AdminPolicy < ApplicationPolicy
     user.admin? || user.has_role?(:guardian_of_integrity)
   end
 
+  def manage_external_sync?
+    user.admin?
+  end
+
   def access_blazer?
     user.admin?
   end

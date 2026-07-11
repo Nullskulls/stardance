@@ -13,6 +13,7 @@ module ExternalDashboard
       cert_ids = scope.pluck(:id)
       return_ids = active_returns.where.not(external_certification_id: nil).pluck(:id)
       run_id = BackfillRun.start(enqueued: cert_ids.size + return_ids.size)
+      BackfillRun.remember_last_run(run_id)
 
       cert_ids.each_with_index do |cert_id, index|
         delay = (index.to_f / rate_per_second).seconds

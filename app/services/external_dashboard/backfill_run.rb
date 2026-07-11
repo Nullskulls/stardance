@@ -11,6 +11,7 @@ module ExternalDashboard
       failed: "failed"
     }.freeze
     TTL = 7.days
+    LAST_RUN_KEY = "external_dashboard:backfill:last_run_id".freeze
 
     def start(enqueued:)
       run_id = "#{Time.current.utc.strftime('%Y%m%d%H%M%S')}-#{SecureRandom.hex(2)}"
@@ -33,6 +34,14 @@ module ExternalDashboard
 
     def run_id_from(arguments)
       arguments.find { |arg| arg.is_a?(Hash) }&.dig(:backfill_run_id)
+    end
+
+    def remember_last_run(run_id)
+      Rails.cache.write(LAST_RUN_KEY, run_id, expires_in: TTL)
+    end
+
+    def last_run_id
+      Rails.cache.read(LAST_RUN_KEY)
     end
 
     # Successful pushes are not counted (spares a cache hit per job on runs

@@ -8,23 +8,37 @@ module ExternalDashboard
       new(cert, backfill: backfill).call
     end
 
+    def self.skip_reason(cert)
+      new(cert, backfill: true).skip_reason
+    end
+
     def initialize(cert, backfill: false)
       @cert = cert
       @backfill = backfill
     end
 
     def call
-      return Result.new(status: :not_configured, error: Client::NOT_CONFIGURED_ERROR) unless Client.configured?
-      return Result.new(status: :skipped, error: "cert has no project") if project.nil?
-      return Result.new(status: :skipped, error: "hardware project — out of scope") if project.hardware?
-      return Result.new(status: :skipped, error: "cert has no ship_event") if ship_event.nil?
-      return Result.new(status: :skipped, error: "owner has no slack_id") if owner_slack_id.blank?
-      if @backfill && missing_required_fields.any?
-        return Result.new(status: :skipped, error: "missing required fields: #{missing_required_fields.join(', ')}")
+      unless Client.configured?
+        return Result.new(status: :not_configured, error: Client::NOT_CONFIGURED_ERROR)
+      end
+      if (reason = skip_reason)
+        return Result.new(status: :skipped, error: reason)
       end
 
       response = Client.connection.post(INGEST_PATH, payload.to_json)
       parse_response(response)
+    end
+
+    def skip_reason
+      return "cert has no project" if project.nil?
+      return "hardware project — out of scope" if project.hardware?
+      return "cert has no ship_event" if ship_event.nil?
+      return "owner has no slack_id" if owner_slack_id.blank?
+      if @backfill && missing_required_fields.any?
+        return "missing required fields: #{missing_required_fields.join(', ')}"
+      end
+
+      nil
     end
 
     private

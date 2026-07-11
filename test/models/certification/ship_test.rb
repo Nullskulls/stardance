@@ -4,24 +4,26 @@
 #
 # Table name: certification_ship_reviews
 #
-#  id                        :bigint           not null, primary key
-#  claim_expires_at          :datetime
-#  claimed_at                :datetime
-#  decided_at                :datetime
-#  feedback                  :text
-#  internal_reason           :text
-#  lock_version              :integer          default(0), not null
-#  proof_video_url           :string
-#  recert_reason             :text
-#  stardust_earned           :float
-#  status                    :integer          default("pending"), not null
-#  created_at                :datetime         not null
-#  updated_at                :datetime         not null
-#  external_certification_id :string
-#  post_ship_event_id        :bigint
-#  project_id                :bigint           not null
-#  returned_by_id            :bigint
-#  reviewer_id               :bigint
+#  id                         :bigint           not null, primary key
+#  claim_expires_at           :datetime
+#  claimed_at                 :datetime
+#  decided_at                 :datetime
+#  external_sync_attempted_at :datetime
+#  external_sync_error        :string
+#  feedback                   :text
+#  internal_reason            :text
+#  lock_version               :integer          default(0), not null
+#  proof_video_url            :string
+#  recert_reason              :text
+#  stardust_earned            :float
+#  status                     :integer          default("pending"), not null
+#  created_at                 :datetime         not null
+#  updated_at                 :datetime         not null
+#  external_certification_id  :string
+#  post_ship_event_id         :bigint
+#  project_id                 :bigint           not null
+#  returned_by_id             :bigint
+#  reviewer_id                :bigint
 #
 # Indexes
 #

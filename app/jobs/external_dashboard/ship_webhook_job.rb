@@ -1,25 +1,37 @@
 module ExternalDashboard
   class ShipWebhookJob < WebhookJob
-    def perform(cert_id, backfill_run_id: nil)
+    def perform(cert_id, backfill_run_id: nil, backfill: nil)
       cert = Certification::Ship.find(cert_id)
       fill_proof_video_url(cert)
-      result = ExternalDashboard::ShipWebhookService.call(cert, backfill: backfill_run_id.present?)
+      backfill = backfill_run_id.present? if backfill.nil?
+      result = ExternalDashboard::ShipWebhookService.call(cert, backfill: backfill)
       BackfillRun.record(backfill_run_id, result.status)
 
       case result.status
       when :ok, :duplicate
-        cert.assign_external_certification_id!(result.cert_id)
+        saved = cert.assign_external_certification_id!(result.cert_id)
+        cert.record_external_sync!
         chain_pending_return(cert, backfill_run_id)
         verb = result.status == :duplicate ? "already ingested" : "ingested"
         Rails.logger.info "[#{self.class.name}] cert=#{cert_id} #{verb} external_cert_id=#{result.cert_id}"
+        if saved == :skipped && cert.external_certification_id.blank?
+          cert.record_external_sync!(error: "ingested but uuid save failed (#{result.cert_id.inspect})")
+          Rails.logger.warn "[#{self.class.name}] cert=#{cert_id} uuid save failed for #{result.cert_id.inspect}"
+        end
       when :not_configured, :skipped
+        cert.record_external_sync!(error: result.error)
         level = cert.pending? ? :info : :warn
         Rails.logger.public_send(level, "[#{self.class.name}] cert=#{cert_id} skipped (#{result.error})")
       when :client_error
+        cert.record_external_sync!(error: "http #{result.http_status}: #{result.error.presence || 'client error'}")
         log_remote_failure("client error", cert_id, result)
       when :server_error
         raise_server_error(cert_id, result)
       end
+    end
+
+    def record_terminal_failure(cert_id, message)
+      Certification::Ship.find_by(id: cert_id)&.record_external_sync!(error: "gave up after retries: #{message}")
     end
 
     private

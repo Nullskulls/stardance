@@ -59,6 +59,23 @@ class Admin::ProjectsController < Admin::ApplicationController
     end
   end
 
+  def push_ship_cert
+    @project = ::Project.unscoped.find(params[:id])
+    authorize @project, :update?
+    cert = @project.ship_reviews.find(params[:cert_id])
+
+    ExternalDashboard::ShipWebhookJob.perform_later(cert.id, backfill: true)
+    ::PaperTrail::Version.create!(
+      item: cert,
+      event: "update",
+      whodunnit: current_user.id.to_s,
+      object_changes: { external_dashboard_push: [ nil, "enqueued" ] }
+    )
+
+    redirect_to admin_project_path(@project),
+                notice: "Cert ##{cert.id} queued for the dashboard — refresh in a few seconds to see the outcome."
+  end
+
   def update_ship_status
     @project = ::Project.unscoped.find(params[:id])
     authorize @project, :update?

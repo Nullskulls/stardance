@@ -1,0 +1,36 @@
+<% content_for :title, "Dashboard sync" %>
+
+<div class="admin-user-show">
+  <h1 class="admin-user-show__title">External dashboard sync</h1>
+
+  <div class="admin-user-show__grid">
+    <div class="mission-panel">
+      <h2 class="admin-user-show__section-title">Backfill</h2>
+      <p>Queues a push for every cert that has no dashboard UUID yet. Rate-limited, idempotent, safe to re-run.</p>
+      <%= button_to "Run backfill", admin_certification_backfill_path, method: :post,
+            class: "action-btn action-btn--large action-btn--primary",
+            form: { data: { turbo_confirm: "Queue a push for every unsynced cert?" } } %>
+    </div>
+
+    <div class="mission-panel">
+      <h2 class="admin-user-show__section-title">Latest run</h2>
+      <% if @report %>
+        <dl class="admin-user-show__dl">
+          <dt>Run</dt>          <dd><%= @report[:run_id] %></dd>
+          <dt>Enqueued</dt>     <dd><%= @report[:enqueued] %></dd>
+          <dt>OK</dt>           <dd><%= @report[:ok] %></dd>
+          <dt>Duplicates</dt>   <dd><%= @report[:duplicate] %></dd>
+          <dt>Skipped</dt>      <dd><%= @report[:skipped] %></dd>
+          <dt>Failed</dt>       <dd><%= @report[:failed] %></dd>
+          <dt>Jobs in flight</dt><dd><%= @in_flight %></dd>
+        </dl>
+        <p class="admin-user-show__muted">
+          OK is derived (enqueued minus the rest) and is only exact once jobs in flight hits 0. Refresh to update.
+          Per-cert outcomes live on each project's admin page.
+        </p>
+      <% else %>
+        <p class="admin-user-show__muted">No run recorded in the last 7 days.</p>
+      <% end %>
+    </div>
+  </div>
+</div>

@@ -643,6 +643,7 @@ Rails.application.routes.draw do
         post :delete
         post :update_ship_status
         post :force_state
+        post :push_ship_cert
         get  :votes
       end
     end
@@ -801,6 +802,8 @@ Rails.application.routes.draw do
           resource :claim, only: [ :create, :destroy ]
         end
       end
+
+      resource :backfill, only: [ :show, :create ]
 
       resources :funding_requests, path: "funding", only: [ :update ] do
         scope module: :funding_requests do
