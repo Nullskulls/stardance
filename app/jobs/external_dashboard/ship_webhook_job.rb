@@ -3,7 +3,7 @@ module ExternalDashboard
     def perform(cert_id, backfill_run_id: nil)
       cert = Certification::Ship.find(cert_id)
       fill_proof_video_url(cert)
-      result = ExternalDashboard::ShipWebhookService.call(cert, require_complete_fields: backfill_run_id.present?)
+      result = ExternalDashboard::ShipWebhookService.call(cert, backfill: backfill_run_id.present?)
       BackfillRun.record(backfill_run_id, result.status)
 
       case result.status

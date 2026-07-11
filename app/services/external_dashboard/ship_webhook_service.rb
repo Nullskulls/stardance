@@ -4,13 +4,13 @@ module ExternalDashboard
 
     Result = Struct.new(:status, :cert_id, :http_status, :error, keyword_init: true)
 
-    def self.call(cert, require_complete_fields: false)
-      new(cert, require_complete_fields: require_complete_fields).call
+    def self.call(cert, backfill: false)
+      new(cert, backfill: backfill).call
     end
 
-    def initialize(cert, require_complete_fields: false)
+    def initialize(cert, backfill: false)
       @cert = cert
-      @require_complete_fields = require_complete_fields
+      @backfill = backfill
     end
 
     def call
@@ -19,7 +19,7 @@ module ExternalDashboard
       return Result.new(status: :skipped, error: "hardware project — out of scope") if project.hardware?
       return Result.new(status: :skipped, error: "cert has no ship_event") if ship_event.nil?
       return Result.new(status: :skipped, error: "owner has no slack_id") if owner_slack_id.blank?
-      if @require_complete_fields && missing_required_fields.any?
+      if @backfill && missing_required_fields.any?
         return Result.new(status: :skipped, error: "missing required fields: #{missing_required_fields.join(', ')}")
       end
 
@@ -58,7 +58,11 @@ module ExternalDashboard
       base_payload.merge(cert.pending? ? pending_payload : decision_payload).compact
     end
 
+    # The dashboard treats explicit status/createdAt on a live ingest as a
+    # backfilled cert, so pending ones only carry them on backfill pushes.
     def pending_payload
+      return {} unless @backfill
+
       {
         status: "pending",
         createdAt: cert.created_at&.iso8601
