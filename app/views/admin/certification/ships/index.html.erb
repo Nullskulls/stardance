@@ -263,6 +263,9 @@
                     <% elsif ship.pending? && !@internal_sw_dash_reviews_disabled %>
                       <%= render "claim_flag", ship: ship %>
                     <% end %>
+                    <% if ship.external_certification_id.blank? && !ship.project&.hardware? %>
+                      <span class="ship-queue__type-tag ship-queue__type-tag--unsynced">Unsynced</span>
+                    <% end %>
                   </div>
                 </td>
                 <td class="ship-queue__cell-author">
@@ -338,6 +341,11 @@
               </div>
             <% elsif ship.pending? && !@internal_sw_dash_reviews_disabled %>
               <div class="ship-queue__card-claim"><%= render "claim_flag", ship: ship %></div>
+            <% end %>
+            <% if ship.external_certification_id.blank? && !ship.project&.hardware? %>
+              <div class="ship-queue__card-claim">
+                <span class="ship-queue__type-tag ship-queue__type-tag--unsynced">Unsynced</span>
+              </div>
             <% end %>
           <% end %>
           <% if own_project %>

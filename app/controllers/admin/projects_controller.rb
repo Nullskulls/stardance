@@ -72,8 +72,8 @@ class Admin::ProjectsController < Admin::ApplicationController
       object_changes: { external_dashboard_push: [ nil, "enqueued" ] }
     )
 
-    redirect_to admin_project_path(@project),
-                notice: "Cert ##{cert.id} queued for the dashboard — refresh in a few seconds to see the outcome."
+    redirect_back fallback_location: admin_certification_ship_path(cert),
+                  notice: "Cert ##{cert.id} queued for the dashboard — refresh in a few seconds to see the outcome."
   end
 
   def update_ship_status

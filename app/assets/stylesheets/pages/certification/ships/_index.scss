@@ -718,6 +718,11 @@
       background: rgba(255, 176, 122, 0.2);
       color: var(--color-brand-orange);
     }
+
+    &--unsynced {
+      background: rgba(255, 141, 157, 0.2);
+      color: var(--color-brand-salmon);
+    }
   }
 
   // --- Empty state -------------------------------------------------------
