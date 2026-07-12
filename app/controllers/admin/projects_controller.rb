@@ -66,7 +66,7 @@ class Admin::ProjectsController < Admin::ApplicationController
 
     if @project.deleted_at.present?
       return redirect_back fallback_location: admin_project_path(@project),
-                           alert: "Project is deleted — its data stays off the dashboard."
+                           alert: "Project is deleted, so its data stays off the dashboard."
     end
 
     ExternalDashboard::ShipWebhookJob.perform_later(cert.id, backfill: true)
@@ -78,7 +78,7 @@ class Admin::ProjectsController < Admin::ApplicationController
     )
 
     redirect_back fallback_location: admin_certification_ship_path(cert),
-                  notice: "Cert ##{cert.id} queued for the dashboard — refresh in a few seconds to see the outcome."
+                  notice: "Cert ##{cert.id} queued for the dashboard. Refresh in a few seconds to see the outcome."
   end
 
   def update_ship_status

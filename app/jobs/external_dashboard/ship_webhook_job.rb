@@ -46,7 +46,7 @@ module ExternalDashboard
         return cert.record_external_sync! unless saved == :skipped && cert.external_certification_id.blank?
 
         if result.cert_id.blank?
-          cert.record_external_sync!(error: "dashboard response carried no certId — uuid unknown")
+          cert.record_external_sync!(error: "dashboard response carried no certId, uuid unknown")
           Rails.logger.warn "[#{self.class.name}] cert=#{cert.id} #{result.http_status} response without certId"
           return
         end

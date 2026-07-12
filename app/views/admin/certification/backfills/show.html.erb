@@ -5,46 +5,90 @@
 
   <div class="admin-user-show__grid">
     <div class="mission-panel">
-      <h2 class="admin-user-show__section-title">Backfill</h2>
-      <p>Queues a push for every cert that has no dashboard UUID yet. Rate-limited, idempotent, safe to re-run.</p>
-      <%= button_to "Run backfill", admin_certification_backfill_path, method: :post,
-            class: "action-btn action-btn--large action-btn--primary",
-            form: { data: { turbo_confirm: "Queue a push for every unsynced cert?" } } %>
+      <h2 class="admin-user-show__section-title">Fleet</h2>
+      <dl class="admin-user-show__dl">
+        <dt>Total certs</dt>          <dd><%= @stats[:total] %></dd>
+        <dt>On dashboard</dt>         <dd><%= @stats[:synced] %></dd>
+        <dt>Not on dashboard</dt>     <dd><%= @stats[:unsynced] %></dd>
+        <dt>Eligible for backfill</dt><dd><%= @stats[:eligible] %></dd>
+        <dt>Hardware (never syncs)</dt><dd><%= @stats[:unsynced_hardware] %></dd>
+        <dt>Deleted projects</dt>     <dd><%= @stats[:unsynced_deleted] %></dd>
+        <dt>Active YSWS returns</dt>  <dd><%= @stats[:unsynced_active_returns] %> <span class="admin-user-show__muted">(synced via their approved cert)</span></dd>
+        <dt>Synced, last 24h</dt>     <dd><%= @stats[:synced_recently] %></dd>
+        <dt>Failed, last 24h</dt>     <dd><%= @stats[:failed_recently] %></dd>
+      </dl>
     </div>
 
     <div class="mission-panel">
       <h2 class="admin-user-show__section-title">Latest run</h2>
       <% if @report %>
         <dl class="admin-user-show__dl">
-          <dt>Run</dt>          <dd><%= @report[:run_id] %></dd>
-          <dt>Enqueued</dt>     <dd><%= @report[:enqueued] %></dd>
-          <dt>OK</dt>           <dd><%= @report[:ok] %></dd>
-          <dt>Duplicates</dt>   <dd><%= @report[:duplicate] %></dd>
-          <dt>Skipped</dt>      <dd><%= @report[:skipped] %></dd>
-          <dt>Failed</dt>       <dd><%= @report[:failed] %></dd>
+          <dt>Run</dt>           <dd><%= @report[:run_id] %></dd>
+          <dt>Enqueued</dt>      <dd><%= @report[:enqueued] %></dd>
+          <dt>OK</dt>            <dd><%= @report[:ok] %></dd>
+          <dt>Duplicates</dt>    <dd><%= @report[:duplicate] %></dd>
+          <dt>Skipped</dt>       <dd><%= @report[:skipped] %></dd>
+          <dt>Failed</dt>        <dd><%= @report[:failed] %></dd>
           <dt>Jobs in flight</dt><dd><%= @in_flight || "—" %></dd>
         </dl>
         <p class="admin-user-show__muted">
           OK is derived (enqueued minus the rest) and is only exact once jobs in flight hits 0.
           In flight counts live pushes too and excludes failed jobs parked for retry. Refresh to update.
-          Per-cert outcomes live on each cert's review page.
         </p>
       <% else %>
         <p class="admin-user-show__muted">No run recorded in the last 7 days.</p>
       <% end %>
+
+      <h2 class="admin-user-show__section-title">Actions</h2>
+      <%= button_to "Run backfill", admin_certification_backfill_path, method: :post,
+            class: "action-btn action-btn--small action-btn--primary",
+            form: { data: { turbo_confirm: "Queue a push for every eligible unsynced cert?" } } %>
+      <p class="admin-user-show__muted">
+        Pushes every eligible cert above. Rate-limited, idempotent, safe to re-run.
+      </p>
+      <%= form_with url: wipe_uuids_admin_certification_backfill_path, method: :post,
+            data: { turbo_confirm: "Wipe ALL dashboard UUIDs from every cert? There is no local undo." } do |f| %>
+        <%= f.text_field :confirmation, placeholder: "type WIPE to confirm", autocomplete: "off" %>
+        <%= f.submit "Wipe all UUIDs", class: "action-btn action-btn--small action-btn--destructive" %>
+      <% end %>
+      <p class="admin-user-show__muted">
+        Clears every stored UUID. Only for a full resync, and only after the dashboard side is wiped first:
+        against a live dashboard, re-pushes 409 and heal the same UUIDs back.
+      </p>
     </div>
   </div>
 
   <div class="mission-panel">
-    <h2 class="admin-user-show__section-title">Danger zone</h2>
-    <p>
-      Wipes every locally stored dashboard UUID. Only for a full resync after the dashboard side
-      has been wiped too — against a non-wiped dashboard, re-pushes just 409 and heal the same UUIDs back.
-    </p>
-    <%= form_with url: wipe_uuids_admin_certification_backfill_path, method: :post,
-          data: { turbo_confirm: "Wipe ALL dashboard UUIDs from every cert? There is no local undo." } do |f| %>
-      <%= f.text_field :confirmation, placeholder: "type WIPE to confirm", autocomplete: "off" %>
-      <%= f.submit "Wipe all UUIDs", class: "action-btn action-btn--large action-btn--destructive" %>
+    <h2 class="admin-user-show__section-title">Failure breakdown (unsynced certs)</h2>
+    <% if @stats[:failure_breakdown].any? %>
+      <dl class="admin-user-show__dl">
+        <% @stats[:failure_breakdown].each do |error, count| %>
+          <dt><%= count %></dt>
+          <dd><%= error %></dd>
+        <% end %>
+      </dl>
+    <% else %>
+      <p class="admin-user-show__muted">No recorded failures on unsynced certs.</p>
+    <% end %>
+  </div>
+
+  <div class="mission-panel">
+    <h2 class="admin-user-show__section-title">Most recent failures</h2>
+    <% if @stats[:recent_failures].any? %>
+      <dl class="admin-user-show__dl">
+        <% @stats[:recent_failures].each do |cert| %>
+          <dt>
+            <%= link_to "Cert ##{cert.id}", admin_certification_ship_path(cert) %>
+            <span class="admin-user-show__muted"><%= time_ago_in_words(cert.external_sync_attempted_at) %> ago</span>
+          </dt>
+          <dd>
+            <%= cert.project&.title || "Deleted project" %>:
+            <%= cert.external_sync_error %>
+          </dd>
+        <% end %>
+      </dl>
+    <% else %>
+      <p class="admin-user-show__muted">No failures recorded yet.</p>
     <% end %>
   </div>
 </div>

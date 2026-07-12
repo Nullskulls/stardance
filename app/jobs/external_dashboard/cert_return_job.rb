@@ -24,11 +24,11 @@ module ExternalDashboard
           Rails.logger.info "[#{self.class.name}] cert=#{cert_id} already returned remotely (#{result.error})"
         else
           BackfillRun.record(backfill_run_id, :failed)
-          cert.record_external_sync!(error: "return failed — http #{result.http_status}: #{result.error.presence || 'client error'}")
+          cert.record_external_sync!(error: "return failed, http #{result.http_status}: #{result.error.presence || 'client error'}")
           log_remote_failure("client error", cert_id, result)
         end
       when :server_error
-        cert.record_external_sync!(error: "return retrying — http #{result.http_status}: #{result.error.presence || 'server error'}")
+        cert.record_external_sync!(error: "return retrying, http #{result.http_status}: #{result.error.presence || 'server error'}")
         raise_server_error(cert_id, result)
       end
     end

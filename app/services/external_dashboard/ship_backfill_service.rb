@@ -4,16 +4,23 @@ module ExternalDashboard
 
     Result = Struct.new(:status, :run_id, :enqueued, :error, keyword_init: true)
 
+    def self.active_returns
+      Certification::Ship.pending.where.not(returned_by_id: nil)
+    end
+
+    # Hardware and deleted-project certs would only churn through the queue
+    # and skip; keeping them out makes enqueued/skipped reflect real work.
+    def self.eligible_scope
+      Certification::Ship.where(external_certification_id: nil)
+                         .where.not(id: active_returns.select(:id))
+                         .joins(:project)
+                         .where(projects: { hardware_stage: [ nil, "" ] })
+    end
+
     def self.call(scope: nil, rate_per_second: DEFAULT_RATE_PER_SECOND)
       return Result.new(status: :not_configured, enqueued: 0, error: Client::NOT_CONFIGURED_ERROR) unless Client.configured?
 
-      active_returns = Certification::Ship.pending.where.not(returned_by_id: nil)
-      # Hardware and deleted-project certs would only churn through the queue
-      # and skip; keeping them out makes enqueued/skipped reflect real work.
-      scope ||= Certification::Ship.where(external_certification_id: nil)
-                                   .where.not(id: active_returns.select(:id))
-                                   .joins(:project)
-                                   .where(projects: { hardware_stage: [ nil, "" ] })
+      scope ||= eligible_scope
       link_ship_events(scope)
       cert_ids = scope.pluck(:id)
       return_ids = active_returns.where.not(external_certification_id: nil).pluck(:id)

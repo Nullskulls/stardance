@@ -157,13 +157,13 @@
             <h2 class="ship-review__panel-title">Dashboard sync</h2>
             <% if @ship.external_certification_id.present? %>
               <p class="ship-review__description">
-                On dashboard —
+                On dashboard:
                 <%= link_to "open ↗", ExternalDashboard::Client.certification_url(@ship.external_certification_id),
                       target: "_blank", rel: "noopener noreferrer" %>
               </p>
               <% if @ship.external_sync_error.present? %>
                 <p class="ship-review__description">
-                  Last sync issue (<%= time_ago_in_words(@ship.external_sync_attempted_at) %> ago) —
+                  Last sync issue (<%= time_ago_in_words(@ship.external_sync_attempted_at) %> ago):
                   <%= @ship.external_sync_error %>
                 </p>
               <% end %>
@@ -171,10 +171,7 @@
               <p class="ship-review__description">Not on dashboard.</p>
               <% if @ship.external_sync_attempted_at.present? %>
                 <p class="ship-review__description">
-                  Last attempt <%= time_ago_in_words(@ship.external_sync_attempted_at) %> ago
-                  <% if @ship.external_sync_error.present? %>
-                    — <%= @ship.external_sync_error %>
-                  <% end %>
+                  Last attempt <%= time_ago_in_words(@ship.external_sync_attempted_at) %> ago<% if @ship.external_sync_error.present? %>: <%= @ship.external_sync_error %><% end %>
                 </p>
               <% else %>
                 <p class="ship-review__description">Never attempted.</p>
