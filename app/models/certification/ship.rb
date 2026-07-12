@@ -95,10 +95,10 @@ module Certification
         update!(external_certification_id: cert_id)
         :persisted
       rescue ActiveRecord::StaleObjectError
+        reload
         return :skipped if retried
 
         retried = true
-        reload
         retry
       rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique
         restore_attributes([ :external_certification_id ])

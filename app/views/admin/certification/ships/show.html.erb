@@ -161,6 +161,12 @@
                 <%= link_to "open ↗", ExternalDashboard::Client.certification_url(@ship.external_certification_id),
                       target: "_blank", rel: "noopener noreferrer" %>
               </p>
+              <% if @ship.external_sync_error.present? %>
+                <p class="ship-review__description">
+                  Last sync issue (<%= time_ago_in_words(@ship.external_sync_attempted_at) %> ago) —
+                  <%= @ship.external_sync_error %>
+                </p>
+              <% end %>
             <% else %>
               <p class="ship-review__description">Not on dashboard.</p>
               <% if @ship.external_sync_attempted_at.present? %>

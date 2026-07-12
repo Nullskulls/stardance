@@ -60,8 +60,8 @@ class Admin::ProjectsController < Admin::ApplicationController
   end
 
   def push_ship_cert
-    @project = ::Project.unscoped.find(params[:id])
     authorize :admin, :manage_external_sync?
+    @project = ::Project.unscoped.find(params[:id])
     cert = @project.ship_reviews.find(params[:cert_id])
 
     ExternalDashboard::ShipWebhookJob.perform_later(cert.id, backfill: true)

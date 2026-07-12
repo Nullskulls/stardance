@@ -4,7 +4,12 @@ module ExternalDashboard
       cert = Certification::Ship.find(cert_id)
       fill_proof_video_url(cert)
       backfill = backfill_run_id.present? if backfill.nil?
-      result = ExternalDashboard::ShipWebhookService.call(cert, backfill: backfill)
+      begin
+        result = ExternalDashboard::ShipWebhookService.call(cert, backfill: backfill)
+      rescue Faraday::Error => e
+        cert.record_external_sync!(error: "connection error: #{e.class} (retrying)")
+        raise
+      end
       BackfillRun.record(backfill_run_id, result.status)
 
       case result.status
@@ -40,8 +45,13 @@ module ExternalDashboard
       def record_ingest_outcome(cert, result, saved)
         return cert.record_external_sync! unless saved == :skipped && cert.external_certification_id.blank?
 
-        holder = result.cert_id.presence &&
-                 Certification::Ship.where.not(id: cert.id).find_by(external_certification_id: result.cert_id.to_s)
+        if result.cert_id.blank?
+          cert.record_external_sync!(error: "dashboard response carried no certId — uuid unknown")
+          Rails.logger.warn "[#{self.class.name}] cert=#{cert.id} #{result.http_status} response without certId"
+          return
+        end
+
+        holder = Certification::Ship.where.not(id: cert.id).find_by(external_certification_id: result.cert_id.to_s)
         if holder
           cert.record_external_sync!(error: "dashboard uuid held by cert ##{holder.id} (transferred to its active return)")
           Rails.logger.info "[#{self.class.name}] cert=#{cert.id} uuid #{result.cert_id} already held by cert=#{holder.id}"

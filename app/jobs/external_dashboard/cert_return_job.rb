@@ -2,7 +2,12 @@ module ExternalDashboard
   class CertReturnJob < WebhookJob
     def perform(cert_id, backfill_run_id: nil)
       cert = Certification::Ship.find(cert_id)
-      result = ExternalDashboard::CertReturnService.call(cert)
+      begin
+        result = ExternalDashboard::CertReturnService.call(cert)
+      rescue Faraday::Error => e
+        cert.record_external_sync!(error: "return connection error: #{e.class} (retrying)")
+        raise
+      end
 
       case result.status
       when :ok
