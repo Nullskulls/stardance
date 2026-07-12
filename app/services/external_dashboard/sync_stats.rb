@@ -1,7 +1,5 @@
 module ExternalDashboard
   class SyncStats
-    RECENT_FAILURES_LIMIT = 15
-    BREAKDOWN_LIMIT = 10
     RECENT_WINDOW = 24.hours
 
     def self.call
@@ -23,14 +21,7 @@ module ExternalDashboard
         synced_recently: certs.where(external_sync_error: nil)
                               .where(external_sync_attempted_at: RECENT_WINDOW.ago..).count,
         failed_recently: certs.where.not(external_sync_error: nil)
-                              .where(external_sync_attempted_at: RECENT_WINDOW.ago..).count,
-        recent_failures: certs.where.not(external_sync_error: nil)
-                              .order(external_sync_attempted_at: :desc)
-                              .includes(:project).limit(RECENT_FAILURES_LIMIT),
-        failure_breakdown: unsynced.where.not(external_sync_error: nil)
-                                   .group(:external_sync_error).count
-                                   .sort_by { |_error, count| -count }
-                                   .first(BREAKDOWN_LIMIT)
+                              .where(external_sync_attempted_at: RECENT_WINDOW.ago..).count
       }
     end
   end

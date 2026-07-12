@@ -11,6 +11,10 @@ class Admin::Certification::BackfillsController < Admin::Certification::Applicat
     @report = @run_id && ExternalDashboard::ShipBackfillService.report(@run_id)
     @in_flight = in_flight_count
     @stats = ExternalDashboard::SyncStats.call
+    @pagy, @sync_log = pagy(:offset,
+                            Certification::Ship.includes(:project)
+                              .order(Arel.sql("external_sync_attempted_at DESC NULLS LAST"), id: :desc),
+                            limit: 50)
   end
 
   def create

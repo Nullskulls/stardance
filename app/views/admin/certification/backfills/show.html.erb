@@ -59,36 +59,48 @@
   </div>
 
   <div class="mission-panel">
-    <h2 class="admin-user-show__section-title">Failure breakdown (unsynced certs)</h2>
-    <% if @stats[:failure_breakdown].any? %>
-      <dl class="admin-user-show__dl">
-        <% @stats[:failure_breakdown].each do |error, count| %>
-          <dt><%= count %></dt>
-          <dd><%= error %></dd>
-        <% end %>
-      </dl>
-    <% else %>
-      <p class="admin-user-show__muted">No recorded failures on unsynced certs.</p>
-    <% end %>
-  </div>
-
-  <div class="mission-panel">
-    <h2 class="admin-user-show__section-title">Most recent failures</h2>
-    <% if @stats[:recent_failures].any? %>
-      <dl class="admin-user-show__dl">
-        <% @stats[:recent_failures].each do |cert| %>
-          <dt>
-            <%= link_to "Cert ##{cert.id}", admin_certification_ship_path(cert) %>
-            <span class="admin-user-show__muted"><%= time_ago_in_words(cert.external_sync_attempted_at) %> ago</span>
-          </dt>
-          <dd>
-            <%= cert.project&.title || "Deleted project" %>:
+    <h2 class="admin-user-show__section-title">Sync log</h2>
+    <dl class="admin-user-show__dl">
+      <% @sync_log.each do |cert| %>
+        <% deleted = cert.project.nil? || cert.project.deleted_at.present? %>
+        <dt>
+          <%= link_to "Cert ##{cert.id}", admin_certification_ship_path(cert) %>
+          <span class="status-pill status-pill--<%= cert.status %>"><%= cert.status.capitalize %></span>
+        </dt>
+        <dd>
+          <%= cert.project&.title || "(no project)" %>
+          <% if deleted %>
+            <span class="admin-user-show__muted">(deleted project)</span>
+          <% end %>
+          <% if cert.pending? && cert.returned_by_id.present? %>
+            <span class="admin-user-show__muted">(active YSWS return)</span>
+          <% elsif cert.project&.hardware? %>
+            <span class="admin-user-show__muted">(hardware)</span>
+          <% end %>
+          <br>
+          <% if cert.external_certification_id.present? %>
+            On dashboard:
+            <%= link_to "open ↗", ExternalDashboard::Client.certification_url(cert.external_certification_id),
+                  target: "_blank", rel: "noopener noreferrer" %>
+            <% if cert.external_sync_attempted_at.present? %>
+              <span class="admin-user-show__muted">(last sync <%= time_ago_in_words(cert.external_sync_attempted_at) %> ago)</span>
+            <% end %>
+            <% if cert.external_sync_error.present? %>
+              <br><%= cert.external_sync_error %>
+            <% end %>
+          <% elsif cert.external_sync_error.present? %>
             <%= cert.external_sync_error %>
-          </dd>
-        <% end %>
-      </dl>
-    <% else %>
-      <p class="admin-user-show__muted">No failures recorded yet.</p>
+            <span class="admin-user-show__muted">(<%= time_ago_in_words(cert.external_sync_attempted_at) %> ago)</span>
+          <% elsif cert.external_sync_attempted_at.present? %>
+            Attempted <%= time_ago_in_words(cert.external_sync_attempted_at) %> ago, no error recorded.
+          <% else %>
+            Never attempted.
+          <% end %>
+        </dd>
+      <% end %>
+    </dl>
+    <% if @pagy.pages > 1 %>
+      <%== @pagy.series_nav %>
     <% end %>
   </div>
 </div>
