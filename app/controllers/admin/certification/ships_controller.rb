@@ -71,7 +71,10 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
 
   def show
     authorize @ship
-    if internal_sw_dash_reviews_disabled? && (dash_url = ExternalDashboard::Client.certification_url(@ship.external_certification_id))
+    # Reviewers get sent to where reviews happen; admins keep the local page
+    # since the sync tooling lives here.
+    if internal_sw_dash_reviews_disabled? && !current_user.admin? &&
+       (dash_url = ExternalDashboard::Client.certification_url(@ship.external_certification_id))
       return redirect_to dash_url, allow_other_host: true
     end
     @reviewed_today = ::Certification::Ship.reviewed_today(current_user)

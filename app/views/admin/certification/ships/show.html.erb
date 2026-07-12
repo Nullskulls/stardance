@@ -155,33 +155,43 @@
         <% if current_user.admin? %>
           <div class="ship-review__panel">
             <h2 class="ship-review__panel-title">Dashboard sync</h2>
-            <% if @ship.external_certification_id.present? %>
-              <p class="ship-review__description">
-                On dashboard:
-                <%= link_to "open ↗", ExternalDashboard::Client.certification_url(@ship.external_certification_id),
-                      target: "_blank", rel: "noopener noreferrer" %>
-              </p>
-              <% if @ship.external_sync_error.present? %>
-                <p class="ship-review__description">
-                  Last sync issue (<%= time_ago_in_words(@ship.external_sync_attempted_at) %> ago):
-                  <%= @ship.external_sync_error %>
-                </p>
-              <% end %>
+            <% if @ship.project&.hardware? %>
+              <p class="ship-review__description">Hardware project. Never syncs to the dashboard.</p>
             <% else %>
-              <p class="ship-review__description">Not on dashboard.</p>
-              <% if @ship.external_sync_attempted_at.present? %>
-                <p class="ship-review__description">
-                  Last attempt <%= time_ago_in_words(@ship.external_sync_attempted_at) %> ago<% if @ship.external_sync_error.present? %>: <%= @ship.external_sync_error %><% end %>
-                </p>
-              <% else %>
-                <p class="ship-review__description">Never attempted.</p>
-              <% end %>
-              <% if (skip_reason = ExternalDashboard::ShipWebhookService.skip_reason(@ship)) %>
-                <p class="ship-review__description">Would skip if pushed now: <%= skip_reason %></p>
-              <% end %>
+              <%
+                recorded = @ship.external_sync_error.presence
+                preflight = @ship.external_certification_id.blank? ? ExternalDashboard::ShipWebhookService.skip_reason(@ship) : nil
+              %>
+              <dl class="ship-review__meta">
+                <dt>Status</dt>
+                <dd>
+                  <% if @ship.external_certification_id.present? %>
+                    <%= link_to "On dashboard ↗", ExternalDashboard::Client.certification_url(@ship.external_certification_id),
+                          target: "_blank", rel: "noopener noreferrer" %>
+                  <% else %>
+                    Not on dashboard
+                  <% end %>
+                </dd>
+                <dt>Last attempt</dt>
+                <dd>
+                  <% if @ship.external_sync_attempted_at.present? %>
+                    <%= time_ago_in_words(@ship.external_sync_attempted_at) %> ago
+                  <% else %>
+                    Never
+                  <% end %>
+                </dd>
+                <% if recorded || preflight %>
+                  <dt>Reason</dt>
+                  <dd><%= recorded || preflight %></dd>
+                  <% if recorded.present? && preflight.present? && recorded != preflight %>
+                    <dt>Would skip now</dt>
+                    <dd><%= preflight %></dd>
+                  <% end %>
+                <% end %>
+              </dl>
+              <%= button_to "Push to dashboard", push_ship_cert_admin_project_path(@ship.project, cert_id: @ship.id),
+                    method: :post, class: "action-btn action-btn--small action-btn--secondary" %>
             <% end %>
-            <%= button_to "Push to dashboard", push_ship_cert_admin_project_path(@ship.project, cert_id: @ship.id),
-                  method: :post, class: "action-btn action-btn--small action-btn--secondary" %>
           </div>
         <% end %>
 
