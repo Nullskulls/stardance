@@ -5,36 +5,34 @@ module ExternalDashboard
       begin
         result = ExternalDashboard::CertReturnService.call(cert)
       rescue Faraday::Error => e
-        cert.record_external_sync!(error: "return connection error: #{e.class} (retrying)")
+        record_sync(cert, :retrying, "return connection error: #{e.class}", backfill_run_id)
         raise
       end
 
       case result.status
       when :ok
-        cert.record_external_sync!
+        record_sync(cert, :ok, nil, backfill_run_id)
         Rails.logger.info "[#{self.class.name}] cert=#{cert_id} returned external_cert_id=#{cert.external_certification_id}"
       when :not_configured, :skipped
-        BackfillRun.record(backfill_run_id, :skipped)
-        cert.record_external_sync!(error: "return skipped: #{result.error}")
+        record_sync(cert, :skipped, "return skipped: #{result.error}", backfill_run_id)
         Rails.logger.info "[#{self.class.name}] cert=#{cert_id} skipped (#{result.error})"
       when :client_error
         if result.error.to_s.match?(/only approved/i)
-          BackfillRun.record(backfill_run_id, :duplicate)
-          cert.record_external_sync!
+          record_sync(cert, :duplicate, nil, backfill_run_id)
           Rails.logger.info "[#{self.class.name}] cert=#{cert_id} already returned remotely (#{result.error})"
         else
-          BackfillRun.record(backfill_run_id, :failed)
-          cert.record_external_sync!(error: "return failed, http #{result.http_status}: #{result.error.presence || 'client error'}")
+          record_sync(cert, :failed, "return failed, http #{result.http_status}: #{result.error.presence || 'client error'}", backfill_run_id)
           log_remote_failure("client error", cert_id, result)
         end
       when :server_error
-        cert.record_external_sync!(error: "return retrying, http #{result.http_status}: #{result.error.presence || 'server error'}")
+        record_sync(cert, :retrying, "return retrying, http #{result.http_status}: #{result.error.presence || 'server error'}", backfill_run_id)
         raise_server_error(cert_id, result)
       end
     end
 
-    def record_terminal_failure(cert_id, message)
-      Certification::Ship.find_by(id: cert_id)&.record_external_sync!(error: "return gave up after retries: #{message}")
+    def record_terminal_failure(cert_id, message, run_id)
+      cert = Certification::Ship.find_by(id: cert_id)
+      record_sync(cert, :failed, "return gave up after retries: #{message}", run_id) if cert
     end
   end
 end

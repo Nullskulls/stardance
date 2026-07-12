@@ -1,5 +1,7 @@
 <% content_for :title, "Dashboard sync" %>
 
+<% outcome_pill = { "ok" => "approved", "failed" => "returned" } %>
+
 <div class="admin-user-show">
   <h1 class="admin-user-show__title">External dashboard sync</h1>
 
@@ -13,7 +15,7 @@
         <dt>Eligible for backfill</dt><dd><%= @stats[:eligible] %></dd>
         <dt>Hardware (never syncs)</dt><dd><%= @stats[:unsynced_hardware] %></dd>
         <dt>Deleted projects</dt>     <dd><%= @stats[:unsynced_deleted] %></dd>
-        <dt>Active YSWS returns</dt>  <dd><%= @stats[:unsynced_active_returns] %> <span class="admin-user-show__muted">(synced via their approved cert)</span></dd>
+        <dt>Active YSWS returns</dt>  <dd><%= @stats[:unsynced_active_returns] %></dd>
         <dt>Synced, last 24h</dt>     <dd><%= @stats[:synced_recently] %></dd>
         <dt>Failed, last 24h</dt>     <dd><%= @stats[:failed_recently] %></dd>
       </dl>
@@ -29,12 +31,9 @@
           <dt>Duplicates</dt>    <dd><%= @report[:duplicate] %></dd>
           <dt>Skipped</dt>       <dd><%= @report[:skipped] %></dd>
           <dt>Failed</dt>        <dd><%= @report[:failed] %></dd>
+          <dt>Retrying</dt>      <dd><%= @report[:retrying] %></dd>
           <dt>Jobs in flight</dt><dd><%= @in_flight || "—" %></dd>
         </dl>
-        <p class="admin-user-show__muted">
-          OK is derived (enqueued minus the rest) and is only exact once jobs in flight hits 0.
-          In flight counts live pushes too and excludes failed jobs parked for retry. Refresh to update.
-        </p>
       <% else %>
         <p class="admin-user-show__muted">No run recorded in the last 7 days.</p>
       <% end %>
@@ -43,64 +42,38 @@
       <%= button_to "Run backfill", admin_certification_backfill_path, method: :post,
             class: "action-btn action-btn--small action-btn--primary",
             form: { data: { turbo_confirm: "Queue a push for every eligible unsynced cert?" } } %>
-      <p class="admin-user-show__muted">
-        Pushes every eligible cert above. Rate-limited, idempotent, safe to re-run.
-      </p>
       <%= form_with url: wipe_uuids_admin_certification_backfill_path, method: :post,
             data: { turbo_confirm: "Wipe ALL dashboard UUIDs from every cert? There is no local undo." } do |f| %>
         <%= f.text_field :confirmation, placeholder: "type WIPE to confirm", autocomplete: "off" %>
         <%= f.submit "Wipe all UUIDs", class: "action-btn action-btn--small action-btn--destructive" %>
       <% end %>
-      <p class="admin-user-show__muted">
-        Clears every stored UUID. Only for a full resync, and only after the dashboard side is wiped first:
-        against a live dashboard, re-pushes 409 and heal the same UUIDs back.
-      </p>
+      <p class="admin-user-show__muted">Please don't.</p>
     </div>
   </div>
 
   <div class="mission-panel">
     <h2 class="admin-user-show__section-title">Sync log</h2>
-    <dl class="admin-user-show__dl">
-      <% @sync_log.each do |cert| %>
-        <% deleted = cert.project.nil? || cert.project.deleted_at.present? %>
-        <dt>
-          <%= link_to "Cert ##{cert.id}", admin_certification_ship_path(cert) %>
-          <span class="status-pill status-pill--<%= cert.status %>"><%= cert.status.capitalize %></span>
-        </dt>
-        <dd>
-          <%= cert.project&.title || "(no project)" %>
-          <% if deleted %>
-            <span class="admin-user-show__muted">(deleted project)</span>
-          <% end %>
-          <% if cert.pending? && cert.returned_by_id.present? %>
-            <span class="admin-user-show__muted">(active YSWS return)</span>
-          <% elsif cert.project&.hardware? %>
-            <span class="admin-user-show__muted">(hardware)</span>
-          <% end %>
-          <br>
-          <% if cert.external_certification_id.present? %>
-            On dashboard:
-            <%= link_to "open ↗", ExternalDashboard::Client.certification_url(cert.external_certification_id),
-                  target: "_blank", rel: "noopener noreferrer" %>
-            <% if cert.external_sync_attempted_at.present? %>
-              <span class="admin-user-show__muted">(last sync <%= time_ago_in_words(cert.external_sync_attempted_at) %> ago)</span>
+    <% if @events.any? %>
+      <dl class="admin-user-show__dl">
+        <% @events.each do |event| %>
+          <dt>
+            <span class="status-pill status-pill--<%= outcome_pill.fetch(event.outcome, "pending") %>"><%= event.outcome.capitalize %></span>
+            <%= link_to "Cert ##{event.cert_id}", admin_certification_ship_path(event.cert_id) %>
+          </dt>
+          <dd>
+            <%= event.cert&.project&.title || "(deleted project)" %>
+            <% if event.message.present? %>
+              : <%= event.message %>
             <% end %>
-            <% if cert.external_sync_error.present? %>
-              <br><%= cert.external_sync_error %>
-            <% end %>
-          <% elsif cert.external_sync_error.present? %>
-            <%= cert.external_sync_error %>
-            <span class="admin-user-show__muted">(<%= time_ago_in_words(cert.external_sync_attempted_at) %> ago)</span>
-          <% elsif cert.external_sync_attempted_at.present? %>
-            Attempted <%= time_ago_in_words(cert.external_sync_attempted_at) %> ago, no error recorded.
-          <% else %>
-            Never attempted.
-          <% end %>
-        </dd>
+            <span class="admin-user-show__muted"><%= event.created_at.strftime("%Y-%m-%d %H:%M:%S") %></span>
+          </dd>
+        <% end %>
+      </dl>
+      <% if @pagy.pages > 1 %>
+        <%== @pagy.series_nav %>
       <% end %>
-    </dl>
-    <% if @pagy.pages > 1 %>
-      <%== @pagy.series_nav %>
+    <% else %>
+      <p class="admin-user-show__muted">No sync activity recorded yet.</p>
     <% end %>
   </div>
 </div>

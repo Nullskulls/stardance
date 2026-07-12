@@ -7,13 +7,12 @@ module ExternalDashboard
     self.enqueue_after_transaction_commit = true
 
     discard_on ActiveRecord::RecordNotFound do |job, _error|
-      BackfillRun.record(BackfillRun.run_id_from(job.arguments), :skipped)
+      Rails.logger.info "[#{job.class.name}] cert=#{job.arguments.first} discarded, cert no longer exists"
     end
 
     retry_on Faraday::Error, RetriableServerError, wait: :polynomially_longer, attempts: 4 do |job, error|
       cert_id = job.arguments.first
-      BackfillRun.record(BackfillRun.run_id_from(job.arguments), :failed)
-      job.record_terminal_failure(cert_id, "#{error.class}: #{error.message}")
+      job.record_terminal_failure(cert_id, "#{error.class}: #{error.message}", BackfillRun.run_id_from(job.arguments))
       Rails.logger.warn "[#{job.class.name}] cert=#{cert_id} giving up after #{error.class}: #{error.message}"
       Sentry.capture_message(
         "ExternalDashboard webhook gave up after retries",
@@ -27,10 +26,24 @@ module ExternalDashboard
       )
     end
 
-    def record_terminal_failure(cert_id, message)
+    def record_terminal_failure(cert_id, message, run_id)
     end
 
     private
+
+      # The audit write must never take a job down with it.
+      def record_sync(cert, outcome, message = nil, run_id = nil)
+        cert.record_external_sync!(error: %w[ok duplicate].include?(outcome.to_s) ? nil : message)
+        record_event(cert, outcome, message, run_id)
+      rescue StandardError => e
+        Rails.logger.warn "[#{self.class.name}] cert=#{cert.id} sync record failed: #{e.class}: #{e.message}"
+      end
+
+      def record_event(cert, outcome, message = nil, run_id = nil)
+        ExternalDashboard::SyncEvent.create!(cert_id: cert.id, outcome: outcome, message: message, run_id: run_id)
+      rescue StandardError => e
+        Rails.logger.warn "[#{self.class.name}] cert=#{cert.id} sync event write failed: #{e.class}: #{e.message}"
+      end
 
       def log_remote_failure(label, cert_id, result)
         Rails.logger.warn "[#{self.class.name}] cert=#{cert_id} #{label} http=#{result.http_status} error=#{result.error}"

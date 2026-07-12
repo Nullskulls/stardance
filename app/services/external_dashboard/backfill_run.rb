@@ -2,14 +2,6 @@ module ExternalDashboard
   module BackfillRun
     extend self
 
-    COUNTERS = %w[enqueued duplicate skipped failed].freeze
-    OUTCOME_MAP = {
-      duplicate: "duplicate",
-      skipped: "skipped",
-      not_configured: "skipped",
-      client_error: "failed",
-      failed: "failed"
-    }.freeze
     TTL = 7.days
     LAST_RUN_KEY = "external_dashboard:backfill:last_run_id".freeze
     RUN_ID_PATTERN = /\A\d{14}-\h{4}\z/
@@ -18,13 +10,6 @@ module ExternalDashboard
       run_id = "#{Time.current.utc.strftime('%Y%m%d%H%M%S')}-#{SecureRandom.hex(2)}"
       Rails.cache.increment(key(run_id, "enqueued"), enqueued, expires_in: TTL)
       run_id
-    end
-
-    def record(run_id, status)
-      counter = OUTCOME_MAP[status&.to_sym]
-      return if run_id.blank? || counter.nil?
-
-      Rails.cache.increment(key(run_id, counter), 1, expires_in: TTL)
     end
 
     def record_enqueued(run_id)
@@ -45,15 +30,17 @@ module ExternalDashboard
       Rails.cache.read(LAST_RUN_KEY)
     end
 
-    # Successful pushes are not counted (spares a cache hit per job on runs
-    # that are mostly 200s) — ok is derived, so it's only exact once the
-    # queue has drained; mid-run it still includes queued jobs.
     def report(run_id)
-      counts = COUNTERS.index_with { |counter| Rails.cache.read(key(run_id, counter), raw: true).to_i }
-      counts.symbolize_keys.merge(
+      counts = SyncEvent.where(run_id: run_id).group(:outcome).count
+      {
         run_id: run_id,
-        ok: counts["enqueued"] - counts.except("enqueued").values.sum
-      )
+        enqueued: Rails.cache.read(key(run_id, "enqueued"), raw: true).to_i,
+        ok: counts["ok"].to_i,
+        duplicate: counts["duplicate"].to_i,
+        skipped: counts["skipped"].to_i,
+        failed: counts["failed"].to_i,
+        retrying: counts["retrying"].to_i
+      }
     end
 
     private

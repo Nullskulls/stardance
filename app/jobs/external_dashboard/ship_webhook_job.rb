@@ -7,33 +7,33 @@ module ExternalDashboard
       begin
         result = ExternalDashboard::ShipWebhookService.call(cert, backfill: backfill)
       rescue Faraday::Error => e
-        cert.record_external_sync!(error: "connection error: #{e.class} (retrying)")
+        record_sync(cert, :retrying, "connection error: #{e.class}", backfill_run_id)
         raise
       end
-      BackfillRun.record(backfill_run_id, result.status)
 
       case result.status
       when :ok, :duplicate
         saved = cert.assign_external_certification_id!(result.cert_id)
-        record_ingest_outcome(cert, result, saved)
+        record_ingest_outcome(cert, result, saved, backfill_run_id)
         chain_pending_return(cert, backfill_run_id)
         verb = result.status == :duplicate ? "already ingested" : "ingested"
         Rails.logger.info "[#{self.class.name}] cert=#{cert_id} #{verb} external_cert_id=#{result.cert_id}"
       when :not_configured, :skipped
-        cert.record_external_sync!(error: result.error)
+        record_sync(cert, :skipped, result.error, backfill_run_id)
         level = cert.pending? ? :info : :warn
         Rails.logger.public_send(level, "[#{self.class.name}] cert=#{cert_id} skipped (#{result.error})")
       when :client_error
-        cert.record_external_sync!(error: "http #{result.http_status}: #{result.error.presence || 'client error'}")
+        record_sync(cert, :failed, "http #{result.http_status}: #{result.error.presence || 'client error'}", backfill_run_id)
         log_remote_failure("client error", cert_id, result)
       when :server_error
-        cert.record_external_sync!(error: "http #{result.http_status}: retrying (#{result.error.presence || 'server error'})")
+        record_sync(cert, :retrying, "http #{result.http_status}: #{result.error.presence || 'server error'}", backfill_run_id)
         raise_server_error(cert_id, result)
       end
     end
 
-    def record_terminal_failure(cert_id, message)
-      Certification::Ship.find_by(id: cert_id)&.record_external_sync!(error: "gave up after retries: #{message}")
+    def record_terminal_failure(cert_id, message, run_id)
+      cert = Certification::Ship.find_by(id: cert_id)
+      record_sync(cert, :failed, "gave up after retries: #{message}", run_id) if cert
     end
 
     private
@@ -42,26 +42,28 @@ module ExternalDashboard
       # blanks the uuid by transferring it to an active return, which must not
       # read as a failed save. A uuid already held by a sibling cert is the
       # same transfer seen from a later backfill, not an error.
-      def record_ingest_outcome(cert, result, saved)
-        return cert.record_external_sync! unless saved == :skipped && cert.external_certification_id.blank?
+      def record_ingest_outcome(cert, result, saved, run_id)
+        return record_sync(cert, result.status, nil, run_id) unless saved == :skipped && cert.external_certification_id.blank?
 
         if result.cert_id.blank?
-          cert.record_external_sync!(error: "dashboard response carried no certId, uuid unknown")
+          record_sync(cert, :failed, "dashboard response carried no certId, uuid unknown", run_id)
           Rails.logger.warn "[#{self.class.name}] cert=#{cert.id} #{result.http_status} response without certId"
           return
         end
         unless result.cert_id.to_s.match?(Certification::Ship::EXTERNAL_CERTIFICATION_ID_PATTERN)
-          cert.record_external_sync!(error: "dashboard returned malformed certId (#{result.cert_id.to_s.truncate(60)})")
+          record_sync(cert, :failed, "dashboard returned malformed certId (#{result.cert_id.to_s.truncate(60)})", run_id)
           Rails.logger.warn "[#{self.class.name}] cert=#{cert.id} malformed certId #{result.cert_id.inspect}"
           return
         end
 
         holder = Certification::Ship.where.not(id: cert.id).find_by(external_certification_id: result.cert_id.to_s)
         if holder
-          cert.record_external_sync!(error: "dashboard uuid held by cert ##{holder.id}")
+          message = "dashboard uuid held by cert ##{holder.id}"
+          cert.record_external_sync!(error: message)
+          record_event(cert, :duplicate, message, run_id)
           Rails.logger.info "[#{self.class.name}] cert=#{cert.id} uuid #{result.cert_id} already held by cert=#{holder.id}"
         else
-          cert.record_external_sync!(error: "ingested but uuid save failed (#{result.cert_id.inspect})")
+          record_sync(cert, :failed, "ingested but uuid save failed (#{result.cert_id.inspect})", run_id)
           Rails.logger.warn "[#{self.class.name}] cert=#{cert.id} uuid save failed for #{result.cert_id.inspect}"
         end
       end
