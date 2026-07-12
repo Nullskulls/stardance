@@ -31,6 +31,7 @@ module ExternalDashboard
 
     def skip_reason
       return "cert has no project" if project.nil?
+      return "project is deleted" if project.deleted_at.present?
       return "hardware project — out of scope" if project.hardware?
       return "cert has no ship_event" if ship_event.nil?
       return "owner has no slack_id" if owner_slack_id.blank?
