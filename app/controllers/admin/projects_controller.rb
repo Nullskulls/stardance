@@ -64,6 +64,11 @@ class Admin::ProjectsController < Admin::ApplicationController
     @project = ::Project.unscoped.find(params[:id])
     cert = @project.ship_reviews.find(params[:cert_id])
 
+    if @project.deleted_at.present?
+      return redirect_back fallback_location: admin_project_path(@project),
+                           alert: "Project is deleted — its data stays off the dashboard."
+    end
+
     ExternalDashboard::ShipWebhookJob.perform_later(cert.id, backfill: true)
     ::PaperTrail::Version.create!(
       item: cert,

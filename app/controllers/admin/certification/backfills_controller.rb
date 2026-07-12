@@ -17,6 +17,12 @@ class Admin::Certification::BackfillsController < Admin::Certification::Applicat
 
     result = ExternalDashboard::ShipBackfillService.call
     if result.status == :ok
+      ::PaperTrail::Version.create!(
+        item: current_user,
+        event: "update",
+        whodunnit: current_user.id.to_s,
+        object_changes: { external_dashboard_backfill: [ nil, result.run_id ] }
+      )
       Rails.logger.info "[Admin::Certification::Backfills] run=#{result.run_id} enqueued=#{result.enqueued} triggered_by=#{current_user.id}"
       redirect_to admin_certification_backfill_path,
                   notice: "Backfill started (run #{result.run_id}) — #{result.enqueued} pushes queued."
