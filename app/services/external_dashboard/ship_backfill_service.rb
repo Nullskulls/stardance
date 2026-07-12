@@ -13,7 +13,7 @@ module ExternalDashboard
       scope ||= Certification::Ship.where(external_certification_id: nil)
                                    .where.not(id: active_returns.select(:id))
                                    .joins(:project)
-                                   .where(projects: { hardware_stage: nil })
+                                   .where(projects: { hardware_stage: [ nil, "" ] })
       link_ship_events(scope)
       cert_ids = scope.pluck(:id)
       return_ids = active_returns.where.not(external_certification_id: nil).pluck(:id)

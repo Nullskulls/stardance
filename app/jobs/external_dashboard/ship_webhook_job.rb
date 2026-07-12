@@ -50,10 +50,15 @@ module ExternalDashboard
           Rails.logger.warn "[#{self.class.name}] cert=#{cert.id} #{result.http_status} response without certId"
           return
         end
+        unless result.cert_id.to_s.match?(Certification::Ship::EXTERNAL_CERTIFICATION_ID_PATTERN)
+          cert.record_external_sync!(error: "dashboard returned malformed certId (#{result.cert_id.to_s.truncate(60)})")
+          Rails.logger.warn "[#{self.class.name}] cert=#{cert.id} malformed certId #{result.cert_id.inspect}"
+          return
+        end
 
         holder = Certification::Ship.where.not(id: cert.id).find_by(external_certification_id: result.cert_id.to_s)
         if holder
-          cert.record_external_sync!(error: "dashboard uuid held by cert ##{holder.id} (transferred to its active return)")
+          cert.record_external_sync!(error: "dashboard uuid held by cert ##{holder.id}")
           Rails.logger.info "[#{self.class.name}] cert=#{cert.id} uuid #{result.cert_id} already held by cert=#{holder.id}"
         else
           cert.record_external_sync!(error: "ingested but uuid save failed (#{result.cert_id.inspect})")

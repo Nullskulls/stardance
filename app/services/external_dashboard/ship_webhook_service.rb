@@ -33,6 +33,9 @@ module ExternalDashboard
       return "cert has no project" if project.nil?
       return "project is deleted" if project.deleted_at.present?
       return "hardware project — out of scope" if project.hardware?
+      if cert.pending? && cert.returned_by_id.present?
+        return "active YSWS return — reaches the dashboard via its approved cert's /return, not ingest"
+      end
       return "cert has no ship_event" if ship_event.nil?
       return "owner has no slack_id" if owner_slack_id.blank?
       if @backfill && missing_required_fields.any?
