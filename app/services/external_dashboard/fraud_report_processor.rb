@@ -3,6 +3,7 @@ module ExternalDashboard
     REQUIRED_FIELDS = %w[reported id reportedBy reason].freeze
     REPORT_REASON = "External flag".freeze
     FREE_TEXT_MAX_LENGTH = 10_000
+    TEST_CONNECTION_ID = "test".freeze
 
     Result = Struct.new(:status, :body, keyword_init: true)
 
@@ -15,6 +16,7 @@ module ExternalDashboard
     end
 
     def call
+      return ok_test if payload[:id].to_s == TEST_CONNECTION_ID
       return error(:bad_request, "missing required field: #{missing_field}") if missing_field
       return error(:bad_request, "invalid id: #{payload[:id].inspect}") if cert_id.nil?
 
@@ -78,6 +80,10 @@ module ExternalDashboard
 
     def ok(report)
       Result.new(status: :ok, body: { status: "ok", report_id: report.id })
+    end
+
+    def ok_test
+      Result.new(status: :ok, body: { status: "ok", test: true })
     end
 
     def ignored(reason)
