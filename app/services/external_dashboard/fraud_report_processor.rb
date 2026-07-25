@@ -50,9 +50,8 @@ module ExternalDashboard
       (user && !user.banned? && user.can_review?) ? user : nil
     end
 
-    def details_for(cert)
-      reason_text = payload[:reason].to_s.truncate(FREE_TEXT_MAX_LENGTH, omission: "")
-      "Flagged via the Shipwrights dashboard (cert ##{cert.id}, reported Slack ID #{payload[:reported]}). Reason: #{reason_text}"
+    def details
+      payload[:reason].to_s.truncate(FREE_TEXT_MAX_LENGTH, omission: "")
     end
 
     def create_report!(cert, reporter)
@@ -63,7 +62,7 @@ module ExternalDashboard
           project_id: cert.project_id,
           reporter_id: reporter.id,
           reason: REPORT_REASON,
-          details: details_for(cert),
+          details: details,
           status: :pending
         )
         report.save
