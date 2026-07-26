@@ -1,7 +1,7 @@
 module ExternalDashboard
   class FraudReportProcessor
     REQUIRED_FIELDS = %w[reported id reportedBy reason].freeze
-    REPORT_REASON = "External flag".freeze
+    REPORT_REASON = "Shipwrights project flag".freeze
     FREE_TEXT_MAX_LENGTH = 10_000
     TEST_CONNECTION_ID = "test".freeze
 
