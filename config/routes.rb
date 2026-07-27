@@ -451,6 +451,11 @@ Rails.application.routes.draw do
       resources :ambassador_referrals, only: [ :index, :show ]
       resources :certification_decisions, only: [ :create ]
       resources :fraud_reports, only: [ :create ]
+      resources :reviewer_payouts, only: [ :index, :create ] do
+        member do
+          post :decision
+        end
+      end
     end
     namespace :slack do
       post "events", to: "events#create"
