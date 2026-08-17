@@ -28,6 +28,8 @@
 #  fire_letter_id       :string
 #  marked_fire_by_id    :bigint
 #  nominated_fire_by_id :bigint
+#  bounty_paid_at       :datetime
+#  bounty_stardust      :integer
 #
 # Indexes
 #
@@ -48,6 +50,7 @@ class Project < ApplicationRecord
   include SoftDeletable
   include SemanticSearchIndexable
   include Gorse::SyncableProject
+  include Ledgerable
 
   has_ferret_search :title, :description
   semantic_search_indexable type: "project"
@@ -59,6 +62,10 @@ class Project < ApplicationRecord
 
   ACCEPTED_CONTENT_TYPES = %w[image/jpeg image/png image/webp image/heic image/heif].freeze
   MAX_BANNER_SIZE = 10.megabytes
+
+  MAX_BOUNTY_STARDUST = 2_147_483_647 # postgres integer column ceiling — hard stop, not a business cap
+
+  validates :bounty_stardust, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: MAX_BOUNTY_STARDUST, only_integer: true }, allow_nil: true
 
   AVAILABLE_CATEGORIES = [
     "CLI", "Cargo", "Web App", "Chat Bot", "Extension",
@@ -586,6 +593,26 @@ class Project < ApplicationRecord
       transitions from: [ :submitted, :under_review ], to: :draft,
                   after: -> { self.shipped_at = nil }
     end
+  end
+
+  # Called by Certification::Ship#apply_verdict_to_project! once a Shipwright
+  # review approves the project — awards any admin-assigned bounty on top of
+  # the normal ship payout. Guarded by bounty_paid_at so a re-triggered
+  # verdict (e.g. an idempotent external decision replay) never pays it twice.
+  def grant_bounty!
+    return if bounty_stardust.to_i <= 0
+    return if bounty_paid_at.present?
+
+    owner_user = memberships.owner.order(:created_at).first&.user
+    return unless owner_user
+
+    update!(bounty_paid_at: Time.current)
+    owner_user.ledger_entries.create!(
+      ledgerable: self,
+      amount: bounty_stardust,
+      reason: "Project bounty: #{title}",
+      created_by: "project_bounty"
+    )
   end
 
   # Maps each editable info field on the project form to the shipping
