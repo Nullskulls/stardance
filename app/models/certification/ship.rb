@@ -500,6 +500,7 @@ module Certification
           if latest
             project.start_review! if project.may_start_review?
             project.approve! if project.may_approve?
+            project.grant_bounty!
           end
           create_ysws_review_for_ship(ship_event) if ship_event
           collapse_mission_build_review!(ship_event)

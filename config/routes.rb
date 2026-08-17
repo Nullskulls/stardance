@@ -461,6 +461,7 @@ Rails.application.routes.draw do
           post :decision
         end
       end
+      resources :project_bounties, only: [ :create ]
     end
     namespace :slack do
       post "events", to: "events#create"
