@@ -861,6 +861,12 @@
               <%= f.radio_button :reason, "demo_broken", id: "project_report_reason_demo_broken" %>
               <%= f.label :reason, "Demo does not work", for: "project_report_reason_demo_broken" %>
             </div>
+            <% if @project.ship_reviews.approved.exists? %>
+              <div class="form-checkbox">
+                <%= f.radio_button :reason, Project::Report::SHOULD_NOT_HAVE_BEEN_APPROVED_REASON, id: "project_report_reason_shouldnt_have_been_approved" %>
+                <%= f.label :reason, "Project should not have been approved", for: "project_report_reason_shouldnt_have_been_approved" %>
+              </div>
+            <% end %>
             <div class="form-checkbox">
               <%= f.radio_button :reason, "other", id: "project_report_reason_other" %>
               <%= f.label :reason, "Other", for: "project_report_reason_other" %>
