@@ -4,6 +4,8 @@
 #
 #  id                   :bigint           not null, primary key
 #  ai_declaration       :text
+#  bounty_paid_at       :datetime
+#  bounty_stardust      :integer
 #  deleted_at           :datetime
 #  demo_url             :text
 #  description          :text

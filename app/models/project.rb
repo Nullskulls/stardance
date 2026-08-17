@@ -4,6 +4,8 @@
 #
 #  id                   :bigint           not null, primary key
 #  ai_declaration       :text
+#  bounty_paid_at       :datetime
+#  bounty_stardust      :integer
 #  deleted_at           :datetime
 #  demo_url             :text
 #  description          :text
@@ -28,8 +30,6 @@
 #  fire_letter_id       :string
 #  marked_fire_by_id    :bigint
 #  nominated_fire_by_id :bigint
-#  bounty_paid_at       :datetime
-#  bounty_stardust      :integer
 #
 # Indexes
 #
