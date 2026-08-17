@@ -102,7 +102,7 @@ class ShopItem::FreeStickers < ShopItem
     # walkthrough can complete end-to-end. If a Theseus API key is configured
     # locally (e.g. devs explicitly want to exercise the live path), fall
     # through to the real call instead.
-    if (Rails.env.development? || Rails.env.test?) && Rails.application.credentials.dig(:theseus, :api_key).blank?
+    if (Rails.env.development? || Rails.env.test?) && (ENV["THESEUS_API_KEY"].presence || Rails.application.credentials.dig(:theseus, :api_key)).blank?
       Rails.logger.info("FreeStickers order #{shop_order.id}: dev-mode bypass (no Theseus API key configured), marking fulfilled without Theseus call")
       shop_order.mark_fulfilled!("dev-bypass-#{shop_order.id}", nil, "System")
       return

@@ -6,7 +6,7 @@ module Trackable
   def track_event(name, properties = {})
     ahoy.track(name, properties)
 
-    if current_user && Rails.application.credentials.dig(:fullstory, :api_key).present?
+    if current_user && (ENV["FULLSTORY_API_KEY"].presence || Rails.application.credentials.dig(:fullstory, :api_key)).present?
       TrackFullstoryEventJob.perform_later(user_id: current_user.id, name: name, properties: properties)
     end
   end

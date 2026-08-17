@@ -7,7 +7,8 @@ module TheseusService
           faraday.response :mashify
           faraday.response :json
           faraday.response :raise_error
-          faraday.headers["Authorization"] = "Bearer #{Rails.application.credentials.theseus.api_key}".freeze
+          api_key = ENV["THESEUS_API_KEY"].presence || Rails.application.credentials.dig(:theseus, :api_key)
+          faraday.headers["Authorization"] = "Bearer #{api_key}".freeze
         end
       end
 

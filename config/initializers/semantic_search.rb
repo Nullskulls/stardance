@@ -16,7 +16,7 @@ Rails.application.config.x.semantic_search.redis = {
   }
 }
 Rails.application.config.x.semantic_search.openai_api_key =
-  Rails.application.credentials.dig(:openai, :api_key).presence
+  ENV["OPENAI_API_KEY"].presence || Rails.application.credentials.dig(:openai, :api_key).presence
 Rails.application.config.x.semantic_search.embedding_model =
   ENV["SEARCH_EMBEDDING_MODEL"].presence || "text-embedding-3-small"
 Rails.application.config.x.semantic_search.embedding_dimensions =

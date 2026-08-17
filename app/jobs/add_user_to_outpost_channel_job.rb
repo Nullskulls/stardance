@@ -12,7 +12,7 @@ class AddUserToOutpostChannelJob < ApplicationJob
     user = User.find_by(id: user_id)
     return if user.nil?
 
-    client = Slack::Web::Client.new(token: Rails.application.credentials.dig(:slack, :outpost_bot_token))
+    client = Slack::Web::Client.new(token: ENV["OUTPOST_SLACK_BOT_TOKEN"].presence || Rails.application.credentials.dig(:slack, :outpost_bot_token))
 
     slack_id = user.slack_id.presence || resolve_slack_id(client, user)
     return if slack_id.blank?

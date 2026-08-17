@@ -7,7 +7,7 @@ class SendSlackDmJob < ApplicationJob
       return
     end
 
-    client = Slack::Web::Client.new(token: Rails.application.credentials.dig(:slack, :bot_token))
+    client = Slack::Web::Client.new
 
     recipient = recipient_id.to_s
     channel_id = recipient

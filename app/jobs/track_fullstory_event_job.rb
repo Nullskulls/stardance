@@ -2,7 +2,7 @@ class TrackFullstoryEventJob < ApplicationJob
   queue_as :default
 
   def perform(user_id:, name:, properties:)
-    api_key = Rails.application.credentials.dig(:fullstory, :api_key)
+    api_key = ENV["FULLSTORY_API_KEY"].presence || Rails.application.credentials.dig(:fullstory, :api_key)
     return if api_key.blank?
 
     uri = URI("https://api.fullstory.com/v2/events")

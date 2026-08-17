@@ -33,6 +33,7 @@ class Api::V1::BaseController < ActionController::API
     end
 
     def credential_api_keys
-      Array.wrap(Rails.application.credentials.dig(:ambassador_referrals, :api_keys))
+      env_keys = ENV["AMBASSADOR_REFERRALS_API_KEYS"].presence&.split(",")
+      env_keys || Array.wrap(Rails.application.credentials.dig(:ambassador_referrals, :api_keys))
     end
 end
