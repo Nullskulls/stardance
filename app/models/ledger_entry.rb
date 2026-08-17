@@ -31,6 +31,7 @@ class LedgerEntry < ApplicationRecord
     "fulfillment" => { label: "Fulfillment payouts", types: [ "FulfillmentPayoutLine" ] },
     "reviewer" => { label: "Reviewer payouts", types: [ "ReviewerPayoutRequest" ] },
     "mission" => { label: "Mission payouts", types: [ "Mission::Submission" ] },
+    "project_bounty" => { label: "Project bounties", types: [ "Project" ] },
     "show_and_tell" => { label: "Show & tell payouts", types: [ "ShowAndTellAttendance" ] },
     "vote" => { label: "Vote charges", types: [ "Vote" ] },
     "other" => { label: "Other", types: [] }
@@ -98,6 +99,7 @@ class LedgerEntry < ApplicationRecord
     when "FulfillmentPayoutLine" then "fulfillment payout"
     when "ShowAndTellAttendance" then "show and tell payout"
     when "Mission::Submission" then "mission payout: #{ledgerable.mission.name}"
+    when "Project" then "project bounty: #{ledgerable.title}"
     else ledgerable_type.underscore.humanize.downcase
     end
     change_emoji = amount.positive? ? "📈" : "📉"

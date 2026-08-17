@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_14_142740) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_17_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -897,6 +897,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_14_142740) do
 
   create_table "projects", force: :cascade do |t|
     t.text "ai_declaration"
+    t.datetime "bounty_paid_at"
+    t.integer "bounty_stardust"
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
     t.text "demo_url"
