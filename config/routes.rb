@@ -526,8 +526,10 @@ Rails.application.routes.draw do
   get "auth/:provider/callback", to: "sessions#create"
   get "/auth/failure", to: "sessions#failure"
   delete "logout", to: "sessions#destroy"
-  get "dev_login", to: "sessions#dev_login", as: :dev_login_auto if Rails.env.development? || Rails.env.test?
-  get "dev_login/:id", to: "sessions#dev_login", as: :dev_login if Rails.env.development? || Rails.env.test?
+  if Rails.env.development? || Rails.env.test? || ENV["FORCE_DEV_LOGIN"] == "1"
+    get "dev_login", to: "sessions#dev_login", as: :dev_login_auto
+    get "dev_login/:id", to: "sessions#dev_login", as: :dev_login
+  end
 
   # OAuth callback for HCA
   get "/oauth/callback", to: "sessions#create"
