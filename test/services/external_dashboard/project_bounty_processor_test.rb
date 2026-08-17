@@ -91,7 +91,7 @@ class ExternalDashboard::ProjectBountyProcessorTest < ActiveSupport::TestCase
       setBy: @setter.slack_id
     )
 
-    version = PaperTrail::Version.where(item_type: "Project", item_id: @project.id).last
+    version = PaperTrail::Version.find_by(item_type: "Project", item_id: @project.id, event: "update")
     assert_equal @setter.id.to_s, version.whodunnit
   end
 end
