@@ -844,6 +844,10 @@
     <% end %>
 
     <% if current_user.present? && (!is_member || Rails.env.development?) %>
+      <button type="button" class="action-btn action-btn--large action-btn--secondary" onclick="document.getElementById('project-report-modal').showModal()">
+        Report project
+      </button>
+
       <%= render layout: "shared/modal", locals: { id: "project-report-modal", title: "Report project?" } do %>
         <h2>We want good, high quality projects in Stardance. If you believe this project violates our community guidelines, please let us know why:</h2>
 
