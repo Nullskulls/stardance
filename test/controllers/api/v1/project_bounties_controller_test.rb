@@ -3,7 +3,8 @@ require "test_helper"
 class Api::V1::ProjectBountiesControllerTest < ActionDispatch::IntegrationTest
   include UserFactory
 
-  SECRET = "test-webhook-secret".freeze
+  API_KEY = "test-api-key".freeze
+  WORKPLACE_ID = "test-workplace-id".freeze
 
   setup do
     @owner = create_user(slack_id: "U_BOUNTYAPI_OWNER", display_name: "bountyapiowner")
@@ -16,39 +17,45 @@ class Api::V1::ProjectBountiesControllerTest < ActionDispatch::IntegrationTest
     )
   end
 
-  test "rejects requests with no signature" do
-    ExternalDashboard::Client.stub(:decision_webhook_secret, SECRET) do
-      post api_v1_project_bounties_path,
-        params: { certification: { id: @cert.external_certification_id }, amount: "500" }.to_json,
-        headers: { "Content-Type" => "application/json" }
+  test "rejects requests with no api key" do
+    ExternalDashboard::Client.stub(:api_key, API_KEY) do
+      ExternalDashboard::Client.stub(:workplace_id, WORKPLACE_ID) do
+        post api_v1_project_bounties_path,
+          params: { certification: { id: @cert.external_certification_id }, amount: "500" }.to_json,
+          headers: { "Content-Type" => "application/json" }
+      end
     end
 
     assert_response :unauthorized
   end
 
-  test "rejects requests with a bad signature" do
-    ExternalDashboard::Client.stub(:decision_webhook_secret, SECRET) do
-      post api_v1_project_bounties_path,
-        params: { certification: { id: @cert.external_certification_id }, amount: "500" }.to_json,
-        headers: {
-          "Content-Type" => "application/json",
-          "X-Shipwrights-Signature" => "sha256=#{"0" * 64}"
-        }
+  test "rejects requests with the wrong workplace id" do
+    ExternalDashboard::Client.stub(:api_key, API_KEY) do
+      ExternalDashboard::Client.stub(:workplace_id, WORKPLACE_ID) do
+        post api_v1_project_bounties_path,
+          params: { certification: { id: @cert.external_certification_id }, amount: "500" }.to_json,
+          headers: {
+            "Content-Type" => "application/json",
+            "x-api-key" => API_KEY,
+            "x-workplace-id" => "wrong"
+          }
+      end
     end
 
     assert_response :unauthorized
   end
 
-  test "sets the bounty when the signature is valid" do
-    body = { certification: { id: @cert.external_certification_id }, amount: "500" }.to_json
-
-    ExternalDashboard::Client.stub(:decision_webhook_secret, SECRET) do
-      post api_v1_project_bounties_path,
-        params: body,
-        headers: {
-          "Content-Type" => "application/json",
-          "X-Shipwrights-Signature" => signature_for(body)
-        }
+  test "sets the bounty when authenticated" do
+    ExternalDashboard::Client.stub(:api_key, API_KEY) do
+      ExternalDashboard::Client.stub(:workplace_id, WORKPLACE_ID) do
+        post api_v1_project_bounties_path,
+          params: { certification: { id: @cert.external_certification_id }, amount: "500" }.to_json,
+          headers: {
+            "Content-Type" => "application/json",
+            "x-api-key" => API_KEY,
+            "x-workplace-id" => WORKPLACE_ID
+          }
+      end
     end
 
     assert_response :success
@@ -57,23 +64,18 @@ class Api::V1::ProjectBountiesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "returns bad_request for malformed json" do
-    body = "not json"
-
-    ExternalDashboard::Client.stub(:decision_webhook_secret, SECRET) do
-      post api_v1_project_bounties_path,
-        params: body,
-        headers: {
-          "Content-Type" => "application/json",
-          "X-Shipwrights-Signature" => signature_for(body)
-        }
+    ExternalDashboard::Client.stub(:api_key, API_KEY) do
+      ExternalDashboard::Client.stub(:workplace_id, WORKPLACE_ID) do
+        post api_v1_project_bounties_path,
+          params: "not json",
+          headers: {
+            "Content-Type" => "application/json",
+            "x-api-key" => API_KEY,
+            "x-workplace-id" => WORKPLACE_ID
+          }
+      end
     end
 
     assert_response :bad_request
   end
-
-  private
-
-    def signature_for(raw_body)
-      "sha256=" + OpenSSL::HMAC.hexdigest("SHA256", SECRET, raw_body)
-    end
 end
