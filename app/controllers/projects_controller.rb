@@ -40,6 +40,7 @@ class ProjectsController < ApplicationController
     @is_member = current_user && @members.include?(current_user)
     @active_nav_slug = @is_member ? "projects" : "home"
     @can_edit_project = @is_member && policy(@project).update?
+    @is_owner = current_user && @project.memberships.exists?(user_id: current_user.id, role: :owner)
     @follower_count = @project.project_follows.size
     @viewer_follow = current_user && @project.project_follows.find_by(user_id: current_user.id)
     @total_hours = (@project.duration_seconds / 3600.0).round

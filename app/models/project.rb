@@ -574,6 +574,8 @@ class Project < ApplicationRecord
 
   def shippable? = ship_blocking_errors.empty?
 
+  def awaiting_ship_review? = ship_reviews.pending.exists?
+
   def ship_blocking_errors = shipping_requirements.reject { |r| r[:passed] }.map { |r| r[:label] }
 
   # The single most relevant reason the project can't ship yet, as a short
