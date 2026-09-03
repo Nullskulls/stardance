@@ -24,7 +24,7 @@ module ExternalDashboard
       return ignored("project is deleted") if cert.project.nil? || cert.project.deleted_at.present?
       return ignored("project owner is banned") if cert.owner&.banned?
       return error(:bad_request, "missing or invalid timestamp") if decision_timestamp.nil?
-      return error(:conflict, "decision predates this review cycle (timestamp=#{payload[:timestamp].inspect})") if cert.pending? && VerdictApplier.stale?(cert: cert, decided_at: decision_timestamp)
+      return error(:conflict, "implausible decision timestamp (timestamp=#{payload[:timestamp].inspect})") if cert.pending? && VerdictApplier.stale?(cert: cert, decided_at: decision_timestamp)
 
       if proof_video_url
         return error(:bad_request, "proofVideoUrl must be an http(s) URL") unless proof_video_url.match?(Certification::Ship::PROOF_VIDEO_URL_PATTERN)
@@ -44,6 +44,7 @@ module ExternalDashboard
         cert: cert,
         target_status: target_status,
         reviewer: reviewer,
+        reviewer_slack_id: certification[:reviewerSlackId].to_s.presence,
         comment: reviewer_comment,
         proof_video_url: proof_video_url,
         external_uuid: certification[:id],
@@ -56,7 +57,7 @@ module ExternalDashboard
       when :idempotent
         ok(decision_payload(outcome.cert, idempotent: true))
       when :stale
-        error(:conflict, "decision predates this review cycle (timestamp=#{payload[:timestamp].inspect})")
+        error(:conflict, "implausible decision timestamp (timestamp=#{payload[:timestamp].inspect})")
       when :divergent
         error(:conflict, "cert #{outcome.cert.id} is already #{outcome.cert.status} locally — refusing to apply remote #{decision_status}")
       else

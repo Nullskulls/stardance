@@ -5,6 +5,7 @@ module ExternalDashboard
     PATH = "/api/v1/certifications/ships".freeze
     DEFAULT_LIMIT = 1000
     MAX_PAGES = 25
+    MAX_BODY_BYTES = 10.megabytes
 
     Result = Struct.new(:ships, :status, :error, keyword_init: true)
 
@@ -27,13 +28,22 @@ module ExternalDashboard
 
       MAX_PAGES.times do
         response = conn.get(PATH, page_params(cursor: cursor, until_param: until_param))
-        body = Client.parse_json(response.body)
+        raw_body = response.body.to_s
 
-        unless response.status.between?(200, 299)
-          return partial_or_error(ships, "http=#{response.status} error=#{Client.error_from(body)}")
+        if raw_body.bytesize > MAX_BODY_BYTES
+          return partial_or_error(ships, "response body exceeded #{MAX_BODY_BYTES} bytes, refusing to parse")
         end
 
-        ships.concat(Array(body["ships"]))
+        body = Client.parse_json(raw_body)
+
+        unless response.status.between?(200, 299)
+          return partial_or_error(ships, "http=#{response.status} error=#{Client.error_from(body).inspect}")
+        end
+
+
+        return partial_or_error(ships, "malformed response body (no ships array)") unless body.is_a?(Hash) && body["ships"].is_a?(Array)
+
+        ships.concat(body["ships"])
         until_param ||= body.dig("window", "to")
         more = body["hasMore"] ? true : false
         cursor = body["nextCursor"]

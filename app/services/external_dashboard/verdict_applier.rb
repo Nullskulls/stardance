@@ -11,13 +11,16 @@ module ExternalDashboard
     def self.call(...) = new(...).call
 
     def self.stale?(cert:, decided_at:)
-      decided_at.present? && decided_at < (cert.created_at - REPLAY_CLOCK_SKEW)
+      return false if decided_at.blank?
+
+      decided_at < (cert.created_at - REPLAY_CLOCK_SKEW) || decided_at > (Time.current + REPLAY_CLOCK_SKEW)
     end
 
-    def initialize(cert:, target_status:, reviewer: nil, comment: nil, proof_video_url: nil, external_uuid: nil, decided_at: nil, dry_run: false)
+    def initialize(cert:, target_status:, reviewer: nil, reviewer_slack_id: nil, comment: nil, proof_video_url: nil, external_uuid: nil, decided_at: nil, dry_run: false)
       @cert = cert
       @target_status = target_status
       @reviewer = reviewer
+      @reviewer_slack_id = reviewer_slack_id
       @comment = comment
       @proof_video_url = proof_video_url
       @external_uuid = external_uuid
@@ -38,7 +41,7 @@ module ExternalDashboard
 
     private
 
-    attr_reader :cert, :target_status, :reviewer, :comment, :proof_video_url, :external_uuid, :decided_at, :dry_run
+    attr_reader :cert, :target_status, :reviewer, :reviewer_slack_id, :comment, :proof_video_url, :external_uuid, :decided_at, :dry_run
 
     def apply_locked
       return stale_outcome if cert.pending? && self.class.stale?(cert: cert, decided_at: decided_at)
@@ -56,12 +59,19 @@ module ExternalDashboard
     end
 
     def apply!
-      cert.update!(status: target_status, feedback: comment, reviewer_id: reviewer&.id, proof_video_url: proof_video_url)
+      cert.update!(status: target_status, feedback: comment, reviewer_id: reviewer&.id, proof_video_url: proof_video_url, decided_at: decided_at)
       cert.assign_external_certification_id!(external_uuid)
+      log_dropped_reviewer
+    end
+
+    def log_dropped_reviewer
+      return if reviewer || reviewer_slack_id.blank?
+
+      Rails.logger.warn "[ExternalDashboard::VerdictApplier]#{dry_run_tag} cert=#{cert.id} reviewerSlackId=#{reviewer_slack_id} did not resolve to a local reviewer - stardust not awarded"
     end
 
     def stale_outcome
-      Rails.logger.warn "[ExternalDashboard::VerdictApplier]#{dry_run_tag} cert=#{cert.id} decision predates this review cycle (decided_at=#{decided_at})"
+      Rails.logger.warn "[ExternalDashboard::VerdictApplier]#{dry_run_tag} cert=#{cert.id} implausible decision timestamp (decided_at=#{decided_at})"
       Outcome.new(status: :stale, cert: cert)
     end
 
@@ -71,15 +81,13 @@ module ExternalDashboard
 
       # The poller re-checks every cert in its lookback window on every run, so
       # an unresolved divergence would otherwise re-page on every cycle.
-      alert_key = "external_dashboard:verdict_applier:divergence:#{cert.id}:#{cert.status}:#{target_status}"
-      return if Rails.cache.exist?(alert_key)
-
-      Rails.cache.write(alert_key, true, expires_in: DIVERGENCE_ALERT_TTL)
-      Sentry.capture_message(
-        DIVERGENCE_SENTRY_MESSAGE,
-        level: :warning,
-        extra: { cert_id: cert.id, local_status: cert.status, remote_status: target_status.to_s }
-      )
+      AlertThrottle.once("external_dashboard:verdict_applier:divergence:#{cert.id}:#{cert.status}:#{target_status}", ttl: DIVERGENCE_ALERT_TTL) do
+        Sentry.capture_message(
+          DIVERGENCE_SENTRY_MESSAGE,
+          level: :warning,
+          extra: { cert_id: cert.id, local_status: cert.status, remote_status: target_status.to_s }
+        )
+      end
     end
 
     def dry_run_tag

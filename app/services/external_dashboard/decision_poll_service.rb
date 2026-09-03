@@ -4,6 +4,7 @@ module ExternalDashboard
   # one instead of depending on a cursor that could get lost.
   class DecisionPollService
     LOOKBACK = 2.hours
+    UNHEALTHY_ALERT_TTL = 1.hour
 
     def self.call(...) = new(...).call
 
@@ -21,12 +22,42 @@ module ExternalDashboard
 
       tag = dry_run ? " [dry-run]" : ""
       Rails.logger.info "[ExternalDashboard::DecisionPollService]#{tag} fetch=#{result.status} fetched=#{result.ships.size} #{counts.map { |k, v| "#{k}=#{v}" }.join(' ')}"
+      alert_on_unhealthy_run(result, counts) unless dry_run
       counts.merge(fetch_status: result.status)
     end
 
     private
 
     attr_reader :lookback, :now, :dry_run
+
+    UNRESOLVED_OUTCOMES = %i[missing_timestamp not_found error].freeze
+
+    def alert_on_unhealthy_run(result, counts)
+      unless result.status == :ok
+        AlertThrottle.once("external_dashboard:decision_poll:fetch_unhealthy:#{result.status}", ttl: UNHEALTHY_ALERT_TTL) do
+          Sentry.capture_message(
+            "ExternalDashboard::DecisionPollService fetch did not complete",
+            level: :warning,
+            extra: { fetch_status: result.status, fetch_error: result.error, fetched: result.ships.size }
+          )
+        end
+        return
+      end
+
+      decided_count = result.ships.size - counts[:ignored_status]
+      return if decided_count <= 0
+
+      unresolved_count = UNRESOLVED_OUTCOMES.sum { |outcome| counts[outcome] }
+      return if unresolved_count < decided_count * 0.5
+
+      AlertThrottle.once("external_dashboard:decision_poll:high_error_rate", ttl: UNHEALTHY_ALERT_TTL) do
+        Sentry.capture_message(
+          "ExternalDashboard::DecisionPollService is failing to apply most decided ships in its window",
+          level: :warning,
+          extra: { fetched: result.ships.size, decided: decided_count, unresolved: unresolved_count, breakdown: counts }
+        )
+      end
+    end
 
     def process(ship)
       status = ship["status"].to_s
@@ -45,15 +76,17 @@ module ExternalDashboard
 
       apply(ship, cert, target, proof_video_url, decided_at).status
     rescue StandardError => e
-      Rails.logger.warn "[ExternalDashboard::DecisionPollService] ship=#{ship['id']} #{e.class}: #{e.message}"
+      Rails.logger.warn "[ExternalDashboard::DecisionPollService] ship=#{ship['id'].inspect} #{e.class}: #{e.message}"
       :error
     end
 
     def apply(ship, cert, target, proof_video_url, decided_at)
+      reviewer_slack_id = ship.dig("reviewer", "slackId").to_s.presence
       VerdictApplier.call(
         cert: cert,
         target_status: target,
-        reviewer: resolve_reviewer(ship.dig("reviewer", "slackId")),
+        reviewer: resolve_reviewer(reviewer_slack_id),
+        reviewer_slack_id: reviewer_slack_id,
         comment: ship["feedback"].to_s.presence&.truncate(Certification::Ship::FEEDBACK_MAX_LENGTH, omission: ""),
         proof_video_url: proof_video_url,
         external_uuid: ship["id"],
