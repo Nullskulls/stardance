@@ -457,6 +457,9 @@ Rails.application.routes.draw do
       end
       resources :fraud_reports, only: [ :create ]
       resources :reviewer_payouts, only: [ :index, :create ] do
+        collection do
+          get :all
+        end
         member do
           post :decision
         end
