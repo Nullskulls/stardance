@@ -657,6 +657,9 @@ Rails.application.routes.draw do
 
     resource :funnel, only: [ :show ], controller: "funnel"
     resource :rating_dashboard, only: [ :show ], controller: "rating_dashboard"
+    resource :hour_funnel, only: [ :show ], controller: "hour_funnel" do
+      post :refresh
+    end
 
     # Sections load lazily so one slow data source can't hold up the page.
     get    "mega_dashboard",                   to: "mega_dashboard#show",        as: :mega_dashboard
