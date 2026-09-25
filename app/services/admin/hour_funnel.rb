@@ -4,8 +4,9 @@ module Admin
   # and the Airtable sync. Built as Sankey nodes and links in two units, hours
   # and ships, so the same graph reads as "how much time" or "how many ships".
   #
-  # All time, software only. Hardware pays for build time after a funding
-  # cutoff and skips integrity, so it needs its own funnel.
+  # All time, software and hardware. Hardware skips the integrity check, so
+  # its ships pass through their own kept node on the way to Airtable, and a
+  # ship a reviewer misfiled into the wrong queue has its own held state.
   #
   # Every ship is in exactly one state at a time, so the ship unit only flows
   # through nodes that take a whole ship out of the funnel. A markdown or a
@@ -29,7 +30,8 @@ module Admin
       Node.new("ship_pending", "Ship cert pending", "ship_cert", "held", false),
       Node.new("ship_resubmitted", "Resubmitted, pending again", "ship_cert", "held", false),
       Node.new("ship_returned", "Returned, waiting on builder", "ship_cert", "held", false),
-      Node.new("ship_withdrawn", "Withdrawn by undo", "ship_cert", "held", false),
+      Node.new("ship_misfiled", "Misfiled, builder answering", "ship_cert", "held", false),
+      Node.new("ship_withdrawn", "Withdrawn", "ship_cert", "held", false),
       Node.new("ship_rejected", "Ship rejected", "ship_cert", "lost", false),
       Node.new("ysws_approved", "YSWS approved", "ysws", "kept", false),
       Node.new("ysws_pending", "YSWS review pending", "ysws", "held", false),
@@ -37,6 +39,7 @@ module Admin
       Node.new("ysws_rejected", "Devlogs rejected by YSWS", "ysws", "lost", true),
       Node.new("ysws_under_minimum", "Review rejected (under 6 min)", "ysws", "lost", false),
       Node.new("integrity_passed", "Integrity passed", "integrity", "kept", false),
+      Node.new("integrity_skipped", "No integrity check (hardware)", "integrity", "kept", false),
       Node.new("integrity_pending", "Integrity pending", "integrity", "held", false),
       Node.new("integrity_deducted", "Deducted by integrity", "integrity", "lost", true),
       Node.new("integrity_banned", "Banned by integrity", "integrity", "lost", false),
@@ -57,7 +60,7 @@ module Admin
     INTEGRITY_PASSED = %w[auto_passed manually_passed].freeze
 
     ShipRow = Struct.new(
-      :ship_event_id, :project_deleted, :certification_status, :review_status, :recert_from_ysws, :bounced,
+      :ship_event_id, :project_deleted, :hardware, :certification_status, :review_status, :recert_from_ysws, :bounced,
       :ysws_reviewed, :ysws_returned, :approved_minutes_all, :airtable_synced, :in_unified_db,
       :integrity_status, :deduction_minutes,
       :hours, :devlogs, :raw_over_cap_hours, :over_cap_devlogs, :rejected_hours, :auto_rejected_hours,
@@ -107,7 +110,8 @@ module Admin
       flow("devlogged", "unshipped", hours: row["unshipped_never"].to_f + row["unshipped_after_ship"].to_f)
       flow("devlogged", "shipped", hours: row["shipped"].to_f)
 
-      %w[deleted_before_ship deleted_after_ship banned project_deleted unshipped_never unshipped_after_ship].each do |key|
+      %w[deleted_before_ship deleted_after_ship banned project_deleted unshipped_never unshipped_after_ship
+         hardware design_phase].each do |key|
         @details["#{key}_hours"] = row[key].to_f
       end
       @details["devlogs"] = row["devlogs"].to_i
@@ -136,7 +140,7 @@ module Admin
       net = add_integrity(row, approved)
       return if net.nil?
 
-      add_airtable(row, net)
+      add_airtable(row, net, from: row.hardware ? "integrity_skipped" : "integrity_passed")
     end
 
     # A rejected ship event is an admin forcing the project state, so it wins
@@ -144,6 +148,7 @@ module Admin
     # older than the review queue) the ship event's own status stands in.
     def ship_cert_node(row)
       return "ship_rejected" if row.certification_status == "rejected"
+      return "ship_misfiled" if row.certification_status == "misfiled"
 
       case row.review_status
       when nil
@@ -151,6 +156,7 @@ module Admin
       when "pending" then row.bounced ? "ship_resubmitted" : "ship_pending"
       when "approved" then row.bounced ? "ship_approved_after_return" : "ship_approved"
       when "returned" then "ship_returned"
+      when "misfiled" then "ship_misfiled"
       when "withdrawn" then "ship_withdrawn"
       else "ship_pending"
       end
@@ -178,7 +184,14 @@ module Admin
       row.approved_hours
     end
 
+    # Hardware never gets an integrity check (the Airtable sync doesn't wait
+    # for one either), so its approved hours pass straight through.
     def add_integrity(row, approved)
+      if row.hardware
+        flow("ysws_approved", "integrity_skipped", hours: approved, ships: 1)
+        return approved
+      end
+
       case row.integrity_status
       when *INTEGRITY_PASSED
         flow("ysws_approved", "integrity_passed", hours: approved, ships: 1)
@@ -197,13 +210,13 @@ module Admin
       end
     end
 
-    def add_airtable(row, net)
+    def add_airtable(row, net, from:)
       unless row.airtable_synced
-        flow("integrity_passed", "airtable_unsynced", hours: net, ships: 1)
+        flow(from, "airtable_unsynced", hours: net, ships: 1)
         return
       end
 
-      flow("integrity_passed", "airtable_synced", hours: net, ships: 1)
+      flow(from, "airtable_synced", hours: net, ships: 1)
       if row.in_unified_db
         @details["unified_db_hours"] += net
         @details["unified_db_ships"] += 1
@@ -241,6 +254,7 @@ module Admin
         ShipRow.new(
           ship_event_id: row["ship_event_id"],
           project_deleted: row["project_deleted_at"].present?,
+          hardware: row["hardware"],
           certification_status: row["certification_status"],
           review_status: row["review_status"] && SHIP_STATUSES[row["review_status"]],
           recert_from_ysws: row["recert_from_ysws"],
@@ -266,24 +280,26 @@ module Admin
       end
     end
 
-    # Every software devlog, deleted or not, with the ship event whose window
-    # it falls in: the earliest ship posted at or after the devlog, which is
-    # exactly Post::ShipEvent#window_devlogs read from the other side.
+    # Every devlog, deleted or not, with the ship event whose window it falls
+    # in: the earliest ship posted at or after the devlog, which is exactly
+    # Post::ShipEvent#window_devlogs read from the other side.
     def devlog_base_sql
       <<~SQL
-        WITH software_projects AS (
-          SELECT id, deleted_at FROM projects WHERE hardware_stage IS NULL
+        WITH funnel_projects AS (
+          SELECT id, deleted_at, (hardware_stage IS NOT NULL) AS hardware FROM projects
         ),
         ship_posts AS (
           SELECT p.postable_id AS ship_event_id, p.project_id, p.created_at AS shipped_at
           FROM posts p
-          JOIN software_projects pr ON pr.id = p.project_id
+          JOIN funnel_projects pr ON pr.id = p.project_id
           WHERE p.postable_type = 'Post::ShipEvent'
         ),
         devlogs AS (
           SELECT d.id AS devlog_id,
                  COALESCE(d.duration_seconds, 0) / 3600.0 AS hours,
                  d.deleted_at,
+                 d.phase,
+                 pr.hardware,
                  pr.deleted_at AS project_deleted_at,
                  COALESCE(u.banned, FALSE) AS author_banned,
                  ship.ship_event_id,
@@ -291,7 +307,7 @@ module Admin
                  EXISTS (SELECT 1 FROM ship_posts sp WHERE sp.project_id = p.project_id) AS project_has_ship
           FROM post_devlogs d
           JOIN posts p ON p.postable_type = 'Post::Devlog' AND p.postable_id = d.id
-          JOIN software_projects pr ON pr.id = p.project_id
+          JOIN funnel_projects pr ON pr.id = p.project_id
           LEFT JOIN users u ON u.id = p.user_id
           LEFT JOIN LATERAL (
             SELECT sp.ship_event_id, sp.shipped_at
@@ -321,12 +337,14 @@ module Admin
           COALESCE(SUM(hours) FILTER (WHERE project_deleted_at IS NULL AND deleted_at IS NULL
                                         AND ship_event_id IS NULL AND project_has_ship), 0) AS unshipped_after_ship,
           COALESCE(SUM(hours) FILTER (WHERE project_deleted_at IS NULL AND deleted_at IS NULL
-                                        AND ship_event_id IS NOT NULL), 0) AS shipped
+                                        AND ship_event_id IS NOT NULL), 0) AS shipped,
+          COALESCE(SUM(hours) FILTER (WHERE hardware), 0) AS hardware,
+          COALESCE(SUM(hours) FILTER (WHERE phase = 'design'), 0) AS design_phase
         FROM devlogs
       SQL
     end
 
-    # One row per software ship event: the latest ship review, the latest
+    # One row per ship event: the latest ship review, the latest
     # YSWS review, the integrity check, and its live devlogs rolled up. A
     # devlog review's approved hours are the devlog's own hours unless the
     # reviewer marked it down, so an untouched devlog never shows a rounding
@@ -381,6 +399,7 @@ module Admin
         )
         SELECT sp.ship_event_id,
                pr.deleted_at AS project_deleted_at,
+               pr.hardware,
                se.certification_status,
                r.status AS review_status,
                (r.returned_by_id IS NOT NULL) AS recert_from_ysws,
@@ -400,7 +419,7 @@ module Admin
                COALESCE(ps.unreviewed_hours, 0) AS unreviewed_hours,
                COALESCE(ps.certified_over_cap_hours, 0) AS certified_over_cap_hours
         FROM ship_posts sp
-        JOIN software_projects pr ON pr.id = sp.project_id
+        JOIN funnel_projects pr ON pr.id = sp.project_id
         JOIN post_ship_events se ON se.id = sp.ship_event_id
         LEFT JOIN ship_reviews r ON r.post_ship_event_id = sp.ship_event_id
         LEFT JOIN bounced b ON b.post_ship_event_id = sp.ship_event_id

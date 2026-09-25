@@ -13,7 +13,7 @@
     <div>
       <h1>Hour Funnel</h1>
       <p class="hour-funnel__subtitle">
-        Every hour ever devlogged on a software project and where it is now: deleted, waiting to ship,
+        Every hour ever devlogged and where it is now: deleted, waiting to ship,
         or on its way through ship certification, the YSWS review, integrity and Airtable.
       </p>
     </div>
@@ -31,8 +31,9 @@
   </header>
 
   <p class="hour-funnel__note">
-    All time, software projects only. Computed <%= time_ago_in_words(@generated_at) %> ago.
+    All time, software and hardware. Computed <%= time_ago_in_words(@generated_at) %> ago.
     Ships start at the shipped node; a markdown or deduction takes hours but not the ship, so in the ships unit those nodes drop out.
+    Hardware skips the integrity check, so its ships pass through their own node.
   </p>
 
   <div class="hour-funnel__tiles">
@@ -49,6 +50,21 @@
         <%= pluralize(in_airtable[:ships], "ship") %> ·
         <%= hour_funnel_hours(details["unified_db_hours"]) %> picked up by the Unified DB
       </span>
+    </div>
+    <div class="hour-funnel__tile">
+      <% if @unified %>
+        <span class="hour-funnel__tile-value"><%= hour_funnel_hours(@unified.hours) %></span>
+        <span class="hour-funnel__tile-label">In the Unified YSWS DB, per Airtable</span>
+        <span class="hour-funnel__tile-note">
+          <%= pluralize(number_with_delimiter(@unified.records), "record") %> tagged Stardance ·
+          the funnel counts <%= hour_funnel_hours(details["unified_db_hours"]) %> on
+          <%= pluralize(details["unified_db_ships"], "ship") %> as picked up
+        </span>
+      <% else %>
+        <span class="hour-funnel__tile-value">—</span>
+        <span class="hour-funnel__tile-label">In the Unified YSWS DB, per Airtable</span>
+        <span class="hour-funnel__tile-note">Not reachable right now: no unified key configured or Airtable did not answer.</span>
+      <% end %>
     </div>
     <div class="hour-funnel__tile">
       <span class="hour-funnel__tile-value"><%= hour_funnel_hours(details["raw_over_cap_hours"]) %></span>
@@ -116,6 +132,8 @@
       <dd><%= hour_funnel_hours(details["unshipped_never_hours"]) %> on projects that never shipped · <%= hour_funnel_hours(details["unshipped_after_ship_hours"]) %> logged after the latest ship</dd>
       <dt>Recert opened by YSWS</dt>
       <dd><%= hour_funnel_hours(details["recert_from_ysws_hours"]) %> on <%= pluralize(details["recert_from_ysws_ships"], "ship") %> sent back to ship cert by a YSWS reviewer</dd>
+      <dt>Hardware</dt>
+      <dd><%= hour_funnel_hours(details["hardware_hours"]) %> devlogged on hardware projects · <%= hour_funnel_hours(details["design_phase_hours"]) %> of it in the design phase, which YSWS certifies but payouts never count</dd>
       <dt>Auto-rejected by YSWS</dt>
       <dd><%= hour_funnel_hours(details["auto_rejected_hours"]) %> rejected without a reviewer (ban or project deletion)</dd>
     </dl>
