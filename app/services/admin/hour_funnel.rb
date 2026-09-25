@@ -8,10 +8,16 @@ module Admin
   # its ships pass through their own kept node on the way to Airtable, and a
   # ship a reviewer misfiled into the wrong queue has its own held state.
   #
+  # Deleted work is not dropped at the top. Each deleted devlog carries the
+  # moment it went (its own deleted_at, or the project's when the project was
+  # deleted or its owner banned) and flows through every stage whose own
+  # timestamp is earlier, then leaks out there. So "banned after shipping"
+  # fed from the Airtable node means hours that were synced and then banned.
+  #
   # Every ship is in exactly one state at a time, so the ship unit only flows
-  # through nodes that take a whole ship out of the funnel. A markdown or a
-  # deduction removes hours but the ship carries on, so those nodes carry a
-  # ships_affected count instead of a ship flow.
+  # through nodes that take a whole ship out of the funnel. A markdown, a
+  # deduction or a single deleted devlog removes hours but the ship carries
+  # on, so those nodes carry a ships_affected count instead of a ship flow.
   class HourFunnel
     Node = Data.define(:key, :label, :stage, :kind, :partial)
 
@@ -23,8 +29,8 @@ module Admin
       Node.new("devlogged", "Devlogged", "devlogged", "kept", false),
       Node.new("shipped", "Shipped", "shipped", "kept", false),
       Node.new("unshipped", "Not shipped yet", "shipped", "held", false),
-      Node.new("deleted", "Devlog deleted", "shipped", "lost", false),
-      Node.new("project_gone", "Project deleted or banned", "shipped", "lost", false),
+      Node.new("deleted", "Devlog deleted before shipping", "shipped", "lost", false),
+      Node.new("project_gone", "Project deleted or banned before shipping", "shipped", "lost", false),
       Node.new("ship_approved", "Ship approved", "ship_cert", "kept", false),
       Node.new("ship_approved_after_return", "Ship approved after a return", "ship_cert", "kept", false),
       Node.new("ship_pending", "Ship cert pending", "ship_cert", "held", false),
@@ -46,10 +52,19 @@ module Admin
       Node.new("airtable_synced", "In Airtable", "airtable", "kept", false),
       Node.new("airtable_unsynced", "Awaiting Airtable sync", "airtable", "held", false),
       Node.new("payout_basis", "Within 10h/devlog payout cap", "payout_cap", "kept", false),
-      Node.new("over_payout_cap", "Over 10h/devlog payout cap", "payout_cap", "lost", true)
+      Node.new("over_payout_cap", "Over 10h/devlog payout cap", "payout_cap", "lost", true),
+      Node.new("gone_banned", "Banned after shipping", "gone", "lost", false),
+      Node.new("gone_project_deleted", "Project deleted after shipping", "gone", "lost", false),
+      Node.new("gone_devlog_deleted", "Devlog deleted after shipping", "gone", "lost", true)
     ].freeze
 
     NODES_BY_KEY = NODES.index_by(&:key).freeze
+
+    GONE_NODES = {
+      "banned" => "gone_banned",
+      "project_deleted" => "gone_project_deleted",
+      "devlog_deleted" => "gone_devlog_deleted"
+    }.freeze
 
     PAYOUT_CAP_HOURS = ::Post::ShipEvent::MAX_PAYOUT_HOURS_PER_DEVLOG
 
@@ -59,19 +74,29 @@ module Admin
     INTEGRITY_STATUSES = ::Certification::Integrity.statuses.invert.freeze
     INTEGRITY_PASSED = %w[auto_passed manually_passed].freeze
 
+    # One segment of a ship's hours: its live devlogs, or the devlogs that
+    # went at one moment and had reached one stage by then. A live ship has
+    # one live segment plus one per distinct deletion; a deleted project's
+    # ship has exactly one.
     ShipRow = Struct.new(
-      :ship_event_id, :project_deleted, :hardware, :certification_status, :review_status, :recert_from_ysws, :bounced,
+      :ship_event_id, :hardware, :gone, :reached, :certification_status, :review_status, :recert_from_ysws, :bounced,
       :ysws_reviewed, :ysws_returned, :approved_minutes_all, :airtable_synced, :in_unified_db,
       :integrity_status, :deduction_minutes,
       :hours, :devlogs, :raw_over_cap_hours, :over_cap_devlogs, :rejected_hours, :auto_rejected_hours,
       :approved_hours, :marked_down_hours, :unreviewed_hours, :certified_over_cap_hours,
       keyword_init: true
-    )
+    ) do
+      # A single deleted devlog leaves its ship behind; a deleted project or
+      # a ban takes the ship with it.
+      def whole_ship? = gone != "devlog_deleted"
+
+      def gone_node = GONE_NODES[gone]
+    end
 
     def to_h
       @hours = Hash.new(0.0)
       @ships = Hash.new(0)
-      @ships_affected = Hash.new(0)
+      @ships_affected = Hash.new { |h, k| h[k] = Set.new }
       @links = Hash.new { |h, k| h[k] = { hours: 0.0, ships: 0 } }
       @details = Hash.new(0)
 
@@ -93,7 +118,7 @@ module Admin
         key: node.key, label: node.label, stage: node.stage, kind: node.kind, partial: node.partial,
         hours: round(@hours[node.key]),
         ships: node.partial ? nil : @ships[node.key],
-        ships_affected: node.partial ? @ships_affected[node.key] : nil
+        ships_affected: node.partial ? @ships_affected[node.key].size : nil
       }
     end
 
@@ -105,48 +130,63 @@ module Admin
       row = ::ActiveRecord::Base.connection.select_one(devlog_stage_sql)
 
       @hours["devlogged"] = row["gross"].to_f
-      flow("devlogged", "deleted", hours: row["deleted_before_ship"].to_f + row["deleted_after_ship"].to_f)
-      flow("devlogged", "project_gone", hours: row["banned"].to_f + row["project_deleted"].to_f)
+      flow("devlogged", "deleted", hours: row["devlog_deleted_before_ship"].to_f)
+      flow("devlogged", "project_gone", hours: row["banned_before_ship"].to_f + row["project_deleted_before_ship"].to_f)
       flow("devlogged", "unshipped", hours: row["unshipped_never"].to_f + row["unshipped_after_ship"].to_f)
       flow("devlogged", "shipped", hours: row["shipped"].to_f)
 
-      %w[deleted_before_ship deleted_after_ship banned project_deleted unshipped_never unshipped_after_ship
-         hardware design_phase].each do |key|
+      %w[banned_before_ship project_deleted_before_ship unshipped_never unshipped_after_ship hardware design_phase].each do |key|
         @details["#{key}_hours"] = row[key].to_f
       end
       @details["devlogs"] = row["devlogs"].to_i
     end
 
-    # ---- stages C..F: one ship at a time -----------------------------------
+    # ---- stages C..F: one ship segment at a time ----------------------------
 
     def add_ship(row)
-      if row.project_deleted
-        @ships["project_gone"] += 1
+      ships = row.whole_ship? ? 1 : 0
+      @ships["shipped"] += ships
+      record_payout_cap(row) if row.gone.nil?
+
+      if row.gone && row.reached == "shipped"
+        leak(row, "shipped", row.hours, ships)
         return
       end
 
-      @ships["shipped"] += 1
-      record_payout_cap(row)
-
       ship_node = ship_cert_node(row)
-      flow("shipped", ship_node, hours: row.hours, ships: 1)
-      @details["recert_from_ysws_hours"] += row.hours if row.recert_from_ysws
-      @details["recert_from_ysws_ships"] += 1 if row.recert_from_ysws
+      flow("shipped", ship_node, hours: row.hours, ships: ships)
+      if row.gone.nil? && row.recert_from_ysws
+        @details["recert_from_ysws_hours"] += row.hours
+        @details["recert_from_ysws_ships"] += 1
+      end
       return unless ship_node.start_with?("ship_approved")
 
-      approved = add_ysws(row, ship_node)
+      if row.gone && row.reached == "ship_approved"
+        leak(row, ship_node, row.hours, ships)
+        return
+      end
+
+      approved = add_ysws(row, ship_node, ships)
       return if approved.nil?
 
-      net = add_integrity(row, approved)
+      if row.gone && row.reached == "ysws"
+        leak(row, "ysws_approved", approved, ships)
+        return
+      end
+
+      net = add_integrity(row, approved, ships)
       return if net.nil?
 
-      add_airtable(row, net, from: row.hardware ? "integrity_skipped" : "integrity_passed")
+      add_airtable(row, net, ships, from: row.hardware ? "integrity_skipped" : "integrity_passed")
     end
 
     # A rejected ship event is an admin forcing the project state, so it wins
     # over whatever the latest review row says. Without a review row (ships
     # older than the review queue) the ship event's own status stands in.
+    # Deleted work only gets this far when it was approved before it went, so
+    # it reads as approved whatever the review row says now.
     def ship_cert_node(row)
+      return row.bounced ? "ship_approved_after_return" : "ship_approved" if row.gone
       return "ship_rejected" if row.certification_status == "rejected"
       return "ship_misfiled" if row.certification_status == "misfiled"
 
@@ -164,66 +204,71 @@ module Admin
 
     # Returns the approved hours that carry on to integrity, or nil when the
     # ship stops here.
-    def add_ysws(row, from)
+    def add_ysws(row, from, ships)
       unless row.ysws_reviewed && !row.ysws_returned
-        flow(from, "ysws_pending", hours: row.hours, ships: 1)
+        hold(row, from, "ysws_pending", row.hours, ships)
         return nil
       end
 
-      flow(from, "ysws_pending", hours: row.unreviewed_hours) if row.unreviewed_hours.positive?
-      flow(from, "ysws_rejected", hours: row.rejected_hours, affected: 1) if row.rejected_hours.positive?
-      flow(from, "ysws_marked_down", hours: row.marked_down_hours, affected: 1) if row.marked_down_hours.positive?
+      hold(row, from, "ysws_pending", row.unreviewed_hours, 0) if row.unreviewed_hours.positive?
+      flow(from, "ysws_rejected", hours: row.rejected_hours, affected: row) if row.rejected_hours.positive?
+      flow(from, "ysws_marked_down", hours: row.marked_down_hours, affected: row) if row.marked_down_hours.positive?
       @details["auto_rejected_hours"] += row.auto_rejected_hours
 
       if row.approved_minutes_all < ::Certification::Ysws::MIN_APPROVED_MINUTES
-        flow(from, "ysws_under_minimum", hours: row.approved_hours, ships: 1)
+        flow(from, "ysws_under_minimum", hours: row.approved_hours, ships: ships)
         return nil
       end
 
-      flow(from, "ysws_approved", hours: row.approved_hours, ships: 1)
+      flow(from, "ysws_approved", hours: row.approved_hours, ships: ships)
       row.approved_hours
     end
 
     # Hardware never gets an integrity check (the Airtable sync doesn't wait
     # for one either), so its approved hours pass straight through.
-    def add_integrity(row, approved)
+    def add_integrity(row, approved, ships)
       if row.hardware
-        flow("ysws_approved", "integrity_skipped", hours: approved, ships: 1)
+        flow("ysws_approved", "integrity_skipped", hours: approved, ships: ships)
         return approved
       end
 
       case row.integrity_status
       when *INTEGRITY_PASSED
-        flow("ysws_approved", "integrity_passed", hours: approved, ships: 1)
+        flow("ysws_approved", "integrity_passed", hours: approved, ships: ships)
         approved
       when "banned"
-        flow("ysws_approved", "integrity_banned", hours: approved, ships: 1)
+        flow("ysws_approved", "integrity_banned", hours: approved, ships: ships)
         nil
       when "deducted"
         deducted = [ row.deduction_minutes.to_i / 60.0, approved ].min
-        flow("ysws_approved", "integrity_deducted", hours: deducted, affected: 1)
-        flow("ysws_approved", "integrity_passed", hours: approved - deducted, ships: 1)
+        flow("ysws_approved", "integrity_deducted", hours: deducted, affected: row)
+        flow("ysws_approved", "integrity_passed", hours: approved - deducted, ships: ships)
         approved - deducted
       else
-        flow("ysws_approved", "integrity_pending", hours: approved, ships: 1)
+        hold(row, "ysws_approved", "integrity_pending", approved, ships)
         nil
       end
     end
 
-    def add_airtable(row, net, from:)
+    def add_airtable(row, net, ships, from:)
       unless row.airtable_synced
-        flow(from, "airtable_unsynced", hours: net, ships: 1)
+        hold(row, from, "airtable_unsynced", net, ships)
         return
       end
 
-      flow(from, "airtable_synced", hours: net, ships: 1)
+      flow(from, "airtable_synced", hours: net, ships: ships)
+      if row.gone
+        leak(row, "airtable_synced", net, ships)
+        return
+      end
+
       if row.in_unified_db
         @details["unified_db_hours"] += net
         @details["unified_db_ships"] += 1
       end
 
       over_cap = [ row.certified_over_cap_hours, net ].min
-      flow("airtable_synced", "over_payout_cap", hours: over_cap, affected: 1) if over_cap.positive?
+      flow("airtable_synced", "over_payout_cap", hours: over_cap, affected: row) if over_cap.positive?
       flow("airtable_synced", "payout_basis", hours: net - over_cap)
     end
 
@@ -238,10 +283,22 @@ module Admin
       @details["raw_over_cap_ships"] += 1
     end
 
-    def flow(source, target, hours:, ships: 0, affected: 0)
+    # Deleted work never sits in a waiting state: what would be held is what
+    # it had reached when it went.
+    def hold(row, from, held_node, hours, ships)
+      return leak(row, from, hours, ships) if row.gone
+
+      flow(from, held_node, hours: hours, ships: ships)
+    end
+
+    def leak(row, from, hours, ships)
+      flow(from, row.gone_node, hours: hours, ships: ships, affected: (row unless row.whole_ship?))
+    end
+
+    def flow(source, target, hours:, ships: 0, affected: nil)
       @hours[target] += hours
       @ships[target] += ships
-      @ships_affected[target] += affected
+      @ships_affected[target] << affected.ship_event_id if affected
       link = @links[[ source, target ]]
       link[:hours] += hours
       link[:ships] += ships
@@ -253,8 +310,9 @@ module Admin
       ::ActiveRecord::Base.connection.select_all(ship_rows_sql).map do |row|
         ShipRow.new(
           ship_event_id: row["ship_event_id"],
-          project_deleted: row["project_deleted_at"].present?,
           hardware: row["hardware"],
+          gone: row["gone"],
+          reached: row["reached"],
           certification_status: row["certification_status"],
           review_status: row["review_status"] && SHIP_STATUSES[row["review_status"]],
           recert_from_ysws: row["recert_from_ysws"],
@@ -282,11 +340,26 @@ module Admin
 
     # Every devlog, deleted or not, with the ship event whose window it falls
     # in: the earliest ship posted at or after the devlog, which is exactly
-    # Post::ShipEvent#window_devlogs read from the other side.
+    # Post::ShipEvent#window_devlogs read from the other side. Each devlog
+    # also carries why and when it went, if it did: a banned owner and a
+    # deleted project both stamp the project's deleted_at onto the devlogs, so
+    # that moment is the project's, and an ordinary deletion is the devlog's.
     def devlog_base_sql
       <<~SQL
         WITH funnel_projects AS (
-          SELECT id, deleted_at, (hardware_stage IS NOT NULL) AS hardware FROM projects
+          SELECT projects.id,
+                 projects.deleted_at,
+                 (projects.hardware_stage IS NOT NULL) AS hardware,
+                 CASE
+                   WHEN projects.deleted_at IS NULL THEN NULL
+                   WHEN EXISTS (
+                     SELECT 1 FROM project_memberships pm
+                     JOIN users u ON u.id = pm.user_id
+                     WHERE pm.project_id = projects.id AND pm.role = #{::Project::Membership.roles[:owner]} AND u.banned
+                   ) THEN 'banned'
+                   ELSE 'project_deleted'
+                 END AS gone
+          FROM projects
         ),
         ship_posts AS (
           SELECT p.postable_id AS ship_event_id, p.project_id, p.created_at AS shipped_at
@@ -297,18 +370,16 @@ module Admin
         devlogs AS (
           SELECT d.id AS devlog_id,
                  COALESCE(d.duration_seconds, 0) / 3600.0 AS hours,
-                 d.deleted_at,
                  d.phase,
                  pr.hardware,
-                 pr.deleted_at AS project_deleted_at,
-                 COALESCE(u.banned, FALSE) AS author_banned,
+                 COALESCE(pr.gone, CASE WHEN d.deleted_at IS NOT NULL THEN 'devlog_deleted' END) AS gone,
+                 COALESCE(pr.deleted_at, d.deleted_at) AS gone_at,
                  ship.ship_event_id,
                  ship.shipped_at,
                  EXISTS (SELECT 1 FROM ship_posts sp WHERE sp.project_id = p.project_id) AS project_has_ship
           FROM post_devlogs d
           JOIN posts p ON p.postable_type = 'Post::Devlog' AND p.postable_id = d.id
           JOIN funnel_projects pr ON pr.id = p.project_id
-          LEFT JOIN users u ON u.id = p.user_id
           LEFT JOIN LATERAL (
             SELECT sp.ship_event_id, sp.shipped_at
             FROM ship_posts sp
@@ -326,26 +397,37 @@ module Admin
         SELECT
           COUNT(*) AS devlogs,
           COALESCE(SUM(hours), 0) AS gross,
-          COALESCE(SUM(hours) FILTER (WHERE project_deleted_at IS NOT NULL AND author_banned), 0) AS banned,
-          COALESCE(SUM(hours) FILTER (WHERE project_deleted_at IS NOT NULL AND NOT author_banned), 0) AS project_deleted,
-          COALESCE(SUM(hours) FILTER (WHERE project_deleted_at IS NULL AND deleted_at IS NOT NULL
-                                        AND (shipped_at IS NULL OR deleted_at <= shipped_at)), 0) AS deleted_before_ship,
-          COALESCE(SUM(hours) FILTER (WHERE project_deleted_at IS NULL AND deleted_at IS NOT NULL
-                                        AND shipped_at IS NOT NULL AND deleted_at > shipped_at), 0) AS deleted_after_ship,
-          COALESCE(SUM(hours) FILTER (WHERE project_deleted_at IS NULL AND deleted_at IS NULL
-                                        AND ship_event_id IS NULL AND NOT project_has_ship), 0) AS unshipped_never,
-          COALESCE(SUM(hours) FILTER (WHERE project_deleted_at IS NULL AND deleted_at IS NULL
-                                        AND ship_event_id IS NULL AND project_has_ship), 0) AS unshipped_after_ship,
-          COALESCE(SUM(hours) FILTER (WHERE project_deleted_at IS NULL AND deleted_at IS NULL
-                                        AND ship_event_id IS NOT NULL), 0) AS shipped,
+          COALESCE(SUM(hours) FILTER (WHERE gone = 'banned' AND NOT shipped_before_gone), 0) AS banned_before_ship,
+          COALESCE(SUM(hours) FILTER (WHERE gone = 'project_deleted' AND NOT shipped_before_gone), 0) AS project_deleted_before_ship,
+          COALESCE(SUM(hours) FILTER (WHERE gone = 'devlog_deleted' AND NOT shipped_before_gone), 0) AS devlog_deleted_before_ship,
+          COALESCE(SUM(hours) FILTER (WHERE gone IS NULL AND ship_event_id IS NULL AND NOT project_has_ship), 0) AS unshipped_never,
+          COALESCE(SUM(hours) FILTER (WHERE gone IS NULL AND ship_event_id IS NULL AND project_has_ship), 0) AS unshipped_after_ship,
+          COALESCE(SUM(hours) FILTER (WHERE ship_event_id IS NOT NULL AND (gone IS NULL OR shipped_before_gone)), 0) AS shipped,
           COALESCE(SUM(hours) FILTER (WHERE hardware), 0) AS hardware,
           COALESCE(SUM(hours) FILTER (WHERE phase = 'design'), 0) AS design_phase
-        FROM devlogs
+        FROM (
+          SELECT *, (ship_event_id IS NOT NULL AND shipped_at <= gone_at) AS shipped_before_gone FROM devlogs
+        ) devlogs
       SQL
     end
 
-    # One row per ship event: the latest ship review, the latest
-    # YSWS review, the integrity check, and its live devlogs rolled up. A
+    # The stage a deleted devlog had reached when it went: the deepest stage
+    # whose own timestamp comes first. An auto-rejection at ban time stamps
+    # reviewed_at after the project's deleted_at, so it does not count as a
+    # review the work reached.
+    def reached_sql(gone_at)
+      <<~SQL.squish
+        CASE
+          WHEN times.synced_at <= #{gone_at} THEN 'airtable'
+          WHEN times.reviewed_at <= #{gone_at} THEN 'ysws'
+          WHEN times.approved_at <= #{gone_at} THEN 'ship_approved'
+          ELSE 'shipped'
+        END
+      SQL
+    end
+
+    # One row per ship segment: the latest ship review, the latest YSWS
+    # review, the integrity check, and the segment's devlogs rolled up. A
     # devlog review's approved hours are the devlog's own hours unless the
     # reviewer marked it down, so an untouched devlog never shows a rounding
     # sliver as a markdown.
@@ -369,20 +451,38 @@ module Admin
           FROM certification_ysws_reviews
           ORDER BY post_ship_event_id, id DESC
         ),
-        live_shipped AS (
-          SELECT dl.ship_event_id, dl.hours, dr.status AS review_status, dr.justification,
+        stage_times AS (
+          SELECT sp.ship_event_id,
+                 COALESCE(
+                   (SELECT MIN(r.decided_at) FROM certification_ship_reviews r
+                     WHERE r.post_ship_event_id = sp.ship_event_id AND r.status = #{::Certification::Ship.statuses[:approved]}),
+                   CASE WHEN se.certification_status = 'approved'
+                         AND NOT EXISTS (SELECT 1 FROM certification_ship_reviews r WHERE r.post_ship_event_id = sp.ship_event_id)
+                        THEN sp.shipped_at END
+                 ) AS approved_at,
+                 y.reviewed_at,
+                 y.airtable_synced_at AS synced_at
+          FROM ship_posts sp
+          JOIN post_ship_events se ON se.id = sp.ship_event_id
+          LEFT JOIN ysws y ON y.post_ship_event_id = sp.ship_event_id
+        ),
+        shipped_devlogs AS (
+          SELECT dl.ship_event_id, dl.hours, dl.gone,
+                 CASE WHEN dl.gone IS NOT NULL THEN #{reached_sql("dl.gone_at")} END AS reached,
+                 dr.status AS review_status, dr.justification,
                  CASE
-                   WHEN dr.status <> 'approved' THEN NULL
+                   WHEN dr.status IS DISTINCT FROM 'approved' THEN NULL
                    WHEN dr.approved_minutes >= dr.original_minutes THEN dl.hours
                    ELSE LEAST(dr.approved_minutes / 60.0, dl.hours)
                  END AS approved_hours
           FROM devlogs dl
+          JOIN stage_times times ON times.ship_event_id = dl.ship_event_id
           LEFT JOIN ysws y ON y.post_ship_event_id = dl.ship_event_id
           LEFT JOIN certification_devlog_reviews dr ON dr.ysws_review_id = y.id AND dr.post_devlog_id = dl.devlog_id
-          WHERE dl.deleted_at IS NULL AND dl.project_deleted_at IS NULL AND dl.ship_event_id IS NOT NULL
+          WHERE dl.ship_event_id IS NOT NULL AND (dl.gone IS NULL OR dl.shipped_at <= dl.gone_at)
         ),
-        per_ship AS (
-          SELECT ship_event_id,
+        segments AS (
+          SELECT ship_event_id, gone, reached,
                  COUNT(*) AS devlogs,
                  SUM(hours) AS hours,
                  SUM(GREATEST(hours - #{PAYOUT_CAP_HOURS}, 0)) AS raw_over_cap_hours,
@@ -394,12 +494,13 @@ module Admin
                  COALESCE(SUM(GREATEST(hours - approved_hours, 0)) FILTER (WHERE review_status = 'approved'), 0) AS marked_down_hours,
                  COALESCE(SUM(hours) FILTER (WHERE review_status IS NULL OR review_status = 'pending'), 0) AS unreviewed_hours,
                  COALESCE(SUM(GREATEST(approved_hours - #{PAYOUT_CAP_HOURS}, 0)), 0) AS certified_over_cap_hours
-          FROM live_shipped
-          GROUP BY ship_event_id
+          FROM shipped_devlogs
+          GROUP BY ship_event_id, gone, reached
         )
         SELECT sp.ship_event_id,
-               pr.deleted_at AS project_deleted_at,
                pr.hardware,
+               COALESCE(seg.gone, pr.gone) AS gone,
+               COALESCE(seg.reached, CASE WHEN pr.gone IS NOT NULL THEN #{reached_sql("pr.deleted_at")} END) AS reached,
                se.certification_status,
                r.status AS review_status,
                (r.returned_by_id IS NOT NULL) AS recert_from_ysws,
@@ -408,25 +509,26 @@ module Admin
                (SELECT COALESCE(SUM(approved_minutes), 0) FROM certification_devlog_reviews dr WHERE dr.ysws_review_id = y.id) AS approved_minutes_all,
                i.status AS integrity_status,
                i.deduction_minutes,
-               COALESCE(ps.devlogs, 0) AS devlogs,
-               COALESCE(ps.hours, 0) AS hours,
-               COALESCE(ps.raw_over_cap_hours, 0) AS raw_over_cap_hours,
-               COALESCE(ps.over_cap_devlogs, 0) AS over_cap_devlogs,
-               COALESCE(ps.rejected_hours, 0) AS rejected_hours,
-               COALESCE(ps.auto_rejected_hours, 0) AS auto_rejected_hours,
-               COALESCE(ps.approved_hours, 0) AS approved_hours,
-               COALESCE(ps.marked_down_hours, 0) AS marked_down_hours,
-               COALESCE(ps.unreviewed_hours, 0) AS unreviewed_hours,
-               COALESCE(ps.certified_over_cap_hours, 0) AS certified_over_cap_hours
+               COALESCE(seg.devlogs, 0) AS devlogs,
+               COALESCE(seg.hours, 0) AS hours,
+               COALESCE(seg.raw_over_cap_hours, 0) AS raw_over_cap_hours,
+               COALESCE(seg.over_cap_devlogs, 0) AS over_cap_devlogs,
+               COALESCE(seg.rejected_hours, 0) AS rejected_hours,
+               COALESCE(seg.auto_rejected_hours, 0) AS auto_rejected_hours,
+               COALESCE(seg.approved_hours, 0) AS approved_hours,
+               COALESCE(seg.marked_down_hours, 0) AS marked_down_hours,
+               COALESCE(seg.unreviewed_hours, 0) AS unreviewed_hours,
+               COALESCE(seg.certified_over_cap_hours, 0) AS certified_over_cap_hours
         FROM ship_posts sp
         JOIN funnel_projects pr ON pr.id = sp.project_id
         JOIN post_ship_events se ON se.id = sp.ship_event_id
+        JOIN stage_times times ON times.ship_event_id = sp.ship_event_id
         LEFT JOIN ship_reviews r ON r.post_ship_event_id = sp.ship_event_id
         LEFT JOIN bounced b ON b.post_ship_event_id = sp.ship_event_id
         LEFT JOIN ysws y ON y.post_ship_event_id = sp.ship_event_id
         LEFT JOIN certification_integrities i ON i.ship_event_id = sp.ship_event_id
-        LEFT JOIN per_ship ps ON ps.ship_event_id = sp.ship_event_id
-        ORDER BY sp.ship_event_id
+        LEFT JOIN segments seg ON seg.ship_event_id = sp.ship_event_id
+        ORDER BY sp.ship_event_id, seg.gone NULLS FIRST, seg.reached
       SQL
     end
   end

@@ -34,6 +34,7 @@
     All time, software and hardware. Computed <%= time_ago_in_words(@generated_at) %> ago.
     Ships start at the shipped node; a markdown or deduction takes hours but not the ship, so in the ships unit those nodes drop out.
     Hardware skips the integrity check, so its ships pass through their own node.
+    Deleted and banned work flows to the stage it had reached when it went, then leaves from there.
   </p>
 
   <div class="hour-funnel__tiles">
@@ -123,11 +124,14 @@
       </tbody>
     </table>
 
+    <% by_key = @funnel[:nodes].index_by { |node| node[:key] } %>
     <dl class="hour-funnel__breakdown">
       <dt>Devlog deleted</dt>
-      <dd><%= hour_funnel_hours(details["deleted_before_ship_hours"]) %> before any ship · <%= hour_funnel_hours(details["deleted_after_ship_hours"]) %> after the ship that carried them</dd>
-      <dt>Project deleted or banned</dt>
-      <dd><%= hour_funnel_hours(details["banned_hours"]) %> banned · <%= hour_funnel_hours(details["project_deleted_hours"]) %> project deleted</dd>
+      <dd><%= hour_funnel_hours(by_key["deleted"][:hours]) %> before any ship · <%= hour_funnel_hours(by_key["gone_devlog_deleted"][:hours]) %> after the ship that carried them, shown leaving the stage they had reached</dd>
+      <dt>Banned</dt>
+      <dd><%= hour_funnel_hours(details["banned_before_ship_hours"]) %> never shipped · <%= hour_funnel_hours(by_key["gone_banned"][:hours]) %> shipped first, on <%= pluralize(by_key["gone_banned"][:ships], "ship") %> · <%= hour_funnel_hours(by_key["integrity_banned"][:hours]) %> more on the ships integrity itself banned</dd>
+      <dt>Project deleted</dt>
+      <dd><%= hour_funnel_hours(details["project_deleted_before_ship_hours"]) %> never shipped · <%= hour_funnel_hours(by_key["gone_project_deleted"][:hours]) %> shipped first, on <%= pluralize(by_key["gone_project_deleted"][:ships], "ship") %></dd>
       <dt>Not shipped yet</dt>
       <dd><%= hour_funnel_hours(details["unshipped_never_hours"]) %> on projects that never shipped · <%= hour_funnel_hours(details["unshipped_after_ship_hours"]) %> logged after the latest ship</dd>
       <dt>Recert opened by YSWS</dt>
