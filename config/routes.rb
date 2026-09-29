@@ -936,6 +936,9 @@ Rails.application.routes.draw do
         scope module: :funding_requests do
           resource :claim, only: [ :create, :destroy ]
         end
+        collection do
+          post :sync_all_to_airtable
+        end
       end
 
       resources :permanent_rejection_nominations, only: [ :index, :show, :create ] do
@@ -971,6 +974,7 @@ Rails.application.routes.draw do
 
       get "devlogs/:devlog_id/commits", to: "devlog_commits#index", as: "devlog_commits"
 
+      resource :ysws_shortcuts, only: [ :update ], controller: "ysws_shortcuts"
       get "review", to: "ysws#index", as: "ysws_reviews"
       get "review/dashboard", to: "ysws/dashboard#show", as: "ysws_dashboard"
       get "review/:id", to: "ysws#show", as: "ysws_review"
