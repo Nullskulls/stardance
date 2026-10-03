@@ -69,11 +69,11 @@
 @use "components/vega_sprite";
 @use "components/visual_novel";
 @use "components/buku_x3_reveal";
-@use "components/rocket_progress";
 
 // Pages
 @use "pages/onboarding" as onboarding_pages;
 @use "pages/projects/new";
+@use "pages/ship_funnel";
 @use "pages/project_setup";
 @use "pages/projects/show";
 @use "pages/projects/readme";

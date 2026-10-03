@@ -1,4 +1,6 @@
 .buku-x3-status {
+  --buku-team-color: var(--color-set-1-fg-secondary);
+
   position: relative;
   display: grid;
   align-items: center;
@@ -63,8 +65,8 @@
     }
   }
 
-  &[data-role-open],
-  &:has(&__toggle:focus-visible) {
+  &--interactive[data-role-open],
+  &--interactive:has(.buku-x3-status__toggle:focus-visible) {
     .buku-x3-status__identity {
       visibility: visible;
       opacity: 1;
@@ -76,7 +78,7 @@
   }
 
   @media (hover: hover) {
-    &:not(&--compact):hover {
+    &--interactive:hover {
       .buku-x3-status__identity {
         visibility: visible;
         opacity: 1;
@@ -139,7 +141,14 @@
   }
 
   &__label {
+    // Sit just above the rope, clearing the midpoint's dashed overhang.
+    position: absolute;
+    left: calc(var(--character-width) * 0.93);
+    right: calc(var(--character-width) * 0.93);
+    top: calc(var(--character-width) * 0.405 - var(--space-s));
+    z-index: 1;
     text-align: center;
+    transform: translateY(-100%);
   }
 
   &__tug {
