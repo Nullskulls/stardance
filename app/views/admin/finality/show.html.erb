@@ -8,17 +8,18 @@
       <h1>Finality</h1>
       <p class="finality__subtitle">
         Ship Oct 27–31 (New York time) for a stardust bonus on that ship's payout, bigger the earlier you ship.
-        Everyone who ships is entered in the raffle once.
+        Every approved ship earns another raffle entry. Pending reviews do not enter the draw yet.
       </p>
     </div>
     <div class="finality__controls">
-      <%= button_to "Sync to Airtable", sync_admin_finality_path, class: "finality__action" %>
       <%= button_to "Award missing bonuses (#{@unpaid_count})", award_admin_finality_path,
             class: "finality__action",
             disabled: !Finality.enabled? || @unpaid_count.zero?,
             data: { turbo_confirm: "Credit the #{@unpaid_count} missing Finality bonuses to the ledger? Already-paid ships are skipped." } %>
     </div>
   </header>
+
+  <%= render "draw" %>
 
   <p class="finality__note">
     The bonus is paid with the ship's payout while the <code><%= Finality::FEATURE_FLAG %></code> flag is
@@ -34,7 +35,7 @@
       </div>
     <% end %>
     <div class="finality__tile">
-      <span class="finality__tile-label">Raffle pool</span>
+      <span class="finality__tile-label">Confirmed raffle entries</span>
       <span class="finality__tile-value"><%= @raffle_entry_ids.size %></span>
       <span class="finality__tile-label"><%= number_with_delimiter(@bonus_paid) %> stardust in bonuses paid</span>
     </div>
@@ -71,7 +72,7 @@
             <td><%= (Finality.rate_for(ship_event) * 100).round %>%</td>
             <td><%= ship_event.payout ? number_with_delimiter(ship_event.payout.to_i) : "—" %></td>
             <td><%= bonus_entry ? number_with_delimiter(bonus_entry.amount) : "—" %></td>
-            <td><%= "Entered" if @raffle_entry_ids.include?(ship_event.id) %></td>
+            <td><%= @raffle_entry_ids.include?(ship_event.id) ? "Confirmed" : (Finality.raffle_ineligible?(ship_event) ? "Excluded" : "Awaiting approval") %></td>
           </tr>
         <% end %>
       </tbody>

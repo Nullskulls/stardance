@@ -174,6 +174,7 @@ class Post::ShipEventTest < ActiveSupport::TestCase
   test "issue_payout! holds payout while recipient has vote deficit" do
     ship = create_ship_event(hours: 2, vote_count: Post::ShipEvent::VOTES_REQUIRED_FOR_PAYOUT)
     @owner.update!(vote_balance: -3)
+    ship.reload
     notified = nil
 
     Notifications::Payouts::VoteDeficitBlocked.stub(:notify, ->(**kwargs) { notified = kwargs }) do
@@ -214,9 +215,9 @@ class Post::ShipEventTest < ActiveSupport::TestCase
   end
 
   test "issue_payout! adds the Finality bonus for a ship posted in the window" do
+    travel_to Time.utc(2026, 10, 27, 16)
     Flipper.enable(Finality::FEATURE_FLAG)
     ship = create_ship_event(hours: 2, vote_count: Post::ShipEvent::VOTES_REQUIRED_FOR_PAYOUT)
-    ship.post.update_columns(created_at: Time.utc(2026, 10, 27, 16))
 
     ship.refresh_payout_score!
     ship.issue_payout!
@@ -232,6 +233,7 @@ class Post::ShipEventTest < ActiveSupport::TestCase
     assert_equal expected_bonus, Finality.bonus_entry(ship).amount
   ensure
     Flipper.disable(Finality::FEATURE_FLAG)
+    travel_back
   end
 
   test "issue_payout! pays from locked snapshot" do
@@ -327,14 +329,16 @@ class Post::ShipEventTest < ActiveSupport::TestCase
   def create_ship_event(hours:, vote_count: 1, scores: [ 6, 6, 6, 6 ], project: nil)
     project ||= Project.create!(title: "Project #{SecureRandom.hex(4)}", created_at: 3.days.ago)
     Project::Membership.create!(project: project, user: @owner, role: :owner) unless project.users.exists?(@owner.id)
+    if hours.positive?
+      devlog = Post::Devlog.create!(body: "Work for this ship", duration_seconds: hours.hours.to_i, uploading_attachments: true)
+      Post.create!(project: project, user: @owner, postable: devlog, created_at: 1.minute.ago)
+    end
     ship_event = Post::ShipEvent.create!(
       body: "Ship it",
       uploading_attachments: true,
-      certification_status: "approved",
-      hours_at_ship: hours
+      certification_status: "approved"
     )
     Post.create!(project: project, user: @owner, postable: ship_event, created_at: Time.current)
-    ship_event.update!(hours_at_ship: hours)
     add_votes(ship_event: ship_event, project: project, count: vote_count, scores: scores)
     ship_event
   end
@@ -346,6 +350,7 @@ class Post::ShipEventTest < ActiveSupport::TestCase
         user: voter,
         project: project,
         ship_event: ship_event,
+        auto_discard_checked_at: Time.current,
         reason: "Strong implementation details with clear progress and thoughtful trade offs.",
         originality_score: scores[0],
         technical_score: scores[1],

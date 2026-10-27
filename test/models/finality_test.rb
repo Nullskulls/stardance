@@ -71,7 +71,7 @@ class FinalityTest < ActiveSupport::TestCase
     assert_equal 3, Finality.bonus_entry(second.reload).amount
   end
 
-  test "each person gets one raffle entry, on their first ship that can still count" do
+  test "each approved ship gets its own entry and rejected ships do not count" do
     rejected = create_ship(shipped_at: Time.utc(2026, 10, 27, 16), status: "rejected")
     first = create_ship(shipped_at: Time.utc(2026, 10, 28, 16))
     second = create_ship(shipped_at: Time.utc(2026, 10, 29, 16))
@@ -80,7 +80,46 @@ class FinalityTest < ActiveSupport::TestCase
 
     assert_not_includes entries, rejected.id
     assert_includes entries, first.id
-    assert_not_includes entries, second.id
+    assert_includes entries, second.id
+  end
+
+  test "pending and misfiled ships are excluded, and later approval or rejection updates entries" do
+    pending = create_ship(shipped_at: Time.utc(2026, 10, 28, 16), status: "pending")
+    misfiled = create_ship(shipped_at: Time.utc(2026, 10, 28, 17), status: "misfiled")
+
+    assert_not_includes Finality.raffle_entry_ids, pending.id
+    assert_not_includes Finality.raffle_entry_ids, misfiled.id
+    assert_equal({ confirmed: 0, pending: 1 }, Finality.raffle_counts_for(@owner))
+
+    travel_to Time.utc(2026, 11, 2) do
+      pending.update!(certification_status: "approved")
+      assert_includes Finality.raffle_entry_ids, pending.id
+      assert_equal({ confirmed: 1, pending: 0 }, Finality.raffle_counts_for(@owner))
+      pending.update!(certification_status: "rejected")
+      assert_not_includes Finality.raffle_entry_ids, pending.id
+      assert_equal({ confirmed: 0, pending: 0 }, Finality.raffle_counts_for(@owner))
+    end
+  end
+
+  test "entry counts belong to the signed in shipper and honor exact window boundaries" do
+    create_ship(shipped_at: Finality.window.begin - 1.second)
+    create_ship(shipped_at: Finality.window.begin)
+    create_ship(shipped_at: Finality.window.end - 1.second)
+    create_ship(shipped_at: Finality.window.end)
+    create_ship(shipped_at: Finality.window.begin + 1.hour, status: "pending")
+
+    assert_equal({ confirmed: 2, pending: 1 }, Finality.raffle_counts_for(@owner))
+    assert_equal({ confirmed: 0, pending: 0 }, Finality.raffle_counts_for(nil))
+    assert_equal({ confirmed: 0, pending: 0 }, Finality.raffle_counts_for(users(:one)))
+    @owner.update!(banned: true)
+    assert_equal({ confirmed: 0, pending: 0 }, Finality.raffle_counts_for(@owner))
+  end
+
+  test "ships without a review status remain pending rather than disappearing" do
+    ship = create_ship(shipped_at: Finality.window.begin + 1.hour, status: nil)
+    assert_equal({ confirmed: 0, pending: 1 }, Finality.raffle_counts_for(@owner))
+    assert_includes Finality.pending_raffle_ships, ship
+    assert_not_includes Finality.approved_raffle_ships, ship
   end
 
   private

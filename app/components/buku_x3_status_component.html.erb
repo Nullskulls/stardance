@@ -13,11 +13,6 @@
     </div>
   <% end %>
   <% unless compact? %>
-    <% if leaderboard? %>
-      <%# A sideways tab hanging off the box's right edge. %>
-      <button type="button" class="buku-x3-status__leaderboard-tab" aria-expanded="false" aria-controls="buku-leaderboard-panel"
-              data-buku-leaderboard-panel-target="toggle" data-action="buku-leaderboard-panel#toggle">leaderboard</button>
-    <% end %>
     <% if countdown? %>
       <%# Screen readers get "6d 8h 19min" instead of the bare DD:HH:MM:SS clock. %>
       <div class="buku-x3-status__countdown">
@@ -60,10 +55,9 @@
         <% end %>
       </div>
     </div>
-    <% if ship_cta? %>
-      <div class="buku-x3-status__ctas">
-        <%= render ActionButtonComponent.new(text: "Ship your project", href: ship_path, leading_icon: "icons/rocket_centered.png", size: :small, variant: :primary) %>
-      </div>
+    <% if leaderboard? %>
+      <button type="button" class="buku-x3-status__leaderboard-tab" aria-expanded="false" aria-controls="buku-leaderboard-panel"
+              data-buku-leaderboard-panel-target="toggle" data-action="buku-leaderboard-panel#toggle">leaderboard</button>
     <% end %>
     <%= content %>
   <% end %>

@@ -71,12 +71,6 @@ production:
     concurrency: 1
     description: "Sync ship events to Airtable every minute with single execution limit"
 
-  sync_finality_to_airtable:
-    class: Airtable::FinalitySyncJob
-    schedule: every 10 minutes
-    concurrency: 1
-    description: "Sync Finality ships (Oct 27-31 ship-early bonus and raffle pool) to Airtable"
-
   shop_process_warehouse_orders:
     class: Shop::ProcessWarehouseOrdersJob
     schedule: every 2 days

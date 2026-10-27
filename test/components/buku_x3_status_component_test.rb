@@ -85,7 +85,7 @@ class BukuX3StatusComponentTest < ViewComponent::TestCase
     assert_no_selector ".buku-x3-status__countdown"
   end
 
-  test "leaderboard opens from a sideways tab on the box, with or without the clock" do
+  test "leaderboard opens from an attached tab, with or without the clock" do
     Rails.application.config.stub(:stardance_ends_at, 2.days.from_now) do
       render_inline(BukuX3StatusComponent.new(user: @user)) { "leaderboard" }
       assert_selector ".buku-x3-status[data-controller='buku-x3-status buku-leaderboard-panel']"

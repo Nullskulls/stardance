@@ -105,9 +105,9 @@ class BukuX3::ProgressControllerTest < ActionDispatch::IntegrationTest
     assert_response :forbidden
   end
 
-  test "late arrivals get the finale independently of the team flag and countdown preference" do
+  test "late arrivals get the finale independently of the team flag and visual preferences" do
     sign_in(@user)
-    @user.preference.update!(countdown_enabled: false)
+    @user.preference.update!(countdown_enabled: false, disintegration_effects_enabled: false, particle_effects_enabled: false)
     travel_to Rails.application.config.stardance_ends_at + 2.days do
       get home_path
       assert_response :success
@@ -115,6 +115,9 @@ class BukuX3::ProgressControllerTest < ActionDispatch::IntegrationTest
       assert_select ".stardance-finale__placeholder", text: "", count: 1
       assert_select ".stardance-finale__panel button, .stardance-finale__panel p", count: 0
       assert_select ".buku-x3-status__clock", count: 0
+      assert_select ".blackhole[data-blackhole-disintegration-enabled-value='false'][data-blackhole-particles-enabled-value='false']"
+      assert_not @user.preference.reload.disintegration_effects_enabled?
+      assert_not @user.preference.particle_effects_enabled?
     end
   end
 

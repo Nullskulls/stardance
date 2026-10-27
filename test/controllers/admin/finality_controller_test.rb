@@ -27,6 +27,20 @@ class Admin::FinalityControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "td", text: "Finality page project"
+    assert_select ".finality-draw", count: 1
+    assert_select "form[action=?]", freeze_pool_admin_finality_path
+    assert_select "button", text: "Sync to Airtable", count: 0
+  end
+
+  test "draw controls are real admin forms even outside development" do
+    sign_in @admin
+    get admin_finality_path
+
+    assert_response :success
+    assert_select ".finality-draw", count: 1
+    assert_select ".finality-draw form[action=?]", roll_admin_finality_path
+    assert_select ".finality-draw__eyebrow", text: /private results/
+    assert_select ".finality-draw", text: /fictional|demo_shipper/, count: 0
   end
 
   test "admin can award missing bonuses, and the run is audited" do
@@ -48,5 +62,62 @@ class Admin::FinalityControllerTest < ActionDispatch::IntegrationTest
     get admin_finality_path
 
     assert_response :not_found
+  end
+
+  test "non-admins cannot freeze, roll or reroll by posting directly" do
+    sign_in @owner
+    assert_no_difference [ "Finality::RaffleDraw.count", "Finality::RaffleSelection.count" ] do
+      post freeze_pool_admin_finality_path
+      assert_response :not_found
+      post roll_admin_finality_path, params: { prize_key: "vip" }
+      assert_response :not_found
+      post reroll_admin_finality_path, params: { selection_id: 1, reason: "Try" }
+      assert_response :not_found
+    end
+  end
+
+  test "admin saves selections, sees contact details after reload and rerolls with audit history" do
+    sign_in @admin
+    others = 3.times.map do |i|
+      person = create_user(slack_id: "U_REPLACEMENT_#{i}", display_name: "replacement_#{i}", hca_linked: false)
+      ship = Post::ShipEvent.create!(body: "Another test ship", uploading_attachments: true, certification_status: "approved")
+      Post.create!(project: @ship_event.project, user: person, postable: ship, created_at: @ship_event.post.created_at)
+      person
+    end
+    travel_to Finality.window.end + 1.day do
+      post freeze_pool_admin_finality_path
+      assert_redirected_to admin_finality_path
+      post roll_admin_finality_path, params: { prize_key: "vip" }
+      assert_redirected_to admin_finality_path(prize: "vip")
+      selected = Finality::RaffleDraw.current.selections.active.first
+      get admin_finality_path(prize: "vip")
+      assert_response :success
+      assert_select ".finality-draw__contact a[href=?]", "mailto:#{selected.user.email}"
+
+      reason = "Reviewed prior offenses <script>alert('x')</script>"
+      post reroll_admin_finality_path, params: { selection_id: selected.id, reason: reason }
+      assert_redirected_to admin_finality_path(prize: "vip")
+      get admin_finality_path(prize: "vip")
+      assert_response :success
+      assert_select ".finality-draw__history", text: /Reviewed prior offenses/
+      assert_select ".finality-draw__history script", count: 0
+      assert_equal @admin.id.to_s, selected.reload.versions.last.whodunnit
+
+      Flipper.enable(Finality::RAFFLE_FEATURE_FLAG)
+      get finality_raffle_path
+      assert_response :success
+      assert_select ".finality-draw, .finality-draw__history", count: 0
+      [ @owner, *others ].each { |person| assert_not_includes response.body, person.email }
+      assert_not_includes response.body, "Reviewed prior offenses"
+    end
+  ensure
+    Flipper.disable(Finality::RAFFLE_FEATURE_FLAG)
+  end
+
+  test "admin gets a useful message when drawing before pool preparation" do
+    sign_in @admin
+    post roll_admin_finality_path, params: { prize_key: "vip" }
+    assert_redirected_to admin_finality_path(prize: "vip")
+    assert_match(/Freeze the approved entry pool/, flash[:alert])
   end
 end

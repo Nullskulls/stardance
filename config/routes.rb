@@ -581,6 +581,7 @@ Rails.application.routes.draw do
 
   # Home
   get "home", to: "home#index"
+  get "raffle", to: "finality/raffles#show", as: :finality_raffle
   resources :feed_events, only: [ :create ]
   resources :mihi_activations, only: [ :create ]
   namespace :buku_x3 do
@@ -697,7 +698,9 @@ Rails.application.routes.draw do
     end
     resource :finality, only: [ :show ], controller: "finality" do
       post :award
-      post :sync
+      post :freeze_pool
+      post :roll
+      post :reroll
     end
     # Sections load lazily so one slow data source can't hold up the page.
     get    "mega_dashboard",                   to: "mega_dashboard#show",        as: :mega_dashboard

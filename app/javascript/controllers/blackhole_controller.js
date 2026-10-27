@@ -1,8 +1,8 @@
 import { Controller } from "@hotwired/stimulus";
 import { Delaunay } from "d3";
 
-const CARD_SURFACES =
-  ".feed-post-card, .feed-composer, .rail-widget, .sidebar__logo-img, .sidebar__user-card";
+const FINALE_ONLY_SURFACES = ".finality-promo";
+const CARD_SURFACES = `.feed-post-card, .feed-composer, .rail-widget, .sidebar__logo-img, .sidebar__user-card, ${FINALE_ONLY_SURFACES}`;
 const MEDIA_CONTENT = "img, video, iframe, svg";
 const SIDEBAR_SURFACES = [
   "#primary-nav",
@@ -19,6 +19,11 @@ const SIMULATOR_KEY = "stardance-event-simulator-v1";
 const MESH_OVERSCAN = 128;
 const FINALE_DURATION = 20_000;
 const clamp = (n, min = 0, max = 1) => Math.min(max, Math.max(min, n));
+// The finale temporarily overrides preferences without changing saved settings.
+const particlesEnabled = (controller) =>
+  !!controller.finale ||
+  (controller.particlesEnabledValue &&
+    controller.simulation?.particles !== false);
 const random = (x, y, seed = 0) => {
   const value = Math.sin(x * 127.1 + y * 311.7 + seed * 74.7) * 43758.5453;
   return value - Math.floor(value);
@@ -243,15 +248,11 @@ export default class extends Controller {
     // Scale the visuals without changing the score sent to the tug-of-war.
     const strength =
       (this.simulation?.strength ?? this.visualIntensityValue ?? 100) / 100;
-    // Opting out removes every visual, but the tug-of-war still gets progress.
+    // Outside the finale, opting out removes visuals but keeps score updates.
     this.requested =
       this.disintegrationEnabledValue === false ? 0 : clamp(damage * strength);
     // A later score poll must never repair the finale's destruction.
-    if (
-      this.finale &&
-      this.disintegrationEnabledValue !== false &&
-      strength > 0
-    ) {
+    if (this.finale && strength > 0) {
       this.requested = Math.max(
         this.requested,
         this.finale.from + (1 - this.finale.from) * this.finale.progress,
@@ -292,10 +293,7 @@ export default class extends Controller {
     this.resetFinale();
     // Everyone gets the finale, even if they never opened the team reveal.
     this.awaitingRevealValue = false;
-    if (
-      this.disintegrationEnabledValue === false ||
-      this.visualIntensityValue === 0
-    ) {
+    if (this.visualIntensityValue === 0) {
       this.dispatch("finale-complete");
       return;
     }
@@ -454,8 +452,7 @@ export default class extends Controller {
     if (
       ((this.level > 0 &&
         this.finale?.progress !== 1 &&
-        this.particlesEnabledValue &&
-        this.simulation?.particles !== false) ||
+        particlesEnabled(this)) ||
         this.repairActive ||
         this.repairDirty ||
         this.dirty ||
@@ -494,6 +491,8 @@ export default class extends Controller {
       if (
         element === this.element ||
         element.closest(EXCLUDED_SCENES) ||
+        // Excluded from parent masks always; its own mask starts at the finale.
+        (!this.finale && element.matches(FINALE_ONLY_SURFACES)) ||
         this.surfaces.has(element) ||
         element.matches(
           "script, style, link, svg, template, noscript, .app-loading",
@@ -1108,8 +1107,7 @@ export default class extends Controller {
 
   emitAmbientDust(dt) {
     if (
-      !this.particlesEnabledValue ||
-      this.simulation?.particles === false ||
+      !particlesEnabled(this) ||
       this.finale?.progress === 1 ||
       !this.level ||
       this.reducedMotion.matches
@@ -1124,12 +1122,7 @@ export default class extends Controller {
   }
 
   emitDust(count) {
-    if (
-      !this.particlesEnabledValue ||
-      this.simulation?.particles === false ||
-      this.reducedMotion.matches
-    )
-      return;
+    if (!particlesEnabled(this) || this.reducedMotion.matches) return;
     if (!this.fringe?.length && !this.dustBounds?.length) return;
     for (let i = 0; i < count && this.particles.length < 180; i++) {
       let source = this.fringe[Math.floor(Math.random() * this.fringe.length)];
@@ -1161,12 +1154,7 @@ export default class extends Controller {
   draw(dt) {
     const ctx = this.canvasContext;
     ctx.clearRect(0, 0, this.width, this.height);
-    if (
-      !this.particlesEnabledValue ||
-      this.simulation?.particles === false ||
-      !this.level ||
-      this.reducedMotion.matches
-    )
+    if (!particlesEnabled(this) || !this.level || this.reducedMotion.matches)
       return;
     this.particles = this.particles.filter((p) => p.age < p.life);
     for (const p of this.particles) {

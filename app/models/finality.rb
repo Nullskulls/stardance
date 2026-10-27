@@ -8,6 +8,7 @@
 module Finality
   TIME_ZONE = "America/New_York".freeze
   FEATURE_FLAG = :finality_bonus
+  RAFFLE_FEATURE_FLAG = :finality_raffle
   BONUS_CREATED_BY = "finality_bonus".freeze
   BONUS_RATES = {
     Date.new(2026, 10, 27) => 0.08,
@@ -18,9 +19,34 @@ module Finality
   }.freeze
   # Ships that can never pay: rejected outright, or bounced to the wrong queue.
   INELIGIBLE_STATUSES = Post::ShipEvent::HIDDEN_STATUSES
+  RAFFLE_PRIZES = [
+    { key: "xbox", name: "Xbox Series S", detail: "for when you're done coding", quantity: 5, image: "finality/xbox.webp" },
+    { key: "artemis", name: "LEGO Artemis set", detail: "a rocket. made of LEGO.", quantity: 8, image: "finality/artemis.webp" },
+    { key: "vip", name: "Kennedy Space Center", detail: "VIP ticket + flights*", quantity: 2, image: "finality/kennedy-vip.webp" },
+    { key: "kennedy", name: "Kennedy Space Center", detail: "Visitor ticket", quantity: 50, image: "finality/kennedy.webp" }
+  ].map(&:freeze).freeze
 
   class << self
     def enabled? = Flipper.enabled?(FEATURE_FLAG)
+
+    def raffle_enabled? = Flipper.enabled?(RAFFLE_FEATURE_FLAG)
+
+    def raffle_prize(key)
+      RAFFLE_PRIZES.find { |prize| prize[:key] == key }
+    end
+
+    def raffle_candidates
+      ships.unscope(:includes, :order).joins(post: :user).where(users: { banned: false })
+    end
+
+    def approved_raffle_ships
+      raffle_candidates.where(certification_status: "approved")
+    end
+
+    def pending_raffle_ships
+      raffle_candidates.where.not(certification_status: [ "approved", *INELIGIBLE_STATUSES ])
+                       .or(raffle_candidates.where(certification_status: nil))
+    end
 
     def window
       BONUS_RATES.keys.min.in_time_zone(TIME_ZONE)...(BONUS_RATES.keys.max + 1).in_time_zone(TIME_ZONE)
@@ -77,16 +103,29 @@ module Finality
            .where.not(payout: nil).to_a.count { |ship_event| award_bonus!(ship_event) }
     end
 
-    # One entry per person, on their first ship that can still count.
+    # Each approved ship is a separate entry. Later rejections remove that
+    # entry automatically; approval can happen after the submission window.
     def raffle_entry_ids(ship_events = ships.to_a)
-      ship_events.reject { |ship_event| raffle_ineligible?(ship_event) }
-                 .uniq { |ship_event| ship_event.payout_recipient.id }
+      ship_events.select { |ship_event| ship_event.certification_status == "approved" && !raffle_ineligible?(ship_event) }
                  .to_set(&:id)
+    end
+
+    # A small aggregate query for the public page, without loading the whole pool.
+    def raffle_counts_for(user)
+      return { confirmed: 0, pending: 0 } unless user && !user.banned?
+
+      counts = ships.unscope(:includes, :order)
+                    .where(posts: { user_id: user.id })
+                    .group(:certification_status).count
+                    .except(*INELIGIBLE_STATUSES)
+      confirmed = counts.fetch("approved", 0)
+      { confirmed: confirmed, pending: counts.values.sum - confirmed }
     end
 
     def raffle_ineligible?(ship_event)
       ship_event.payout_recipient.nil? ||
         ship_event.payout_recipient.banned? ||
+        !window.cover?(ship_event.post.created_at) ||
         ship_event.certification_status.in?(INELIGIBLE_STATUSES)
     end
   end

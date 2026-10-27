@@ -66,18 +66,24 @@
     }
   }
 
-  // A sideways tab hanging off the box's right edge. Pinned from the top
-  // (roughly centered on the closed box), so it stays put as the box grows.
+  &:has(> &__leaderboard-tab) {
+    margin-bottom: calc(var(--space-l) + var(--space-m));
+  }
+
+  // The tab stays attached to the bottom edge as the box expands.
   &__leaderboard-tab {
     position: absolute;
-    top: 2.5rem;
-    right: 0;
+    bottom: 0;
+    left: var(--space-m);
     z-index: 3;
-    padding: var(--space-s) var(--space-xxxs);
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--space-xl);
+    padding: var(--space-xs) var(--space-m);
     border: 2px solid
       color-mix(in srgb, var(--buku-team-color) 70%, transparent);
-    border-left: 0;
-    border-radius: 0 8px 8px 0;
+    border-top-color: var(--buku-team-color);
+    border-radius: 0 0 var(--profile-radius) var(--profile-radius);
     background: var(--color-set-1-bg);
     color: var(--color-brand-cream);
     font-family: inherit;
@@ -85,8 +91,8 @@
     letter-spacing: 0.18em;
     line-height: 1;
     text-transform: uppercase;
-    writing-mode: vertical-rl;
-    transform: translateX(100%);
+    white-space: nowrap;
+    transform: translateY(100%);
     cursor: pointer;
     transition:
       background 180ms ease,
@@ -101,46 +107,16 @@
       outline-offset: 2px;
     }
 
-    // The single-column layout (the sidebar's 960px breakpoint) leaves only
-    // a narrow gutter to hang into, so sit just inside the edge there.
-    @media (max-width: 960px) {
-      border-right: 0;
-      border-left: 2px solid
-        color-mix(in srgb, var(--buku-team-color) 70%, transparent);
-      border-radius: 8px 0 0 8px;
-      transform: none;
-    }
-  }
-
-  // Make room for the tab once it sits inside the edge.
-  @media (max-width: 960px) {
-    &:has(> &__leaderboard-tab) {
-      padding-right: calc(var(--space-m) + 1.25rem);
+    @media (max-width: 400px) {
+      left: var(--space-xs);
+      padding-inline: var(--space-xs);
+      letter-spacing: 0.06em;
     }
   }
 
   &[data-open] &__leaderboard-tab {
     background: var(--buku-team-color);
     color: var(--color-set-1-bg);
-  }
-
-  // Home page calls to action under the tug of war.
-  &__ctas {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-xs);
-    justify-content: center;
-
-    // Exo 2's glyphs sit low in their line box; shift the padding so the
-    // letters, not the box, are centred in the pill.
-    .action-btn--small {
-      gap: var(--space-xxxs);
-      padding-block: 2px 4px;
-    }
-
-    .action-btn__icon--leading {
-      margin-right: 0;
-    }
   }
 
   // "stardance ends in" over the clock.

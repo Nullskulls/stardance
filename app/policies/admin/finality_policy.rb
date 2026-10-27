@@ -5,5 +5,7 @@ class Admin::FinalityPolicy < ApplicationPolicy
 
   def award? = show?
 
-  def sync? = show?
+  def freeze_pool? = show?
+  def roll? = show?
+  def reroll? = show?
 end

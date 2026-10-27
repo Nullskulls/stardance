@@ -10,10 +10,7 @@ class HomeController < ApplicationController
     @welcoming = params[:welcome] == "1" && current_user.present? && !current_user.has_dismissed?("home_intro")
     @body_class += " home-welcoming" if @welcoming
 
-    if current_user.present?
-      load_composer
-      @ship_path = @composer_projects.first ? project_path(@composer_projects.first) : profile_projects_path(current_user.display_name)
-    end
+    load_composer if current_user.present?
     if policy(BukuX3::Event).leaderboard?
       leaderboard = BukuX3::Leaderboard.new(BukuX3::Event.current)
       @buku_teams = leaderboard.teams
