@@ -1,5 +1,27 @@
 require "test_helper"
 
+# == Schema Information
+#
+# Table name: finality_raffle_draws
+#
+#  id                :bigint           not null, primary key
+#  entry_count       :integer          default(0), not null
+#  frozen_at         :datetime
+#  key               :string           not null
+#  participant_count :integer          default(0), not null
+#  created_at        :datetime         not null
+#  updated_at        :datetime         not null
+#  frozen_by_id      :bigint
+#
+# Indexes
+#
+#  index_finality_raffle_draws_on_frozen_by_id  (frozen_by_id)
+#  index_finality_raffle_draws_on_key           (key) UNIQUE
+#
+# Foreign Keys
+#
+#  fk_rails_...  (frozen_by_id => users.id)
+#
 class Finality::RaffleDrawTest < ActiveSupport::TestCase
   include ActiveJob::TestHelper
 
