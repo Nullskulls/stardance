@@ -747,11 +747,25 @@ class Project < ApplicationRecord
 
   LINK_REQUIREMENT_KEYS = FIELD_REQUIREMENT_MAP.fetch_values(:demo_url, :repo_url, :readme_url).flatten.freeze
 
+  SHIPPING_CLOSED_MESSAGE = "Stardance has ended, so new ships are closed.".freeze
+
+  def self.shipping_closed?(at = Time.current)
+    close_at = Rails.application.config.stardance_ships_close_at
+    close_at.present? && at >= close_at
+  end
+
   def shipping_requirements
     owner_vote_balance = memberships.owner.first&.user&.vote_balance.to_i
     votes_needed = [ -owner_vote_balance, 0 ].max
     mission_review = blocking_mission_submission
     [
+      {
+        key: :shipping_open,
+        label: "Ship before Stardance ends",
+        fail_label: SHIPPING_CLOSED_MESSAGE,
+        tooltip: "Ships close at the end of Saturday, October 31st (11:59 PM ET).",
+        passed: !Project.shipping_closed?
+      },
       {
         key: :not_ship_blocked,
         label: "Your project must not be blocked from shipping",
