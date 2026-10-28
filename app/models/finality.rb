@@ -21,7 +21,7 @@ module Finality
   INELIGIBLE_STATUSES = Post::ShipEvent::HIDDEN_STATUSES
   RAFFLE_PRIZES = [
     { key: "xbox", name: "Xbox Series S", detail: "for when you're done coding", quantity: 5, image: "finality/xbox.webp" },
-    { key: "artemis", name: "LEGO Artemis set", detail: "a rocket. made of LEGO.", quantity: 8, image: "finality/artemis.webp" },
+    { key: "artemis", name: "LEGO Artemis set", detail: "a rocket. made of LEGO.", quantity: 5, image: "finality/artemis.webp" },
     { key: "vip", name: "Kennedy Space Center", detail: "VIP ticket + flights*", quantity: 2, image: "finality/kennedy-vip.webp" },
     { key: "kennedy", name: "Kennedy Space Center", detail: "Visitor ticket", quantity: 50, image: "finality/kennedy.webp" }
   ].map(&:freeze).freeze

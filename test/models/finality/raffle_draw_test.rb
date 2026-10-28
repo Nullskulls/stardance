@@ -94,7 +94,7 @@ class Finality::RaffleDrawTest < ActiveSupport::TestCase
     assert_equal @people.second.id, draw.selections.find_by!(slot: 1).user_id
   end
 
-  test "all 65 slots are unique across prizes and repeated roll is idempotent" do
+  test "every prize slot is unique across prizes and repeated roll is idempotent" do
     58.times do |i|
       create_ship(create_user(slack_id: "U_MORE_#{i}", display_name: "more_#{i}", hca_linked: false))
     end
@@ -103,8 +103,9 @@ class Finality::RaffleDrawTest < ActiveSupport::TestCase
       assert_equal prize[:quantity], draw.roll!(prize_key: prize[:key], actor: @admin)
       assert_equal 0, draw.roll!(prize_key: prize[:key], actor: @admin)
     end
-    assert_equal 65, draw.selections.active.count
-    assert_equal 65, draw.selections.active.distinct.count(:user_id)
+    slots = Finality::RAFFLE_PRIZES.sum { |prize| prize[:quantity] }
+    assert_equal slots, draw.selections.active.count
+    assert_equal slots, draw.selections.active.distinct.count(:user_id)
   end
 
   test "later approvals do not expand a frozen pool and new bans or rejections reduce weights" do
@@ -148,12 +149,13 @@ class Finality::RaffleDrawTest < ActiveSupport::TestCase
   test "reroll needs a reason and keeps the current result if replacements are exhausted" do
     draw = freeze_pool
     draw.roll!(prize_key: "artemis", actor: @admin)
+    draw.roll!(prize_key: "xbox", actor: @admin) # uses up everyone left in the pool
     previous = draw.selections.first
     [ " ", "x" * 1001, "No eligible replacement" ].each do |reason|
       assert_raises(Finality::RaffleDraw::Error) { draw.reroll!(selection_id: previous.id, reason: reason, actor: @admin) }
     end
     assert_nil previous.reload.voided_at
-    assert_equal 8, draw.selections.active.count
+    assert_equal @people.size, draw.selections.active.count
   end
 
   test "failed replacement rolls back the old result and its audit history" do
