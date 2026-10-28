@@ -31,6 +31,12 @@ module Finality
 
     def raffle_enabled? = Flipper.enabled?(RAFFLE_FEATURE_FLAG)
 
+    # The bonus a ship posted right now would earn, or nil outside the window
+    # or while the bonus is switched off.
+    def current_rate(at = Time.current)
+      BONUS_RATES[at.in_time_zone(TIME_ZONE).to_date] if enabled?
+    end
+
     def raffle_prize(key)
       RAFFLE_PRIZES.find { |prize| prize[:key] == key }
     end

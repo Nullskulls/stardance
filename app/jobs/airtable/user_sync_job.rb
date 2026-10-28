@@ -53,10 +53,63 @@ class Airtable::UserSyncJob < Airtable::BaseSyncJob
     end
 
     fields.merge!(payout_loops_fields(user))
+    fields.merge!(unshipped_loops_fields(user))
     fields
   end
 
   private
+
+  # The user's biggest unshipped project, a rough stardust estimate for
+  # shipping it now, and how many other projects also have unshipped time, for
+  # the "you've got unshipped work" email. The estimate is
+  # unshipped hours at the user's own past payout rate (the typical ship's rate
+  # if they've never been paid), plus today's Finality bonus while it's on.
+  # Always sent, blank when there's nothing to ship, so the Loops properties
+  # clear rather than going stale.
+  def unshipped_loops_fields(user)
+    fields = {
+      "Loops - stardanceUnshippedProject" => nil,
+      "Loops - stardanceUnshippedHours" => nil,
+      "Loops - stardanceUnshippedStardust" => nil,
+      "Loops - stardanceUnshippedOtherProjects" => nil
+    }
+    return fields if user.banned? || Project.shipping_closed?
+
+    unshipped = user.projects.map { |p| [ p.unshipped_hours, p ] }.select { |hours, _| hours.positive? }
+    return fields if unshipped.empty?
+
+    hours, project = unshipped.max_by(&:first)
+
+    rate = past_stardust_per_hour(user) || typical_stardust_per_hour
+    fields.merge(
+      "Loops - stardanceUnshippedProject" => project.title,
+      "Loops - stardanceUnshippedHours" => hours.round(1),
+      "Loops - stardanceUnshippedStardust" => (hours * rate * (1 + Finality.current_rate.to_f)).round,
+      "Loops - stardanceUnshippedOtherProjects" => unshipped.size - 1
+    )
+  rescue => e
+    Rails.logger.error("UserSyncJob unshipped_loops_fields failed for user #{user.id}: #{e.message}")
+    Rails.error.report(e)
+    {}
+  end
+
+  def past_stardust_per_hour(user)
+    payout, hours = paid_ship_events.where(posts: { user_id: user.id })
+                                    .pick(Arel.sql("SUM(payout)"), Arel.sql("SUM(hours_at_payout)"))
+    payout.to_f / hours if hours.to_f.positive?
+  end
+
+  # Median rate across every paid ship, so a few long, top-rated ships don't
+  # inflate the estimate for people who've never been paid. Once per job run.
+  def typical_stardust_per_hour
+    @typical_stardust_per_hour ||= paid_ship_events.pick(
+      Arel.sql("PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY payout / hours_at_payout)")
+    ).to_f
+  end
+
+  def paid_ship_events
+    Post::ShipEvent.joins(:post).where("payout > 0 AND hours_at_payout > 0")
+  end
 
   # Payout notification data as Loops contact properties, synced through the
   # `_users` Airtable table (the only sanctioned path to Loops — no direct API).

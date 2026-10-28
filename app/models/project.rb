@@ -1029,6 +1029,20 @@ class Project < ApplicationRecord
     ship_events.sum(&:hours).to_f
   end
 
+  # Devlog hours a ship posted now would cover: everything since the last ship,
+  # capped per devlog the way Post::ShipEvent#hours caps it. Hardware design
+  # time is dropped as it is at payout; the funding cutoff isn't applied, so
+  # this can run high for a funded hardware build.
+  def unshipped_hours
+    scope = Post.where(project_id: id).of_devlogs(join: true).where(post_devlogs: { deleted_at: nil })
+    last_ship_at = Post.where(project_id: id).of_ship_events.maximum(:created_at)
+    scope = scope.where("posts.created_at > ?", last_ship_at) if last_ship_at
+    scope = scope.where("post_devlogs.phase IS DISTINCT FROM 'design'") if hardware?
+
+    cap = Post::ShipEvent::MAX_PAYOUT_SECONDS_PER_DEVLOG
+    scope.sum(Arel.sql("LEAST(post_devlogs.duration_seconds, #{cap})")).to_f / 1.hour
+  end
+
   def fire?
     marked_fire_at.present?
   end
