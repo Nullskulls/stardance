@@ -90,6 +90,15 @@ module Certification
         .where(projects: { hardware_stage: nil })
         .where("projects.project_type IS DISTINCT FROM 'Hardware'")
     }
+
+    # Banning soft-deletes projects and devlogs, and the review page can't open a
+    # review whose devlog is gone.
+    scope :reviewable, -> {
+      joins(:project, :user)
+        .where(projects: { deleted_at: nil }, users: { banned: false })
+        .where.not(id: Devlog.orphaned.select(:ysws_review_id))
+    }
+
     scope :without_mac_analysis, -> { left_joins(:mac_analysis).where(certification_mac_analyses: { id: nil }) }
 
     # Finished reviews whose Airtable row the unified base has not taken yet, so
