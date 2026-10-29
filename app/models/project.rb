@@ -754,6 +754,30 @@ class Project < ApplicationRecord
     close_at.present? && at >= close_at
   end
 
+  RECERTIFICATION_DISABLED_MESSAGE = "Stardance has ended, so re-certification is closed.".freeze
+  RECERTIFICATION_LIMIT_MESSAGE = "This project has already used its one re-certification.".freeze
+
+  def self.recertification_disabled?
+    Flipper.enabled?(:disable_recertification)
+  end
+
+  def self.recertification_limit_since
+    Flipper::Adapters::ActiveRecord::Gate.where(feature_key: "limit_recertifications", key: "boolean", value: "true").pick(:created_at)
+  end
+
+  def recertification_restriction_message
+    if Project.recertification_disabled?
+      RECERTIFICATION_DISABLED_MESSAGE
+    elsif recertification_limit_reached?
+      RECERTIFICATION_LIMIT_MESSAGE
+    end
+  end
+
+  def recertification_limit_reached?
+    since = Project.recertification_limit_since
+    since.present? && recertification_request_times.any? { |requested_at| requested_at >= since }
+  end
+
   def shipping_requirements
     owner_vote_balance = memberships.owner.first&.user&.vote_balance.to_i
     votes_needed = [ -owner_vote_balance, 0 ].max

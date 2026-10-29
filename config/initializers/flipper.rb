@@ -35,6 +35,8 @@ Rails.application.config.after_initialize do
         ship_event_payouts
         finality_bonus
         disable_internal_sw_dash_reviews
+        disable_recertification
+        limit_recertifications
         no_shigimi_eyes
         ysws_review_flow
         virality_bonus
