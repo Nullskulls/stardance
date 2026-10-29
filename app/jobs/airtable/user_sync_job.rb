@@ -12,7 +12,7 @@ class Airtable::UserSyncJob < Airtable::BaseSyncJob
   # long anything those hooks miss can stay stale. 100/min cycles ~29k users in
   # ~5h — well under the 2-day nudge window. Norairrecord's Faraday middleware
   # paces requests to Airtable's 5 req/s per-base limit on its own.
-  def sync_limit = 1000
+  def sync_limit = 100
 
   def field_mapping(user)
     address = user.addresses.first
