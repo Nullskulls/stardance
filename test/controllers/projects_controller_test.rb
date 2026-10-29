@@ -84,6 +84,43 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".project-show__title", text: "Forest Odyssey"
   end
 
+  test "the ship link sends signed-out visitors to sign in and back" do
+    get project_path(@project, ship: 1)
+
+    assert_redirected_to root_path
+    assert_equal project_path(@project, ship: 1), session[:return_to]
+  end
+
+  test "the ship link doesn't open the ship flow for non-members" do
+    sign_in @viewer
+
+    get project_path(@project, ship: 1)
+
+    assert_response :success
+    assert_select "[data-controller='open-dialog']", 0
+  end
+
+  test "the ship link lists what's missing when the project can't ship yet" do
+    sign_in @owner
+
+    get project_path(@project, ship: 1)
+
+    assert_response :success
+    assert_select "[data-controller='open-dialog']", 0
+    assert_select "dialog.ship-prompt" do
+      assert_select "li", text: "Link Hackatime so your time is tracked"
+      assert_select "li", text: "Add a demo link so anyone can try your project"
+    end
+  end
+
+  test "projects without the ship link don't show the missing list" do
+    sign_in @owner
+
+    get project_path(@project)
+
+    assert_select "dialog.ship-prompt", 0
+  end
+
   test "owner of empty project sees the onboarding welcome prompting a Hackatime link" do
     sign_in @owner
 
