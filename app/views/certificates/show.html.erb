@@ -118,7 +118,7 @@
         <p class="certificate-page__progress-text">
           <%= @approved_hours.floor %> / <%= Certificate::REQUIRED_APPROVED_HOURS %> approved hours
         </p>
-        <% if @approved_hours >= Certificate::REQUIRED_APPROVED_HOURS %>
+        <% if current_user.certificate_eligible? %>
           <p class="certificate-page__mine-text">
             You've earned a certificate! Enter the name you want printed on it:
           </p>

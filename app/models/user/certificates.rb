@@ -3,6 +3,9 @@ module User::Certificates
 
   included do
     has_one :certificate, dependent: :destroy
+
+    validates :certificate_credit_hours, numericality: { greater_than_or_equal_to: 0, less_than: 10_000_000_000 }
+    validates :certificate_credit_projects, numericality: { only_integer: true, greater_than_or_equal_to: 0, less_than: 2_147_483_648 }
   end
 
   def approved_hours
@@ -10,7 +13,20 @@ module User::Certificates
   end
 
   def certificate_eligible?
-    approved_hours >= Certificate::REQUIRED_APPROVED_HOURS
+    certificate_eligibility_override? || certificate_hours >= Certificate::REQUIRED_APPROVED_HOURS
+  end
+
+  def certificate_hours
+    approved_hours + certificate_credit_hours
+  end
+
+  def certificate_projects_count
+    approved_certificate_projects.count + certificate_credit_projects
+  end
+
+  def approved_certificate_projects
+    Project.where(id: Post.approved_ship_events_by(self).select(:project_id))
+           .or(Project.where(id: approved_hardware_funding_requests.select(:project_id)))
   end
 
   private
@@ -23,8 +39,7 @@ module User::Certificates
   # Post::ShipEvent#devlogs_in_ship_window) was reviewed through the funding
   # request instead, so it counts once the request is approved.
   def approved_funding_hours
-    funded_projects = Certification::FundingRequest.approved
-      .where(user_id: id, project_id: Project.hardware.select(:id))
+    funded_projects = approved_hardware_funding_requests
       .group(:project_id)
       .select("project_id, MIN(created_at) AS funded_at")
 
@@ -33,5 +48,9 @@ module User::Certificates
         .where(post_devlogs: { deleted_at: nil })
         .where("post_devlogs.phase = 'design' OR posts.created_at < funded_projects.funded_at")
         .sum("post_devlogs.duration_seconds").to_f / 3600
+  end
+
+  def approved_hardware_funding_requests
+    Certification::FundingRequest.approved.where(user_id: id, project_id: Project.hardware.select(:id))
   end
 end
