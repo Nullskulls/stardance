@@ -9,10 +9,11 @@ class Airtable::UserSyncJob < Airtable::BaseSyncJob
   # Backstop round-robin for the funnel-stuck nudges. Freshness for users who
   # actually advance is handled event-driven by FunnelResyncTrigger (their
   # synced_at is nulled, jumping them to the front); this limit just bounds how
-  # long anything those hooks miss can stay stale. 100/min cycles ~29k users in
-  # ~5h — well under the 2-day nudge window. Norairrecord's Faraday middleware
-  # paces requests to Airtable's 5 req/s per-base limit on its own.
-  def sync_limit = 100
+  # long anything those hooks miss can stay stale. 1000/min cycles ~29k users in
+  # ~30min, so Loops properties for emails are fresh soon after a deploy.
+  # Norairrecord's Faraday middleware paces requests to Airtable's 5 req/s
+  # per-base limit on its own.
+  def sync_limit = 1000
 
   def field_mapping(user)
     address = user.addresses.first
@@ -59,16 +60,18 @@ class Airtable::UserSyncJob < Airtable::BaseSyncJob
 
   private
 
-  # The user's biggest unshipped project, a rough stardust estimate for
-  # shipping it now, and how many other projects also have unshipped time, for
-  # the "you've got unshipped work" email. The estimate is
-  # unshipped hours at the user's own past payout rate (the typical ship's rate
-  # if they've never been paid), plus today's Finality bonus while it's on.
+  # The user's biggest unshipped project (title, and ID for linking to it), a
+  # rough stardust estimate for shipping it now, and how many other projects
+  # also have unshipped time, for the "you've got unshipped work" email. The
+  # estimate is unshipped hours at the user's own past payout rate (the typical
+  # ship's rate if they've never been paid), plus today's Finality bonus while
+  # it's on.
   # Always sent, blank when there's nothing to ship, so the Loops properties
   # clear rather than going stale.
   def unshipped_loops_fields(user)
     fields = {
       "Loops - stardanceUnshippedProject" => nil,
+      "Loops - stardanceUnshippedProjectId" => nil,
       "Loops - stardanceUnshippedHours" => nil,
       "Loops - stardanceUnshippedStardust" => nil,
       "Loops - stardanceUnshippedOtherProjects" => nil
@@ -83,6 +86,7 @@ class Airtable::UserSyncJob < Airtable::BaseSyncJob
     rate = past_stardust_per_hour(user) || typical_stardust_per_hour
     fields.merge(
       "Loops - stardanceUnshippedProject" => project.title,
+      "Loops - stardanceUnshippedProjectId" => project.id,
       "Loops - stardanceUnshippedHours" => hours.round(1),
       "Loops - stardanceUnshippedStardust" => (hours * rate * (1 + Finality.current_rate.to_f)).round,
       "Loops - stardanceUnshippedOtherProjects" => unshipped.size - 1
