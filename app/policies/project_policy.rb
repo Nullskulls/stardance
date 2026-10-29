@@ -43,6 +43,10 @@ class ProjectPolicy < ApplicationPolicy
         user&.can_review? && !member?
     end
 
+    def bypass_recertification_restrictions?
+        user&.admin? || user&.super_admin?
+    end
+
     def request_mission_resubmission?
         (member? || user&.admin?) && record.last_ship_event&.mission_submission&.rejected?
     end
