@@ -1,0 +1,42 @@
+<section class="fabricate-promo"
+         aria-label="Fabricate, a Hack Club YSWS"
+         data-controller="fabricate-promo"
+         data-fabricate-promo-url-value="<%= DiscoverRail::FabricatePromoWidget::URL %>"
+         data-fabricate-promo-cutscene-value="<%= cutscene? %>"
+         data-fabricate-promo-strike-webm-value="<%= helpers.asset_path("fabricate/rocket-strike.webm") %>"
+         data-fabricate-promo-strike-mp4-value="<%= helpers.asset_path("fabricate/rocket-strike.mp4") %>"
+         data-fabricate-promo-shatter-sound-value="<%= helpers.asset_path("fabricate/glass-shatter.mp3") %>"
+         data-fabricate-promo-pipe-sound-value="<%= helpers.asset_path("fabricate/metal-pipe.mp3") %>">
+  <link rel="preconnect" href="https://fabricate.hackclub.com">
+  <%= link_to helpers.fabricate_promo_path,
+        class: "fabricate-promo__card",
+        aria: { label: "Fabricate: design any hardware project and we'll pay for it" },
+        data: { fabricate_promo_target: "card", action: "click->fabricate-promo#launch pointerenter->fabricate-promo#warm focus->fabricate-promo#warm" } do %>
+    <span class="fabricate-promo__grid" aria-hidden="true">
+      <%= image_tag "fabricate/mat-grid.svg", alt: "", class: "fabricate-promo__grid-image" %>
+    </span>
+    <span class="fabricate-promo__button" aria-hidden="true">
+      <% %w[default hover pressed].each do |state| %>
+        <%= image_tag "fabricate/button-#{state}.svg", alt: "", width: 212, height: 154,
+              class: "fabricate-promo__button-state fabricate-promo__button-state--#{state}" %>
+      <% end %>
+    </span>
+    <span class="fabricate-promo__title">Fabricate</span>
+    <span class="fabricate-promo__pitch">
+      Design any hardware project and <em class="fabricate-promo__underline">we'll pay for it</em>.
+    </span>
+    <% if cutscene? %>
+      <span class="fabricate-promo__runtime">▶ 1:00 · unskippable</span>
+    <% end %>
+  <% end %>
+  <%# The blast door the click slams shut over the page. Fabricate opens it on its side. %>
+  <template data-fabricate-promo-target="door">
+    <div class="fabricate-door fabricate-door--hollow">
+      <% %i[left right].each do |side| %>
+        <div class="fabricate-door__leaf fabricate-door__leaf--<%= side %>">
+          <div class="fabricate-door__plate"></div>
+        </div>
+      <% end %>
+    </div>
+  </template>
+</section>

@@ -217,6 +217,9 @@ application.register("emoji-picker", EmojiPickerController);
 import EventTimeController from "./event_time_controller";
 application.register("event-time", EventTimeController);
 
+import FabricatePromoController from "./fabricate_promo_controller";
+application.register("fabricate-promo", FabricatePromoController);
+
 import FallenDustController from "./fallen_dust_controller";
 application.register("fallen-dust", FallenDustController);
 

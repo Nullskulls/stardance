@@ -8,6 +8,7 @@ class Admin::BukuX3EventsController < Admin::ApplicationController
     @mipmap_clicks = promo_clicks(DiscoverRail::MipmapPromoWidget::CLICK_EVENT)
     @day_one_of_clicks = promo_clicks(DiscoverRail::DayOneOfPromoWidget::CLICK_EVENT)
     @fallen_clicks = promo_clicks(DiscoverRail::FallenPromoWidget::CLICK_EVENT)
+    @fabricate_clicks = promo_clicks(DiscoverRail::FabricatePromoWidget::CLICK_EVENT)
     if Flipper.enabled?(:"justin-melena", current_user)
       @poll_tally = PollVote.tally
       @poll_recent_votes = PollVote.where(created_at: 24.hours.ago..Time.current).count

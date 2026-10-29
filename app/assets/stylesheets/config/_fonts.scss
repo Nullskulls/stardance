@@ -66,6 +66,14 @@
 }
 
 @font-face {
+  font-family: "Nippo";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("Nippo-Bold.woff2") format("woff2");
+}
+
+@font-face {
   font-family: "Shantell Sans";
   font-style: normal;
   font-weight: 600;
@@ -79,4 +87,12 @@
   font-weight: 400 700;
   font-display: swap;
   src: url("Lora-latin.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Archivo";
+  font-style: normal;
+  font-weight: 800 900;
+  font-display: swap;
+  src: url("Archivo-latin.woff2") format("woff2");
 }

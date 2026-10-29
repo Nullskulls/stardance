@@ -1,0 +1,51 @@
+{
+  "speed": 1,
+  "impact": {
+    "x": 0.5,
+    "y": 0.85
+  },
+  "cues": {
+    "crack": 0.95,
+    "shatterSound": 0.95,
+    "fall": 1.44,
+    "doors": 2.5
+  },
+  "clip": {
+    "fadeInMs": 0,
+    "fadeOutAt": 3.97,
+    "fadeOutMs": 0,
+    "soundFadeInMs": 560,
+    "soundFadeOutAt": 3.96,
+    "soundFadeOutMs": 1260
+  },
+  "shatter": {
+    "x": 0.501,
+    "y": 0.655,
+    "minShards": 5,
+    "maxShards": 8,
+    "crackMs": 140,
+    "fallMs": 2200,
+    "gravity": 2600,
+    "minSpeed": 250,
+    "maxSpeed": 600,
+    "kick": 500,
+    "spin": 120,
+    "shakeMs": 900,
+    "shakePx": 18
+  },
+  "door": {
+    "closeMs": 650,
+    "pipeDelayMs": 0,
+    "shakeMs": 700,
+    "shakePx": 22,
+    "settleMs": 350,
+    "bolts": 3,
+    "boltMs": 220
+  },
+  "volume": {
+    "clip": 1,
+    "synth": 1,
+    "shatter": 1,
+    "pipe": 1
+  }
+}

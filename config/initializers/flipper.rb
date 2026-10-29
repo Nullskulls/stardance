@@ -49,6 +49,8 @@ Rails.application.config.after_initialize do
         terra-promo
         dayoneof-promo
         mipmap-promo
+        fabricate-promo
+        fabricate-cutscene-promo
         fallen-promo
         justin-melena
       ].each { |flag| Flipper.add(flag) }

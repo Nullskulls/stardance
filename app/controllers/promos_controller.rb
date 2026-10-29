@@ -14,6 +14,13 @@ class PromosController < ApplicationController
     redirect_to DiscoverRail::MipmapPromoWidget::URL, allow_other_host: true, status: :see_other
   end
 
+  def fabricate
+    track_event DiscoverRail::FabricatePromoWidget::CLICK_EVENT
+    return head :no_content if request.format.json?
+
+    redirect_to DiscoverRail::FabricatePromoWidget::URL, allow_other_host: true, status: :see_other
+  end
+
   def day_one_of
     track_event DiscoverRail::DayOneOfPromoWidget::CLICK_EVENT
     redirect_to DiscoverRail::DayOneOfPromoWidget::URL, allow_other_host: true, status: :see_other

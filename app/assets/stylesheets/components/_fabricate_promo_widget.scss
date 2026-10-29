@@ -1,0 +1,560 @@
+@use "sass:list";
+
+// Fabricate's ad: a big red soundboard button on Fabricate's own green workshop mat
+// (fabricate.hackclub.com). Pressing it brings a rocket down on the page and slams a toothed steel
+// blast door shut over the wreckage. The overlay is appended to <body>, outside the card, so it
+// takes the palette too.
+.fabricate-promo,
+.fabricate-promo__overlay {
+  --fabricate-promo-ground: #071d1a;
+  --fabricate-promo-deep: #0c322c;
+  --fabricate-promo-mat-line: #15463e;
+  --fabricate-promo-gridline: #1e5c52;
+  --fabricate-promo-bone: #edf7f6;
+  --fabricate-promo-ink: #04110f;
+  --fabricate-promo-hazard: #f1c40f;
+  --fabricate-promo-steel: #465250;
+  --fabricate-promo-steel-dark: #2b3433;
+  --fabricate-promo-steel-light: #8f9e9c;
+}
+
+.fabricate-promo {
+  &__card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-xxs);
+    padding: var(--space-xs) var(--space-m) 18px;
+    overflow: clip;
+    background-color: var(--fabricate-promo-deep);
+    border: 2px solid var(--fabricate-promo-gridline);
+    border-radius: 7px;
+    color: var(--fabricate-promo-bone);
+    font-family: "Archivo", var(--font-family-text);
+    text-align: center;
+    text-decoration: none;
+
+    // The site sets its own font on every element, so the card's type wouldn't reach inside it.
+    & * {
+      font-family: inherit;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--fabricate-promo-bone);
+      outline-offset: 2px;
+    }
+  }
+
+  // Fabricate's green workshop mat, run out to the card's edge and stopping short of the tagline.
+  &__grid {
+    position: absolute;
+    inset: -2px -2px 28px;
+  }
+
+  &__grid-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  // The soundboard button, drawn in each of its states and swapped as the card is hovered and
+  // pressed: the plunger lifts and glows, then sinks into its base. The drawings run 4px past the
+  // button's box on the sides and bottom for the base's shadow.
+  &__button {
+    position: relative;
+    flex-shrink: 0;
+    width: 204px;
+    height: 150px;
+    cursor: pointer;
+  }
+
+  &__button-state {
+    position: absolute;
+    top: 0;
+    left: -4px;
+    visibility: hidden;
+  }
+
+  &__button-state--default,
+  &__card:is(:hover, :focus-visible) &__button-state--hover,
+  &__card:is(:active, &__card--pressed) &__button-state--pressed {
+    visibility: visible;
+  }
+
+  &__card:is(:hover, :focus-visible, :active, &__card--pressed)
+    &__button-state--default,
+  &__card:is(:active, &__card--pressed) &__button-state--hover {
+    visibility: hidden;
+  }
+
+  &__title {
+    position: relative;
+    font-size: 30px;
+    font-weight: 900;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+  }
+
+  // No wider than the button, so it breaks where the design does however wide the rail is.
+  &__pitch {
+    position: relative;
+    max-width: 204px;
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1.25;
+    opacity: 0.9;
+  }
+
+  &__underline {
+    font-style: normal;
+    text-decoration: underline from-font;
+    text-decoration-skip-ink: none;
+    text-underline-position: from-font;
+  }
+
+  &__runtime {
+    position: relative;
+    color: var(--fabricate-promo-hazard);
+    font-size: var(--font-size-xs);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  &__overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    overflow: hidden;
+  }
+
+  &__strike {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+}
+
+// The page the rocket hit, broken into shards that are each a frozen copy of the site clipped to
+// their own wedge. They crack apart from the shatter's origin and fall away into the dark while
+// the door closes.
+.fabricate-shatter {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  visibility: hidden;
+  background: #000;
+
+  &--cracked {
+    visibility: visible;
+  }
+
+  &__pieces {
+    position: absolute;
+    inset: 0;
+  }
+
+  // Transformed from the start, so the copy's fixed elements stay pinned to the shard.
+  &__shard {
+    position: absolute;
+    inset: 0;
+    transform: translate(0);
+    will-change: transform;
+  }
+
+  &__page {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+
+  &__cracks {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke: rgb(255 255 255 / 85%);
+    stroke-linecap: round;
+    stroke-width: 2;
+    filter: drop-shadow(0 0 2px #000);
+  }
+}
+
+// The leaves meet along a row of hexagonal teeth that mesh when the door is shut. These are the
+// heights (in cqh) where the seam turns a corner, top to bottom; the left leaf's teeth stand out
+// on the 1st, 2nd, 5th, 6th… stops and the right leaf's fill the gaps between them.
+$fabricate-door-seam-stops: 0 10.04 15.05 24.97 29.99 40.02 45.04 54.96 59.98
+  70.01 75.03 84.95 89.97 100;
+$fabricate-door-tooth-depth: 8.69cqh;
+
+// The plate's hardware: bolts down each brace, smaller rivets along the top and bottom edges, and
+// the two raised braces themselves.
+$fabricate-door-bolt: radial-gradient(
+  circle at 46% 44%,
+  #eef3f2 0 0.2cqh,
+  #8d9a98 0.55cqh,
+  #2b3433 0.8cqh,
+  transparent 0.9cqh
+);
+$fabricate-door-rivet: radial-gradient(
+  circle at 46% 44%,
+  #eef3f2 0 0.15cqh,
+  #8d9a98 0.4cqh,
+  #2b3433 0.6cqh,
+  transparent 0.7cqh
+);
+$fabricate-door-brace: linear-gradient(
+  #7d8987,
+  #3e4947 calc(100% - 0.3cqh),
+  rgb(0 0 0 / 60%) calc(100% - 0.3cqh)
+);
+
+// The outline of one leaf, `$inset` in from its toothed edge.
+@function fabricate-door-leaf($side, $inset: 0px) {
+  $edge: ();
+  @for $i from 1 through list.length($fabricate-door-seam-stops) {
+    $y: list.nth($fabricate-door-seam-stops, $i) * 1cqh;
+    $depth: 0px;
+    @if (($i - 1) % 4 < 2) != ($side == left) {
+      $depth: $fabricate-door-tooth-depth;
+    }
+    $x: calc(#{$depth} + #{$inset});
+    @if $side == left {
+      $x: calc(100% - #{$depth} - #{$inset});
+    }
+    $edge: list.append($edge, $x $y, $separator: comma);
+  }
+  @if $side == left {
+    @return polygon(0 0, #{$edge}, 0 100%);
+  }
+  @return polygon(100% 0, #{$edge}, 100% 100%);
+}
+
+// The full-screen blast door, sized in container units so the teeth keep their shape on any
+// screen. --fabricate-door-gap is how far each leaf has slid off the seam (0 shut, 1 open).
+.fabricate-door {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  container-type: size;
+  background: var(--fabricate-promo-ground);
+
+  // While it slams shut, the page the visitor is leaving still shows around it.
+  &--hollow {
+    background: transparent;
+  }
+
+  // Each leaf reaches half a tooth past the middle, so their teeth mesh with no gap when shut. The
+  // shadow sits on the leaf because the clip-paths inside it would cut a shadow of their own away.
+  &__leaf {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: calc(50% + #{$fabricate-door-tooth-depth} / 2);
+    filter: drop-shadow(0 0 2.5cqmin var(--fabricate-promo-ink));
+
+    // A bright machined bevel along the toothed edge, showing round the plate.
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(#d2dbd9, #56625f);
+    }
+
+    &--left {
+      left: 0;
+      translate: calc(var(--fabricate-door-gap, 0) * -100%) 0;
+
+      &::before {
+        clip-path: fabricate-door-leaf(left);
+      }
+    }
+
+    &--right {
+      right: 0;
+      translate: calc(var(--fabricate-door-gap, 0) * 100%) 0;
+
+      &::before {
+        clip-path: fabricate-door-leaf(right);
+      }
+    }
+  }
+
+  // Brushed steel: two bolted braces across a sheened plate, grime settling towards the floor.
+  &__plate {
+    position: absolute;
+    inset: 0;
+    background:
+      $fabricate-door-bolt 0 30.67cqh / 7.1cqh 5.33cqh repeat-x,
+      $fabricate-door-bolt 0 64cqh / 7.1cqh 5.33cqh repeat-x,
+      $fabricate-door-rivet 0 0 / 6.2cqh 5.8cqh repeat-x,
+      $fabricate-door-rivet 0 100% / 6.2cqh 5.8cqh repeat-x,
+      $fabricate-door-brace 0 30.67cqh / 100% 5.33cqh no-repeat,
+      $fabricate-door-brace 0 64cqh / 100% 5.33cqh no-repeat,
+      linear-gradient(transparent 70%, rgb(26 20 16 / 45%)),
+      linear-gradient(
+        105deg,
+        transparent 20%,
+        rgb(255 255 255 / 10%) 42%,
+        transparent 60%,
+        rgb(255 255 255 / 5%) 80%,
+        transparent 95%
+      ),
+      linear-gradient(
+        #66726f,
+        var(--fabricate-promo-steel) 55%,
+        var(--fabricate-promo-steel-dark)
+      );
+
+    .fabricate-door__leaf--left & {
+      clip-path: fabricate-door-leaf(left, 0.8cqh);
+    }
+
+    .fabricate-door__leaf--right & {
+      clip-path: fabricate-door-leaf(right, 0.8cqh);
+    }
+
+    // The brush marks: noise stretched flat into long horizontal streaks.
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1600' height='480'%3E%3Cfilter id='b'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.003 0.8' numOctaves='3' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23b)'/%3E%3C/svg%3E")
+        0 0 / 1600px 480px;
+      mix-blend-mode: overlay;
+      opacity: 0.55;
+    }
+  }
+}
+
+// The cutscene's lockdown screen, letterboxed like a film.
+.fabricate-cutscene {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--fabricate-promo-ink);
+  color: var(--fabricate-promo-bone);
+  font-family: "Nippo", var(--font-family-text);
+  font-weight: 700;
+  cursor: none;
+
+  // The app's global reset sets a font on every element, which would win over the trailer's.
+  & * {
+    font-family: inherit;
+    font-weight: inherit;
+  }
+
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    z-index: 3;
+    height: 10vh;
+    background: #000;
+  }
+
+  &::before {
+    top: 0;
+  }
+
+  &::after {
+    bottom: 0;
+  }
+
+  &__stage {
+    position: absolute;
+    inset: 10vh 0;
+    display: grid;
+    place-items: center;
+    background-color: var(--fabricate-promo-ground);
+    background-image:
+      linear-gradient(var(--fabricate-promo-mat-line) 1px, transparent 1px),
+      linear-gradient(
+        90deg,
+        var(--fabricate-promo-mat-line) 1px,
+        transparent 1px
+      );
+    background-size: 52px 52px;
+  }
+
+  &__shot {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    gap: 3vmin;
+    padding: 4vmin;
+    text-align: center;
+    animation: fabricate-cutscene-in 600ms ease-out both;
+  }
+
+  &__line {
+    font-size: clamp(24px, 6vmin, 72px);
+    line-height: 1.1;
+  }
+
+  &__small {
+    font-size: clamp(14px, 2.6vmin, 28px);
+    opacity: 0.8;
+  }
+
+  &__title {
+    font-size: clamp(56px, 18vmin, 220px);
+    line-height: 0.9;
+    animation: fabricate-cutscene-slam 450ms cubic-bezier(0.5, 0, 0.9, 0.4) both;
+  }
+
+  &__money {
+    color: var(--fabricate-promo-hazard);
+    font-size: clamp(56px, 22vmin, 260px);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__ideas {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2vmin;
+    max-width: 80vw;
+  }
+
+  &__idea {
+    padding: 1.5vmin 2.5vmin;
+    background: var(--fabricate-promo-bone);
+    color: var(--fabricate-promo-deep);
+    font-size: clamp(14px, 3vmin, 32px);
+    rotate: -3deg;
+    animation: fabricate-cutscene-in 400ms ease-out both;
+
+    &:nth-child(even) {
+      rotate: 2deg;
+    }
+
+    @for $i from 2 through 5 {
+      &:nth-child(#{$i}) {
+        animation-delay: ($i - 1) * 500ms;
+      }
+    }
+  }
+
+  &__rating {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 3vmin;
+    align-items: center;
+    max-width: min(90vw, 900px);
+    padding: 3vmin;
+    border: 0.6vmin solid var(--fabricate-promo-bone);
+    text-align: left;
+  }
+
+  &__rating-letter {
+    padding: 1vmin 3vmin;
+    background: var(--fabricate-promo-bone);
+    color: var(--fabricate-promo-ink);
+    font-size: clamp(56px, 16vmin, 180px);
+    line-height: 1;
+  }
+
+  &__bar {
+    width: min(70vw, 800px);
+    height: 4vmin;
+    border: 0.5vmin solid var(--fabricate-promo-bone);
+  }
+
+  &__bar-fill {
+    height: 100%;
+    background: var(--fabricate-promo-hazard);
+  }
+
+  &__skip {
+    position: absolute;
+    right: 4vmin;
+    bottom: 14vh;
+    z-index: 4;
+    padding: 1.5vmin 3vmin;
+    background: rgb(0 0 0 / 70%);
+    border: 1px solid rgb(255 255 255 / 40%);
+    font-size: clamp(14px, 2.4vmin, 24px);
+  }
+
+  &__hud {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    gap: 3vmin;
+    height: 10vh;
+    padding: 0 4vmin;
+    font-size: clamp(11px, 1.8vmin, 18px);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  &__progress {
+    flex: 1;
+    height: 0.6vmin;
+    background: rgb(255 255 255 / 20%);
+  }
+
+  &__progress-fill {
+    display: block;
+    height: 100%;
+    background: var(--fabricate-promo-hazard);
+  }
+
+  &__denied {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 5;
+    padding: 2vmin 4vmin;
+    border: 1vmin solid var(--fabricate-promo-hazard);
+    color: var(--fabricate-promo-hazard);
+    font-size: clamp(28px, 8vmin, 96px);
+    text-transform: uppercase;
+    white-space: nowrap;
+    translate: -50% -50%;
+    rotate: -8deg;
+    animation: fabricate-cutscene-stamp 900ms ease-out both;
+  }
+}
+
+@keyframes fabricate-cutscene-in {
+  from {
+    opacity: 0;
+    scale: 1.08;
+  }
+}
+
+@keyframes fabricate-cutscene-slam {
+  from {
+    opacity: 0;
+    scale: 4;
+  }
+}
+
+@keyframes fabricate-cutscene-stamp {
+  0% {
+    opacity: 0;
+    scale: 2.5;
+  }
+
+  15%,
+  70% {
+    opacity: 1;
+    scale: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
