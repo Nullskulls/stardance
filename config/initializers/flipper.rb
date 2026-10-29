@@ -53,6 +53,7 @@ Rails.application.config.after_initialize do
         fabricate-cutscene-promo
         fallen-promo
         justin-melena
+        late_mission_attach
       ].each { |flag| Flipper.add(flag) }
       Flipper.add(:bukux2_preview_complete) if Rails.env.development?
 
